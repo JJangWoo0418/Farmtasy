@@ -14,7 +14,7 @@ const Login = () => {
             {/* 기관 로고 및 텍스트 */}
             <View style={styles.orgContainer}>
                 <View style={styles.orgRow}>
-                    <Image source={require('./assets/ministry.png')} style={styles.orgLogo} />
+                    <Image source={require('../../assets/IntroLogo.png')} style={styles.orgLogo} />
                     <Text style={styles.orgText}>농림축산식품부</Text>
                 </View>
             </View>
@@ -24,7 +24,7 @@ const Login = () => {
                 <Text style={styles.startText}>농장 관리를 시작해 보세요!</Text>
 
                 <TouchableOpacity style={styles.kakaoButton}>
-                    <Image source={require('./assets/kakao.png')} style={styles.kakaoIcon} />
+                    <Image source={require('../../assets/IntroLogo2.png')} style={styles.kakaoIcon} />
                     <Text style={styles.kakaoText}>카카오톡으로 시작</Text>
                 </TouchableOpacity>
 
