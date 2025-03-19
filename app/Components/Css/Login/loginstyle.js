@@ -32,6 +32,28 @@ export default StyleSheet.create({
         height: 30,
         marginRight: 10,
     },
+    Logo: {
+        resizeMode: 'contain',
+        width: 346,
+        height: 114,
+        marginBottom: 70,
+        marginTop: 70,
+        resizeMethod: "auto"
+    },
+    Logo2: {
+        resizeMode: 'contain',
+        width: 350,
+        height: 130,
+        marginBottom: 50,
+        resizeMethod: "auto"
+    },
+    GreenTalkButton: {
+        resizeMode: 'contain',
+        width: 172,
+        height: 57,
+        marginBottom: 10,
+        resizeMethod: "auto"
+    },
     orgText: {
         fontSize: 16,
         color: '#333',
@@ -56,9 +78,9 @@ export default StyleSheet.create({
         justifyContent: 'center',
     },
     kakaoIcon: {
-        width: 20,
-        height: 20,
-        marginRight: 10,
+        width: 273,
+        height: 42,
+        marginBottom : 20,
     },
     kakaoText: {
         fontSize: 16,
@@ -66,8 +88,9 @@ export default StyleSheet.create({
         color: '#3C1E1E',
     },
     phoneText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#666',
-        marginTop: 10,
+        marginBottom: 100,
+        textDecorationLine: 'underline'
     },
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
 import styles from '../Components/Css/Login/loginstyle'; // 스타일 파일 분리
 
 const Login = () => {
@@ -7,25 +7,27 @@ const Login = () => {
 
     return (
         <View style={styles.container}>
+
+            {/* 상태바 추가 */}
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
             {/* 앱 타이틀 */}
-            <Text style={styles.title}>Farmtasy</Text>
-            <Text style={styles.subtitle}>환상적인 농장 관리를 실현하다</Text>
+            <Image source={require('../../assets/IntroLogo.png')} style={styles.Logo} />
 
             {/* 기관 로고 및 텍스트 */}
             <View style={styles.orgContainer}>
                 <View style={styles.orgRow}>
-                    <Image source={require('../../assets/IntroLogo.png')} style={styles.orgLogo} />
-                    <Text style={styles.orgText}>농림축산식품부</Text>
+                    <Image source={require('../../assets/IntroLogo2.png')} style={styles.Logo2} />
                 </View>
             </View>
 
             {/* 버튼 컨테이너 */}
             <View style={styles.buttonContainer}>
-                <Text style={styles.startText}>농장 관리를 시작해 보세요!</Text>
+                
+                <Image source={require('../../assets/GreenTalkButton.png')} style={styles.GreenTalkButton} />
 
-                <TouchableOpacity style={styles.kakaoButton}>
-                    <Image source={require('../../assets/IntroLogo2.png')} style={styles.kakaoIcon} />
-                    <Text style={styles.kakaoText}>카카오톡으로 시작</Text>
+                <TouchableOpacity>
+                    <Image source={require('../../assets/KakaoTalkButton.png')} style={styles.kakaoIcon} />
                 </TouchableOpacity>
 
                 <TouchableOpacity>
