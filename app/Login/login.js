@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
 import styles from '../Components/Css/Login/loginstyle'; // 스타일 파일 분리
+import { useNavigation } from '@react-navigation/native'; // ✅ 네비게이션 가져오기
 
 const Login = () => {
     console.log("Login Screen Loaded");
+    const navigation = useNavigation(); // ✅ 네비게이션 설정
 
     return (
         <View style={styles.container}>
@@ -30,7 +32,7 @@ const Login = () => {
                     <Image source={require('../../assets/KakaoTalkButton.png')} style={styles.kakaoIcon} />
                 </TouchableOpacity>
 
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('Login/register')}>
                     <Text style={styles.phoneText}>휴대전화번호로 시작</Text>
                 </TouchableOpacity>
             </View>
