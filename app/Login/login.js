@@ -11,7 +11,7 @@ const Login = () => {
         <View style={styles.container}>
 
             {/* 상태바 추가 */}
-            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+            <StatusBar barS tyle="dark-content" backgroundColor="#ffffff" />
 
             {/* 앱 타이틀 */}
             <Image source={require('../../assets/IntroLogo.png')} style={styles.Logo} />
@@ -25,14 +25,14 @@ const Login = () => {
 
             {/* 버튼 컨테이너 */}
             <View style={styles.buttonContainer}>
-                
+
                 <Image source={require('../../assets/GreenTalkButton.png')} style={styles.GreenTalkButton} />
 
                 <TouchableOpacity>
                     <Image source={require('../../assets/KakaoTalkButton.png')} style={styles.kakaoIcon} />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate('Login/register')}>
+                <TouchableOpacity onPress={() => navigation.navigate('Map/Map')}>
                     <Text style={styles.phoneText}>휴대전화번호로 시작</Text>
                 </TouchableOpacity>
             </View>
