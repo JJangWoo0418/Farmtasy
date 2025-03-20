@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
-import { fetchWeather } from './WeatherAPI';
+import { View, Text, StyleSheet } from 'react-native';
+import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
+import styles from '../Components/Css/FarmInfo/FarmInfo.css';
 
 const FarmInfo = () => {
 const [farmWeather, setFarmWeather] = useState(null);
@@ -21,7 +22,7 @@ useEffect(() => {
     },
     error => console.error('Error getting current location:', error)
     );
-}, []);
+    }, []);
 
 return (
     <View style={styles.container}>
@@ -48,18 +49,7 @@ return (
         </View>
     ))}
     </View>
-);
+    );
 };
-
-const styles = StyleSheet.create({
-container: {
-    padding: 20,
-},
-title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
-},
-});
 
 export default FarmInfo;
