@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
         color: '#666',
         fontWeight: 'bold',
         textAlign: 'center',
+        textDecorationLine: 'underline'
     },
     dividerContainer: {
         flexDirection: 'row',
