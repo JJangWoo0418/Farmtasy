@@ -1,11 +1,32 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, StatusBar, Animated } from 'react-native';
 import styles from '../Components/Css/Login/loginstyle'; // 스타일 파일 분리
 import { useNavigation } from '@react-navigation/native'; // ✅ 네비게이션 가져오기
 
 const Login = () => {
     console.log("Login Screen Loaded");
     const navigation = useNavigation(); // ✅ 네비게이션 설정
+
+    // ✅ 애니메이션 값 설정
+    const floatAnim = useRef(new Animated.Value(0)).current;
+
+    // ✅ 애니메이션 효과 정의 (위아래로 반복)
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(floatAnim, {
+                    toValue: -10,
+                    duration: 1500,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(floatAnim, {
+                    toValue: 0,
+                    duration: 1500,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -26,7 +47,11 @@ const Login = () => {
             {/* 버튼 컨테이너 */}
             <View style={styles.buttonContainer}>
                 
-                <Image source={require('../../assets/GreenTalkButton.png')} style={styles.GreenTalkButton} />
+                {/* ✅ 애니메이션 적용 */}
+                <Animated.Image
+                    source={require('../../assets/GreenTalkButton.png')}
+                    style={[styles.GreenTalkButton, { transform: [{ translateY: floatAnim }] }]}
+                />
 
                 <TouchableOpacity>
                     <Image source={require('../../assets/KakaoTalkButton.png')} style={styles.kakaoIcon} />
