@@ -12,6 +12,14 @@ const Register = () => {
 
     const isValid = phone.trim().length === 11 && password.length >= 8;
 
+    const formatPhone = (value) => {
+        const cleaned = value.replace(/\D+/g, ''); // 숫자 이외 제거
+    
+        if (cleaned.length <= 3) return cleaned;
+        if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+        return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
+    };
+
 
     return (
         <View style={styles.container}>
@@ -35,12 +43,14 @@ const Register = () => {
             {/* 입력 필드 */}
             <TextInput
                 style={styles.input}
-                placeholder="휴대전화번호 입력"
-                placeholderTextColor="#999"
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-                maxLength={11}
+                placeholder="-없이 숫자로만 입력"
+                placeholderTextColor="#aaa"
+                keyboardType="number-pad"
+                value={formatPhone(phone)}
+                onChangeText={(text) => {
+                    const onlyNums = text.replace(/\D+/g, '');
+                    setPhone(onlyNums.slice(0, 11)); // 최대 11자리 제한
+                }}
             />
             <TextInput
                 style={styles.input}
@@ -72,7 +82,7 @@ const Register = () => {
             </View>
 
             {/* 회원가입 버튼 */}
-            <TouchableOpacity style={styles.signupButton}>
+            <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('Login/register2')}>
                 <Text style={styles.signupText}>회원가입</Text>
             </TouchableOpacity>
         </View>
