@@ -10,6 +10,9 @@ const Register = () => {
 
     const navigation = useNavigation();
 
+    const isValid = phone.trim().length === 11 && password.length >= 8;
+
+
     return (
         <View style={styles.container}>
             {/* 상태바 설정 */}
@@ -37,6 +40,7 @@ const Register = () => {
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
+                maxLength={11}
             />
             <TextInput
                 style={styles.input}
@@ -48,12 +52,15 @@ const Register = () => {
             />
 
             {/* 로그인 버튼 */}
-            <TouchableOpacity style={styles.loginButton} disabled={phone === '' || password === ''}>
+            <TouchableOpacity
+                style={[styles.loginButton, { backgroundColor: isValid ? '#22CC6B' : '#d1d1d1' }]}
+                disabled={!isValid}
+            >
                 <Text style={styles.loginText}>로그인</Text>
             </TouchableOpacity>
 
             {/* 비밀번호 변경 */}
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Login/pwchange')}>
                 <Text style={styles.passwordChange}>비밀번호 변경</Text>
             </TouchableOpacity>
 
