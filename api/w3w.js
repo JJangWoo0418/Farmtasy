@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const W3W_API_KEY = 'LBPB0057'; // 발급받은 API 키로 교체
+const W3W_API_KEY = 'TE4ZZKWE	'; // 발급받은 API 키로 교체
 
 // 좌표를 3단어 주소로 변환
 export const getThreeWordAddress = async (lat, lng) => {
