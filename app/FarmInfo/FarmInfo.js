@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
 import styles from '../Components/Css/FarmInfo/FarmInfo.css';
+console.log('FarmInfo 페이지 로드됨');
 
 const FarmInfo = () => {
 const [farmWeather, setFarmWeather] = useState(null);
@@ -11,18 +12,26 @@ const [currentLocation, setCurrentLocation] = useState(null);
 
 useEffect(() => {
     // 농장 위치 날씨 조회
-    fetchWeather(farmLocation.latitude, farmLocation.longitude).then(data => setFarmWeather(data));
+    fetchWeather(farmLocation.latitude, farmLocation.longitude)
+    .then(data => {
+        console.log("농장 날씨 데이터:", data);  // 추가된 로그
+        setFarmWeather(data);
+    });
 
     // 현재 위치 날씨 조회
     navigator.geolocation.getCurrentPosition(
-    position => {
+        position => {
         const { latitude, longitude } = position.coords;
         setCurrentLocation({ latitude, longitude });
-        fetchWeather(latitude, longitude).then(data => setCurrentWeather(data));
+        fetchWeather(latitude, longitude)
+        .then(data => {
+            console.log("현위치 날씨 데이터:", data);  // 추가된 로그
+            setCurrentWeather(data);
+        });
     },
-    error => console.error('Error getting current location:', error)
+    error => console.error('위치 조회 오류:', error)
     );
-    }, []);
+}, []);
 
 return (
     <View style={styles.container}>

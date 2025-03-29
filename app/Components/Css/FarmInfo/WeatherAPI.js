@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { WEATHER_API_KEY } from './apikey.js';
+import { WEATHER_API_KEY } from '../../API/apikey';
+console.log('API Key Test:', WEATHER_API_KEY); // APIkey 확인
 
 export const fetchWeather = async (latitude, longitude) => {
     try {
