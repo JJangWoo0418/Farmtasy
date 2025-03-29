@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, FlatList } from 'react-native';
 import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
+import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 
 const HomePage = () => {
     const [activeTab, setActiveTab] = useState('추천글');
@@ -18,6 +19,7 @@ const HomePage = () => {
     ];
 
     return (
+        
         <View style={styles.container}>
             {/* 상단 검색 바 */}
             <View style={styles.searchBar}>
@@ -82,6 +84,7 @@ const HomePage = () => {
                     </View>
                 )}
             />
+            <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />
         </View>
     );
 };
