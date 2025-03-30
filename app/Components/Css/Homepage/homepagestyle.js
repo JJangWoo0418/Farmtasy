@@ -15,6 +15,14 @@ export default StyleSheet.create({
         borderRadius: 10,
         margin: 10,
     },
+    searchBar2: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        borderRadius: 10,
+        margin: 10,
+    },
     searchIcon: {
         marginRight: 10,
     },
@@ -117,5 +125,67 @@ export default StyleSheet.create({
     navItem: {
         alignItems: 'center',
     },
+    searchBarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        backgroundColor: 'white',
+    },
+
+    menuIconWrapper: {
+        paddingHorizontal: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    searchBox: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f3f2f4',
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        marginHorizontal: 8,
+        height: 40,
+    },
+
+    searchIcon: {
+        marginRight: 6,
+    },
+
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#333',
+    },
+
+    bellIconWrapper: {
+        paddingHorizontal: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    writeButton: {
+        position: 'absolute',
+        right: 20,
+        bottom: 80, // 하단 탭바 위로 띄우기 (적당히 조절 가능)
+        backgroundColor: '#22CC6B', // 네가 보낸 이미지에 맞춘 초록색
+        paddingHorizontal: 35,
+        paddingVertical: 20,
+        borderRadius: 30,
+        elevation: 5, // 안드로이드 그림자
+        shadowColor: '#000', // iOS 그림자
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        marginBottom: 10, 
+    },
+
+    writeButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+
 });
 

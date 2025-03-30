@@ -3,9 +3,11 @@ import { View, Text, TextInput, Image, TouchableOpacity, FlatList } from 'react-
 import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
+import { useNavigation } from '@react-navigation/native';
 
 const HomePage = () => {
     const [activeTab, setActiveTab] = useState('추천글');
+    const navigation = useNavigation();
 
     const posts = [
         {
@@ -19,19 +21,31 @@ const HomePage = () => {
     ];
 
     return (
-        
+
         <View style={styles.container}>
-            {/* 상단 검색 바 */}
-            <View style={styles.searchBar}>
-                <FontAwesome name="search" size={20} color="#aaa" style={styles.searchIcon} />
-                <TextInput 
-                    style={styles.searchInput} 
-                    placeholder="지금 필요한 농자재 검색" 
-                    placeholderTextColor="#aaa" 
-                />
-                <FontAwesome name="bell" size={24} color="#555" style={styles.bellIcon} />
+            {/* ✅ 상단 검색 바 */}
+            <View style={styles.searchBarContainer}>
+                {/* 햄버거 버튼 */}
+                <TouchableOpacity style={styles.menuIconWrapper}>
+                    <FontAwesome name="bars" size={20} color="#555" />
+                </TouchableOpacity>
+
+                {/* 검색창 박스만 회색 배경 */}
+                <View style={styles.searchBox}>
+                    <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder=" 지금 필요한 농자재 검색"
+                        placeholderTextColor="#aaa"
+                    />
+                </View>
+
+                {/* 종 아이콘 */}
+                <TouchableOpacity style={styles.bellIconWrapper}>
+                    <FontAwesome name="bell" size={22} color="#555" />
+                </TouchableOpacity>
             </View>
-            
+
             {/* 상단 메뉴 */}
             <View style={styles.menuContainer}>
                 <TouchableOpacity style={styles.menuItem}>
@@ -51,17 +65,14 @@ const HomePage = () => {
                     <Text style={styles.menuText}>직불금계산</Text>
                 </TouchableOpacity>
             </View>
-            
+
             {/* 추천글 & 이웃글 탭 */}
             <View style={styles.tabContainer}>
                 <TouchableOpacity onPress={() => setActiveTab('추천글')}>
                     <Text style={activeTab === '추천글' ? styles.activeTab : styles.inactiveTab}>추천글</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => setActiveTab('이웃글')}>
-                    <Text style={activeTab === '이웃글' ? styles.activeTab : styles.inactiveTab}>이웃글</Text>
-                </TouchableOpacity>
             </View>
-            
+
             {/* 게시글 목록 */}
             <FlatList
                 data={posts}
@@ -84,6 +95,16 @@ const HomePage = () => {
                     </View>
                 )}
             />
+            <TouchableOpacity 
+                style={styles.writeButton}
+                onPress={() => {
+                    // 글쓰기 화면으로 이동하거나 팝업 열기 등
+                    navigation.navigate('WritePost'); // 예시
+                }}
+            >
+                <Text style={styles.writeButtonText}>글쓰기</Text>
+            </TouchableOpacity>
+            
             <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />
         </View>
     );
