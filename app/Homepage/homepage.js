@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Dimensions, Animated, ScrollView } from 'react-native';
 import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import { useNavigation } from '@react-navigation/native';
 
 const HomePage = () => {
-    const [activeTab, setActiveTab] = useState('추천글');
     const navigation = useNavigation();
+    const [activeTab, setActiveTab] = useState('추천글');
 
     const posts = [
         {
@@ -22,7 +22,7 @@ const HomePage = () => {
 
     return (
 
-        <View style={styles.container}>
+        <View style={styles.container}>      
             {/* ✅ 상단 검색 바 */}
             <View style={styles.searchBarContainer}>
                 {/* 햄버거 버튼 */}
@@ -42,7 +42,7 @@ const HomePage = () => {
 
                 {/* 종 아이콘 */}
                 <TouchableOpacity style={styles.bellIconWrapper}>
-                    <FontAwesome name="bell" size={22} color="#555" />
+                    <Image source={require('../../assets/bellicon.png')} />
                 </TouchableOpacity>
             </View>
 
@@ -95,7 +95,7 @@ const HomePage = () => {
                     </View>
                 )}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.writeButton}
                 onPress={() => {
                     // 글쓰기 화면으로 이동하거나 팝업 열기 등
@@ -104,7 +104,7 @@ const HomePage = () => {
             >
                 <Text style={styles.writeButtonText}>글쓰기</Text>
             </TouchableOpacity>
-            
+
             <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />
         </View>
     );

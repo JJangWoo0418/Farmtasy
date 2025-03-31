@@ -1,4 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default StyleSheet.create({
 
@@ -161,7 +163,7 @@ export default StyleSheet.create({
     },
 
     bellIconWrapper: {
-        paddingHorizontal: 8,
+        paddingHorizontal: 2,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -178,13 +180,92 @@ export default StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        marginBottom: 10, 
+        marginBottom: 10,
     },
 
     writeButtonText: {
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+
+    drawerOverlay: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        zIndex: 100,
+        flexDirection: 'row',
+    },
+    drawerBackground: {
+        flex: 1,
+    },
+    drawerContainer: {
+        width: SCREEN_WIDTH * 0.75,
+        backgroundColor: '#fff',
+        paddingTop: 50,
+        paddingHorizontal: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 10,
+    },
+    drawerClose: {
+        alignSelf: 'flex-end',
+        marginBottom: 20,
+    },
+    drawerTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    drawerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    drawerIcon: {
+        width: 24,
+        height: 24,
+        marginRight: 10,
+    },
+    drawer: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: SCREEN_WIDTH * 0.75,
+        backgroundColor: 'white',
+        zIndex: 10,
+        paddingTop: 50,
+        paddingHorizontal: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        elevation: 10,
+    },
+    inner: {
+        flex: 1,
+    },
+    close: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginTop: 20,
+        marginBottom: 5,
+    },
+    item: {
+        fontSize: 14,
+        paddingVertical: 4,
+        paddingLeft: 10,
     },
 
 });
