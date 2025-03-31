@@ -57,7 +57,7 @@ const HomePage = () => {
 
                     <Animated.View style={[styles.drawerStatic, { transform: [{ translateX: drawerAnim }] }]}>
                         <TouchableOpacity onPress={onCloseDrawer} style={styles.drawerClose}>
-                            <Image source={require('../../assets/closeicon.png')} style={{ width: 24, height: 24 }} />
+                            <Image source={require('../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
                         </TouchableOpacity>
 
                         {/* drawerTitle, drawerItem 등은 그대로 유지 */}

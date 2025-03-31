@@ -218,30 +218,32 @@ export default StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.2)',
         zIndex: 100,
         flexDirection: 'row',
+        marginBottom: 0,
     },
 
     drawerStatic: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        width: 270,
+        width: SCREEN_WIDTH * 0.55, // ✅ 화면의 절반 너비로 조정
         backgroundColor: 'white',
-        paddingTop: 50,
+        paddingTop: 20,
         paddingHorizontal: 20,
         zIndex: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 5,
     },
 
     drawerClose: {
         alignSelf: 'flex-end',
-        marginBottom: 20,
+        marginBottom: 0,
     },
 
     drawerTitle: {
         fontWeight: 'bold',
-        fontSize: 16,
-        marginTop: 20,
-        marginBottom: 6,
+        fontSize: 20,
+        marginTop: 16,
+        marginBottom: 2,
         color: '#000',
     },
 
@@ -252,14 +254,14 @@ export default StyleSheet.create({
     },
 
     drawerIcon: {
-        width: 24,
-        height: 24,
+        width: 32,
+        height: 32,
         marginRight: 10,
         resizeMode: 'contain',
     },
 
     drawerText: {
-        fontSize: 14,
+        fontSize: 17,
         color: '#000',
     },
 });
