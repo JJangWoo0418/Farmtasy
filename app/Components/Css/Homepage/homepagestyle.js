@@ -189,65 +189,6 @@ export default StyleSheet.create({
         fontSize: 16,
     },
 
-    drawerOverlay: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        zIndex: 100,
-        flexDirection: 'row',
-    },
-    drawerBackground: {
-        flex: 1,
-    },
-    drawerContainer: {
-        width: SCREEN_WIDTH * 0.75,
-        backgroundColor: '#fff',
-        paddingTop: 50,
-        paddingHorizontal: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 10,
-    },
-    drawerClose: {
-        alignSelf: 'flex-end',
-        marginBottom: 20,
-    },
-    drawerTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 20,
-        marginBottom: 10,
-    },
-    drawerItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-    },
-    drawerIcon: {
-        width: 24,
-        height: 24,
-        marginRight: 10,
-    },
-    drawer: {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        width: SCREEN_WIDTH * 0.75,
-        backgroundColor: 'white',
-        zIndex: 10,
-        paddingTop: 50,
-        paddingHorizontal: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-        elevation: 10,
-    },
     inner: {
         flex: 1,
     },
@@ -268,5 +209,56 @@ export default StyleSheet.create({
         paddingLeft: 10,
     },
 
+    drawerOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.2)',
+        zIndex: 100,
+        flexDirection: 'row',
+    },
+
+    drawerStatic: {
+        width: 280,
+        backgroundColor: '#fff',
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+
+    drawerClose: {
+        alignSelf: 'flex-end',
+        marginBottom: 20,
+    },
+
+    drawerTitle: {
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginTop: 20,
+        marginBottom: 6,
+        color: '#000',
+    },
+
+    drawerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+
+    drawerIcon: {
+        width: 24,
+        height: 24,
+        marginRight: 10,
+        resizeMode: 'contain',
+    },
+
+    drawerText: {
+        fontSize: 14,
+        color: '#000',
+    },
 });
 
