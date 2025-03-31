@@ -221,13 +221,15 @@ export default StyleSheet.create({
     },
 
     drawerStatic: {
-        width: 280,
-        backgroundColor: '#fff',
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 2, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: 270,
+        backgroundColor: 'white',
+        paddingTop: 50,
+        paddingHorizontal: 20,
+        zIndex: 20,
     },
 
     drawerClose: {

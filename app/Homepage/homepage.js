@@ -10,6 +10,34 @@ const HomePage = () => {
     const [activeTab, setActiveTab] = useState('추천글');
     const [showDrawer, setShowDrawer] = useState(false);
 
+    const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
+
+    useEffect(() => {
+        if (showDrawer) {
+            Animated.timing(drawerAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false,
+            }).start();
+        } else {
+            Animated.timing(drawerAnim, {
+                toValue: -300,
+                duration: 300,
+                useNativeDriver: false,
+            }).start();
+        }
+    }, [showDrawer]);
+
+    const onCloseDrawer = () => {
+        Animated.timing(drawerAnim, {
+            toValue: -300, // 왼쪽으로 다시 숨기기
+            duration: 300,
+            useNativeDriver: false,
+        }).start(() => {
+            setShowDrawer(false); // 애니메이션 끝난 뒤에 drawer 숨김
+        });
+    };
+
     const posts = [
         {
             id: '1',
@@ -25,27 +53,27 @@ const HomePage = () => {
         <View style={styles.container}>
             {showDrawer && (
                 <View style={styles.drawerOverlay}>
-                    <View style={styles.drawerStatic}>
-                        {/* 닫기 버튼 */}
-                        <TouchableOpacity onPress={() => setShowDrawer(false)} style={styles.drawerClose}>
+                    <TouchableOpacity style={styles.drawerBackground} onPress={onCloseDrawer} />
+
+                    <Animated.View style={[styles.drawerStatic, { transform: [{ translateX: drawerAnim }] }]}>
+                        <TouchableOpacity onPress={onCloseDrawer} style={styles.drawerClose}>
                             <Image source={require('../../assets/closeicon.png')} style={{ width: 24, height: 24 }} />
                         </TouchableOpacity>
 
-                        {/* 정보 카테고리 */}
+                        {/* drawerTitle, drawerItem 등은 그대로 유지 */}
                         <Text style={styles.drawerTitle}>정보</Text>
                         <TouchableOpacity style={styles.drawerItem}>
                             <Image source={require('../../assets/profileicon.png')} style={styles.drawerIcon} />
                             <Text style={styles.drawerText}>프로필</Text>
                         </TouchableOpacity>
-
-                        {/* 장터 카테고리 */}
+                        {/* 장터 */}
                         <Text style={styles.drawerTitle}>장터</Text>
                         <TouchableOpacity style={styles.drawerItem}>
                             <Image source={require('../../assets/shopicon.png')} style={styles.drawerIcon} />
                             <Text style={styles.drawerText}>장터</Text>
                         </TouchableOpacity>
 
-                        {/* 농사 정보 카테고리 */}
+                        {/* 농사 정보 */}
                         <Text style={styles.drawerTitle}>농사 정보</Text>
                         <TouchableOpacity style={styles.drawerItem}>
                             <Image source={require('../../assets/directdeposit.png')} style={styles.drawerIcon} />
@@ -85,7 +113,7 @@ const HomePage = () => {
                             <Image source={require('../../assets/chatboticon.png')} style={styles.drawerIcon} />
                             <Text style={styles.drawerText}>질문하기</Text>
                         </TouchableOpacity>
-                    </View>
+                    </Animated.View>
                 </View>
             )}
 
