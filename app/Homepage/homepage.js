@@ -8,33 +8,26 @@ import { useNavigation } from '@react-navigation/native';
 const HomePage = () => {
     const navigation = useNavigation();
     const [activeTab, setActiveTab] = useState('추천글');
-    const [showDrawer, setShowDrawer] = useState(false);
+    const [isDrawerVisible, setDrawerVisible] = useState(false);
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
 
-    useEffect(() => {
-        if (showDrawer) {
-            Animated.timing(drawerAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            }).start();
-        } else {
-            Animated.timing(drawerAnim, {
-                toValue: -300,
-                duration: 300,
-                useNativeDriver: false,
-            }).start();
-        }
-    }, [showDrawer]);
+    const openDrawer = () => {
+        setDrawerVisible(true);
+        Animated.timing(drawerAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
+    };
 
-    const onCloseDrawer = () => {
+    const closeDrawer = () => {
         Animated.timing(drawerAnim, {
             toValue: -300, // 왼쪽으로 다시 숨기기
             duration: 300,
             useNativeDriver: false,
         }).start(() => {
-            setShowDrawer(false); // 애니메이션 끝난 뒤에 drawer 숨김
+            setDrawerVisible(false); // 애니메이션 끝난 뒤에 drawer 숨김
         });
     };
 
@@ -51,12 +44,28 @@ const HomePage = () => {
 
     return (
         <View style={styles.container}>
-            {showDrawer && (
-                <View style={styles.drawerOverlay}>
-                    <TouchableOpacity style={styles.drawerBackground} onPress={onCloseDrawer} />
+            {/* ✅ 드로어는 항상 존재하되 조건부 style만 바꿈 */}
+            <View
+                style={[
+                    styles.drawerOverlay,
+                    { display: isDrawerVisible ? 'flex' : 'none' },
+                ]}
+            >
+                {/* 배경 클릭 시 닫기 */}
+                <TouchableOpacity
+                    style={styles.drawerBackground}
+                    onPress={closeDrawer}
+                    activeOpacity={1}
+                />
 
-                    <Animated.View style={[styles.drawerStatic, { transform: [{ translateX: drawerAnim }] }]}>
-                        <TouchableOpacity onPress={onCloseDrawer} style={styles.drawerClose}>
+                {/* 드로어 슬라이드 메뉴 */}
+                <Animated.View
+                    style={[
+                        styles.drawerStatic,
+                        { transform: [{ translateX: drawerAnim }] },
+                    ]}
+                >
+                        <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>
                             <Image source={require('../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
                         </TouchableOpacity>
 
@@ -115,12 +124,12 @@ const HomePage = () => {
                         </TouchableOpacity>
                     </Animated.View>
                 </View>
-            )}
+            
 
             {/* ✅ 상단 검색 바 */}
             <View style={styles.searchBarContainer}>
                 {/* 햄버거 버튼 */}
-                <TouchableOpacity style={styles.menuIconWrapper} onPress={() => setShowDrawer(true)}>
+                <TouchableOpacity style={styles.menuIconWrapper} onPress={openDrawer}>
                     <FontAwesome name="bars" size={20} color="#555" />
                 </TouchableOpacity>
 
