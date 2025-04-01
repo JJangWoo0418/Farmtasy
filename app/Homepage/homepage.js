@@ -76,54 +76,54 @@ const HomePage = () => {
                     {/* drawerTitle, drawerItem 등은 그대로 유지 */}
                     <Text style={styles.drawerTitle}>정보</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/profileicon.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/profileicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>프로필</Text>
                     </TouchableOpacity>
                     {/* 장터 */}
                     <Text style={styles.drawerTitle}>장터</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/shopicon.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/shopicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>장터</Text>
                     </TouchableOpacity>
 
                     {/* 농사 정보 */}
                     <Text style={styles.drawerTitle}>농사 정보</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/directdeposit.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/directdeposit2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>면적 직불금 계산기</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/mapicon.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/quoteicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>작물 시세</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/weathericon.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/weathericon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>날씨</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/bugicon.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/bugicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>병해충</Text>
                     </TouchableOpacity>
 
                     {/* 농사 게시판 */}
                     <Text style={styles.drawerTitle}>농사 게시판</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/freetopic.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/freetopic2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>자유주제</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/studyfarming.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/studyfarming2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>농사공부</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/FarmingQuestions.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/farmingquestions2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>농사질문</Text>
                     </TouchableOpacity>
 
                     {/* AI */}
                     <Text style={styles.drawerTitle}>AI</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/chatboticon.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../assets/chatboticon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>질문하기</Text>
                     </TouchableOpacity>
                 </Animated.View>
@@ -156,28 +156,26 @@ const HomePage = () => {
             {/* 상단 메뉴 */}
             <View style={styles.menuContainer}>
                 <TouchableOpacity style={styles.menuItem}>
-                    <Image source={require('../../assets/FarmingQuestions.png')} style={styles.menuIcon} />
+                    <Image source={require('../../assets/farmingquestions4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사질문</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem}>
-                    <Image source={require('../../assets/studyfarming.png')} style={styles.menuIcon} />
+                    <Image source={require('../../assets/studyfarming4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사공부</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem}>
-                    <Image source={require('../../assets/freetopic.png')} style={styles.menuIcon} />
+                    <Image source={require('../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem}>
-                    <Image source={require('../../assets/directdeposit.png')} style={styles.menuIcon} />
+                    <Image source={require('../../assets/directdeposit4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>직불금계산</Text>
                 </TouchableOpacity>
             </View>
 
             {/* 추천글 & 이웃글 탭 */}
-            <View style={styles.tabContainer}>
-                <TouchableOpacity onPress={() => setActiveTab('추천글')}>
-                    <Text style={activeTab === '추천글' ? styles.activeTab : styles.inactiveTab}>추천글</Text>
-                </TouchableOpacity>
+            <View style={styles.tabContainer}>               
+                    <Text style={styles.activeTab}>추천글</Text>
             </View>
 
             {/* 게시글 목록 */}
@@ -202,6 +200,49 @@ const HomePage = () => {
                     </View>
                 )}
             />
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <View style={styles.post}>
+                        <View style={styles.postHeader}>
+                            <Image source={item.profileImage} style={styles.profileImage} />
+                            <View>
+                                <Text style={styles.username}>{item.username}</Text>
+                                <Text style={styles.postTime}>{item.time}</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.postText}>{item.text}</Text>
+                        <View style={styles.postImages}>
+                            {item.images.map((img, index) => (
+                                <Image key={index} source={img} style={styles.postImage} />
+                            ))}
+                        </View>
+                    </View>
+                )}
+            />
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <View style={styles.post}>
+                        <View style={styles.postHeader}>
+                            <Image source={item.profileImage} style={styles.profileImage} />
+                            <View>
+                                <Text style={styles.username}>{item.username}</Text>
+                                <Text style={styles.postTime}>{item.time}</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.postText}>{item.text}</Text>
+                        <View style={styles.postImages}>
+                            {item.images.map((img, index) => (
+                                <Image key={index} source={img} style={styles.postImage} />
+                            ))}
+                        </View>
+                    </View>
+                )}
+            />
+            
             <TouchableOpacity
                 style={styles.writeButton}
                 onPress={() => {
@@ -209,7 +250,7 @@ const HomePage = () => {
                     navigation.navigate('WritePost'); // 예시
                 }}
             >
-                <Text style={styles.writeButtonText}>글쓰기</Text>
+                <Text style={styles.writeButtonText}>글쓰기   <Image source={require('../../assets/paperpencil.png')} style={styles.paperpencilIcon} /></Text> 
             </TouchableOpacity>
 
             <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />

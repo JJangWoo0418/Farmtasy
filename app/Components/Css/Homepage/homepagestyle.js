@@ -52,12 +52,17 @@ export default StyleSheet.create({
         alignItems: 'center',
     },
     menuIcon: {
-        width: 40,
-        height: 40,
-        marginBottom: 5,
+        width: 65,
+        height: 65,
+        marginBottom: 9,
+        resizeMode:"cover"
+    },
+    paperpencilIcon: {
+        width: 17,
+        height: 17,
     },
     menuText: {
-        fontSize: 14,
+        fontSize: 15,
     },
     tabContainer: {
         flexDirection: 'row',
@@ -180,8 +185,8 @@ export default StyleSheet.create({
         right: 20,
         bottom: 80, // 하단 탭바 위로 띄우기 (적당히 조절 가능)
         backgroundColor: '#22CC6B', // 네가 보낸 이미지에 맞춘 초록색
-        paddingHorizontal: 35,
-        paddingVertical: 20,
+        paddingHorizontal: 25,
+        paddingVertical: 15,
         borderRadius: 30,
         elevation: 5, // 안드로이드 그림자
         shadowColor: '#000', // iOS 그림자
@@ -194,7 +199,7 @@ export default StyleSheet.create({
     writeButtonText: {
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 22,
     },
 
     inner: {
@@ -245,14 +250,14 @@ export default StyleSheet.create({
     drawerClose: {
         alignSelf: 'flex-end',
         marginBottom: 0,
-        marginTop: 55
+        marginTop: 40
     },
 
     drawerTitle: {
         fontWeight: 'bold',
         fontSize: 20,
-        marginTop: 16,
-        marginBottom: 2,
+        marginTop: 14,
+        marginBottom: 1,
         color: '#000',
     },
 
@@ -263,8 +268,8 @@ export default StyleSheet.create({
     },
 
     drawerIcon: {
-        width: 32,
-        height: 32,
+        width: 38,
+        height: 38,
         marginRight: 10,
         resizeMode: 'contain',
     },
