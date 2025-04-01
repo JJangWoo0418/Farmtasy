@@ -175,9 +175,10 @@ export default StyleSheet.create({
     },
 
     bellIconWrapper: {
-        paddingHorizontal: 2,
+        paddingHorizontal: 4,
         justifyContent: 'center',
         alignItems: 'center',
+        resizeMode: 'contain',
     },
     writeButton: {
         position: 'absolute',
