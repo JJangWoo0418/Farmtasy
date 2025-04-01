@@ -47,6 +47,7 @@ export default StyleSheet.create({
         justifyContent: 'space-around',
         paddingVertical: 10,
         backgroundColor: '#fff',
+        marginBottom: 10,
     },
     menuItem: {
         alignItems: 'center',
@@ -74,8 +75,6 @@ export default StyleSheet.create({
     activeTab: {
         fontSize: 16,
         fontWeight: 'bold',
-        borderBottomWidth: 2,
-        borderBottomColor: '#000',
     },
     inactiveTab: {
         fontSize: 16,

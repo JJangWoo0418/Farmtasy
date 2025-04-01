@@ -175,7 +175,7 @@ const HomePage = () => {
 
             {/* 추천글 & 이웃글 탭 */}
             <View style={styles.tabContainer}>               
-                    <Text style={styles.activeTab}>추천글</Text>
+                    <Text style={styles.activeTab}>인기글</Text>
             </View>
 
             {/* 게시글 목록 */}

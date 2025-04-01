@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet} from 'react-native';
 
 export default StyleSheet.create({
     container: {
@@ -28,7 +28,7 @@ export default StyleSheet.create({
     icon: {
         width: 24,
         height: 24,
-        marginBottom: 2,
+        marginBottom: 10,
     },
     label: {
         fontSize: 12,
