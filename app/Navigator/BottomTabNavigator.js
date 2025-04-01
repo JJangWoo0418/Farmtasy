@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Text, Image } from 'react-native';
 import styles from '../Components/Css/Navigator/BottomTabNavigatorstyle'
-import { Platform } from 'react-native';
 
 const BottomTabNavigator = ({ currentTab, onTabPress }) => {
     const tabs = [

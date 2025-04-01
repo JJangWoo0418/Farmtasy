@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Dimensions, Animated, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar} from 'react-native';
 import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
@@ -44,6 +44,10 @@ const HomePage = () => {
 
     return (
         <View style={styles.container}>
+
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+
+
             {/* ✅ 드로어는 항상 존재하되 조건부 style만 바꿈 */}
             <View
                 style={[
@@ -65,66 +69,66 @@ const HomePage = () => {
                         { transform: [{ translateX: drawerAnim }] },
                     ]}
                 >
-                        <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>
-                            <Image source={require('../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
-                        </TouchableOpacity>
+                    <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>
+                        <Image source={require('../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
+                    </TouchableOpacity>
 
-                        {/* drawerTitle, drawerItem 등은 그대로 유지 */}
-                        <Text style={styles.drawerTitle}>정보</Text>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/profileicon.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>프로필</Text>
-                        </TouchableOpacity>
-                        {/* 장터 */}
-                        <Text style={styles.drawerTitle}>장터</Text>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/shopicon.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>장터</Text>
-                        </TouchableOpacity>
+                    {/* drawerTitle, drawerItem 등은 그대로 유지 */}
+                    <Text style={styles.drawerTitle}>정보</Text>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/profileicon.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>프로필</Text>
+                    </TouchableOpacity>
+                    {/* 장터 */}
+                    <Text style={styles.drawerTitle}>장터</Text>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/shopicon.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>장터</Text>
+                    </TouchableOpacity>
 
-                        {/* 농사 정보 */}
-                        <Text style={styles.drawerTitle}>농사 정보</Text>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/directdeposit.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>면적 직불금 계산기</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/mapicon.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>작물 시세</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/weathericon.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>날씨</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/bugicon.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>병해충</Text>
-                        </TouchableOpacity>
+                    {/* 농사 정보 */}
+                    <Text style={styles.drawerTitle}>농사 정보</Text>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/directdeposit.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>면적 직불금 계산기</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/mapicon.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>작물 시세</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/weathericon.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>날씨</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/bugicon.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>병해충</Text>
+                    </TouchableOpacity>
 
-                        {/* 농사 게시판 */}
-                        <Text style={styles.drawerTitle}>농사 게시판</Text>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/freetopic.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>자유주제</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/studyfarming.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>농사공부</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/FarmingQuestions.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>농사질문</Text>
-                        </TouchableOpacity>
+                    {/* 농사 게시판 */}
+                    <Text style={styles.drawerTitle}>농사 게시판</Text>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/freetopic.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>자유주제</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/studyfarming.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>농사공부</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/FarmingQuestions.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>농사질문</Text>
+                    </TouchableOpacity>
 
-                        {/* AI */}
-                        <Text style={styles.drawerTitle}>AI</Text>
-                        <TouchableOpacity style={styles.drawerItem}>
-                            <Image source={require('../../assets/chatboticon.png')} style={styles.drawerIcon} />
-                            <Text style={styles.drawerText}>질문하기</Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-                </View>
-            
+                    {/* AI */}
+                    <Text style={styles.drawerTitle}>AI</Text>
+                    <TouchableOpacity style={styles.drawerItem}>
+                        <Image source={require('../../assets/chatboticon.png')} style={styles.drawerIcon} />
+                        <Text style={styles.drawerText}>질문하기</Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+
 
             {/* ✅ 상단 검색 바 */}
             <View style={styles.searchBarContainer}>

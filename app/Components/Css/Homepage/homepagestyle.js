@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions,} from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -7,6 +7,13 @@ export default StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99,
+
     },
     searchBar: {
         flexDirection: 'row',
@@ -133,6 +140,7 @@ export default StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 8,
         backgroundColor: 'white',
+        marginTop: 60,
     },
 
     menuIconWrapper: {
@@ -180,7 +188,7 @@ export default StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 4,
-        marginBottom: 10,
+        marginBottom: 40,
     },
 
     writeButtonText: {
@@ -237,6 +245,7 @@ export default StyleSheet.create({
     drawerClose: {
         alignSelf: 'flex-end',
         marginBottom: 0,
+        marginTop: 55
     },
 
     drawerTitle: {

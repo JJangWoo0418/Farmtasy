@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
     container: {
@@ -14,9 +14,10 @@ export default StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 5,
         elevation: 5,
-        paddingBottom: 15,
+        paddingBottom: 40,
         borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,         
+        borderBottomRightRadius: 20,
+        marginBottom: 0,         
     },
     tabItem: {
         alignItems: 'center',
