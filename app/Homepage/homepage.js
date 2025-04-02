@@ -278,18 +278,56 @@ const HomePage = () => {
                     elevation: 5,
                     zIndex: 888,
                 }}>
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                        <Image source={require('../../assets/FarmingQuestions.png')} style={{ width: 42, height: 42, marginRight: 7, marginBottom: 7, marginTop: 10}} />
-                        <Text style={{fontSize: 20, marginRight: 5, marginBottom: 10, marginTop: 10}}>농사질문 글쓰기</Text>
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate('Homepage/writingpage', {
+                                category: '농사질문',
+                                icon: require('../../assets/farmingquestions2.png'),
+                            })
+                        }
+                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+                    >
+                        <Image
+                            source={require('../../assets/FarmingQuestions.png')}
+                            style={{ width: 42, height: 42, marginRight: 7, marginBottom: 7, marginTop: 10 }}
+                        />
+                        <Text style={{ fontSize: 20, marginRight: 5, marginBottom: 10, marginTop: 10 }}>
+                            농사질문 글쓰기
+                        </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                        <Image source={require('../../assets/studyfarming.png')} style={{ width: 35, height: 35, marginRight: 10, marginLeft: 5 , marginBottom: 7}} />
-                        <Text style={{fontSize: 20, marginBottom: 7}}>농사공부 글쓰기</Text>
+
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate('Homepage/writingpage', {
+                                category: '농사공부',
+                                icon: require('../../assets/studyfarming2.png'),
+                            })
+                        }
+                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+                    >
+                        <Image
+                            source={require('../../assets/studyfarming.png')}
+                            style={{ width: 35, height: 35, marginRight: 10, marginLeft: 5, marginBottom: 7 }}
+                        />
+                        <Text style={{ fontSize: 20, marginBottom: 7 }}>농사공부 글쓰기</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Image source={require('../../assets/freetopic.png')} style={{ width: 40, height: 40, marginRight: 10 ,marginBottom: 15}} />
-                        <Text style={{fontSize: 20}}>자유주제 글쓰기</Text>
+
+                    <TouchableOpacity
+                        onPress={() =>
+                            navigation.navigate('Homepage/writingpage', {
+                                category: '자유주제',
+                                icon: require('../../assets/freetopic2.png'),
+                            })
+                        }
+                        style={{ flexDirection: 'row', alignItems: 'center' }}
+                    >
+                        <Image
+                            source={require('../../assets/freetopic.png')}
+                            style={{ width: 40, height: 40, marginRight: 10, marginBottom: 15 }}
+                        />
+                        <Text style={{ fontSize: 20 }}>자유주제 글쓰기</Text>
                     </TouchableOpacity>
+
                 </View>
             )}
 
@@ -315,8 +353,8 @@ const HomePage = () => {
             >
                 {isWriteToggleVisible ? (
                     <Image
-                    source={require('../../assets/Xicon.png')}
-                />
+                        source={require('../../assets/Xicon.png')}
+                    />
                 ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={styles.writeButtonText}>글쓰기  </Text>
