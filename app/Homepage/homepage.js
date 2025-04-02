@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar} from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar } from 'react-native';
 import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
@@ -7,8 +7,9 @@ import { useNavigation } from '@react-navigation/native';
 
 const HomePage = () => {
     const navigation = useNavigation();
-    const [activeTab, setActiveTab] = useState('추천글');
     const [isDrawerVisible, setDrawerVisible] = useState(false);
+    const [isWriteToggleVisible, setWriteToggleVisible] = useState(false);
+
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
 
@@ -174,8 +175,8 @@ const HomePage = () => {
             </View>
 
             {/* 추천글 & 이웃글 탭 */}
-            <View style={styles.tabContainer}>               
-                    <Text style={styles.activeTab}>인기글</Text>
+            <View style={styles.tabContainer}>
+                <Text style={styles.activeTab}>인기글</Text>
             </View>
 
             {/* 게시글 목록 */}
@@ -242,17 +243,90 @@ const HomePage = () => {
                     </View>
                 )}
             />
-            
-            <TouchableOpacity
-                style={styles.writeButton}
-                onPress={() => {
-                    // 글쓰기 화면으로 이동하거나 팝업 열기 등
-                    navigation.navigate('WritePost'); // 예시
-                }}
-            >
-                <Text style={styles.writeButtonText}>글쓰기   <Image source={require('../../assets/paperpencil.png')} style={styles.paperpencilIcon} /></Text> 
-            </TouchableOpacity>
 
+            {/* ✅ 딤처리 배경 (글쓰기 토글 켜졌을 때만 보임) */}
+            {isWriteToggleVisible && (
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={() => setWriteToggleVisible(false)}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                        zIndex: 100,
+                    }}
+                />
+            )}
+
+            {/* ✅ 글쓰기 토글 메뉴 (말풍선 모양) */}
+            {isWriteToggleVisible && (
+                <View style={{
+                    position: 'absolute',
+                    bottom: 200, // ← X 버튼보다 위로 올라오게
+                    right: 20,
+                    backgroundColor: 'white',
+                    borderRadius: 15,
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 5,
+                    elevation: 5,
+                    zIndex: 888,
+                }}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                        <Image source={require('../../assets/FarmingQuestions.png')} style={{ width: 42, height: 42, marginRight: 7, marginBottom: 7, marginTop: 10}} />
+                        <Text style={{fontSize: 20, marginRight: 5, marginBottom: 10, marginTop: 10}}>농사질문 글쓰기</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                        <Image source={require('../../assets/studyfarming.png')} style={{ width: 35, height: 35, marginRight: 10, marginLeft: 5 , marginBottom: 7}} />
+                        <Text style={{fontSize: 20, marginBottom: 7}}>농사공부 글쓰기</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Image source={require('../../assets/freetopic.png')} style={{ width: 40, height: 40, marginRight: 10 ,marginBottom: 15}} />
+                        <Text style={{fontSize: 20}}>자유주제 글쓰기</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* ✅ 글쓰기 플로팅 버튼 */}
+            <TouchableOpacity
+                style={[
+                    styles.writeButton,
+                    isWriteToggleVisible && {
+                        backgroundColor: 'white',
+                        borderWidth: 1,
+                        borderColor: '#ccc',
+                        width: 64,
+                        height: 64,
+                        borderRadius: 32,
+                    },
+                    {
+                        zIndex: 555,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }
+                ]}
+                onPress={() => setWriteToggleVisible(prev => !prev)}
+            >
+                {isWriteToggleVisible ? (
+                    <Image
+                    source={require('../../assets/Xicon.png')}
+                />
+                ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={styles.writeButtonText}>글쓰기  </Text>
+                        <Image
+                            source={require('../../assets/paperpencil.png')}
+                            style={styles.paperpencilIcon}
+                        />
+                    </View>
+                )}
+            </TouchableOpacity>
             <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />
         </View>
     );
