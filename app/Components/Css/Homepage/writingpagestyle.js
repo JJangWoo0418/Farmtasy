@@ -104,7 +104,7 @@ export default StyleSheet.create({
     },
     submitText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 'bold',
     },
     bottomSheet: {
