@@ -155,6 +155,11 @@ export default StyleSheet.create({
         height: 40,
         marginBottom: 8,
     },
+    sheetIcon3: {
+        width: 45,
+        height: 40,
+        marginBottom: 8,
+    },
     sheetIcon2: {
         width: 37,
         height: 37,
