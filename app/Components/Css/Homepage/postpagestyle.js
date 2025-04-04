@@ -1,0 +1,159 @@
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+
+export default StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 60,
+        paddingBottom: 12,
+        backgroundColor: '#fff',
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginLeft: 12,
+    },
+    topicBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: '#f6f6f6',
+    },
+    topicIcon: {
+        width: 42,
+        height: 42,
+        marginRight: 12,
+    },
+    topicText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    topicSub: {
+        fontSize: 13,
+        color: '#666',
+    },
+    searchBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f2f2f2',
+        marginHorizontal: 16,
+        marginTop: 10,
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        height: 42,
+    },
+    searchIcon: {
+        width: 20,
+        height: 20,
+        tintColor: '#aaa',
+        marginRight: 6,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#333',
+    },
+    filterRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginVertical: 12,
+        borderBottomWidth: 1,
+        borderColor: '#eee',
+        paddingBottom: 6,
+    },
+    filterText: {
+        fontSize: 14,
+        color: '#444',
+    },
+    postBox: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderColor: '#f0f0f0',
+        backgroundColor: '#fff',
+    },
+    postHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    profileImg: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        marginRight: 10,
+    },
+    username: {
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    time: {
+        fontSize: 12,
+        color: '#888',
+    },
+    moreBtn: {
+        marginLeft: 'auto',
+    },
+    postText: {
+        fontSize: 15,
+        lineHeight: 22,
+        marginBottom: 10,
+    },
+    postImage: {
+        width: '100%',
+        height: 180,
+        borderRadius: 10,
+        marginBottom: 10,
+    },
+    iconRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+    },
+    iconGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    icon: {
+        width: 18,
+        height: 18,
+        marginRight: 4,
+    },
+    iconText: {
+        fontSize: 13,
+        color: '#333',
+    },
+    writeButton: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#22CC6B',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 30,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 4,
+    },
+    writeButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginRight: 6,
+    },
+    writeIcon: {
+        width: 18,
+        height: 18,
+        tintColor: '#fff',
+    },
+});

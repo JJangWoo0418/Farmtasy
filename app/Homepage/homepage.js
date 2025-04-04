@@ -164,7 +164,7 @@ const HomePage = () => {
                     <Image source={require('../../assets/studyfarming4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사공부</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Homepage/postpage')}>
                     <Image source={require('../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>
