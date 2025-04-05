@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation } from '@react-navigation/native';
 
@@ -12,22 +12,15 @@ const PostPage = () => {
 
     // ✅ 글쓰기 버튼 애니메이션 관련 상태
     const writeButtonAnim = useRef(new Animated.Value(1)).current;
-    const textOpacity = useRef(new Animated.Value(1)).current;
     const [showText, setShowText] = useState(true);
 
     const animateWriteButton = (visible) => {
-        Animated.parallel([
-            Animated.timing(writeButtonAnim, {
-                toValue: visible ? 1 : 0,
-                duration: 250,
-                useNativeDriver: true,
-            }),
-            Animated.timing(textOpacity, {
-                toValue: visible ? 1 : 0,
-                duration: 250,
-                useNativeDriver: true,
-            })
-        ]).start();
+        Animated.timing(writeButtonAnim, {
+            toValue: visible ? 1 : 0,
+            duration: 1000,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: false, // ✅ transform에만 쓰더라도 safe 처리
+        }).start();
     };
 
     const handleScroll = (e) => {
@@ -93,7 +86,40 @@ const PostPage = () => {
             comments: 3,
             bookmarks: 5,
             profile: require('../../assets/leejunho.png'),
-        }
+        },
+        {
+            id: '5',
+            user: '충북음성 이준호',
+            time: '1시간 전',
+            text: '이런 곳에 산다면.\n얼마나 좋을까.',
+            image: require('../../assets/postimage1.png'),
+            likes: 20,
+            comments: 3,
+            bookmarks: 5,
+            profile: require('../../assets/leejunho.png'),
+        },
+        {
+            id: '6',
+            user: '충북음성 이준호',
+            time: '1시간 전',
+            text: '이런 곳에 산다면.\n얼마나 좋을까.',
+            image: require('../../assets/postimage1.png'),
+            likes: 20,
+            comments: 3,
+            bookmarks: 5,
+            profile: require('../../assets/leejunho.png'),
+        },
+        {
+            id: '7',
+            user: '충북음성 이준호',
+            time: '1시간 전',
+            text: '이런 곳에 산다면.\n얼마나 좋을까.',
+            image: require('../../assets/postimage1.png'),
+            likes: 20,
+            comments: 3,
+            bookmarks: 5,
+            profile: require('../../assets/leejunho.png'),
+        },
     ];
 
     const renderPost = ({ item }) => (
@@ -189,11 +215,16 @@ const PostPage = () => {
                     styles.writeButton,
                     {
                         transform: [
-                            { scale: writeButtonAnim },
+                            {
+                                scale: writeButtonAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0.9, 1],
+                                }),
+                            },
                             {
                                 translateY: writeButtonAnim.interpolate({
                                     inputRange: [0, 1],
-                                    outputRange: [20, 0],
+                                    outputRange: [15, 0],
                                 }),
                             },
                         ],
@@ -202,12 +233,16 @@ const PostPage = () => {
             >
                 <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
                     {showText && (
-                        <Animated.Text style={[styles.writeButtonText, { opacity: textOpacity }]}>글쓰기  </Animated.Text>
+                        <Animated.Text
+                            style={[styles.writeButtonText, {
+                                opacity: writeButtonAnim,
+                            }]}
+                        >
+                            글쓰기  </Animated.Text>
                     )}
                     <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
                 </TouchableOpacity>
             </Animated.View>
-
         </View>
     );
 };
