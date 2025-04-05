@@ -155,7 +155,7 @@ export default StyleSheet.create({
     },
     writeButton: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 100,
         right: 20,
         flexDirection: 'row',
         alignItems: 'center',
