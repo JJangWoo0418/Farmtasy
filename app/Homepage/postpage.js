@@ -133,7 +133,7 @@ const PostPage = () => {
 
             {/* 글쓰기 버튼 */}
             <TouchableOpacity style={styles.writeButton}>
-                <Text style={styles.writeButtonText}>글쓰기</Text>
+                <Text style={styles.writeButtonText}>글쓰기  </Text>
                 <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
             </TouchableOpacity>
         </View>
