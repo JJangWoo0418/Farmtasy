@@ -32,6 +32,29 @@ const HomePage = () => {
         });
     };
 
+    const goToPostPage = (category) => {
+        if (category === '자유주제') {
+            navigation.navigate('Homepage/postpage', {
+                categoryTitle: '화목한 농부들의 자유주제',
+                categoryDesc: '다양한 주제로 소통해 보세요',
+                categoryIcon: require('../../assets/freetopic2.png'),
+            });
+        } else if (category === '농사공부') {
+            navigation.navigate('Homepage/postpage', {
+                categoryTitle: '똑똑한 농부들의 농사공부',
+                categoryDesc: '유익한 정보들을 공유해보세요',
+                categoryIcon: require('../../assets/studyfarming2.png'),
+            });
+        } else if (category === '농사질문') {
+            navigation.navigate('Homepage/postpage', {
+                categoryTitle: '질문은 배움의 시작 농사질문',
+                categoryDesc: '농사에 대한 질문을 남겨보세요',
+                categoryIcon: require('../../assets/farmingquestions2.png'),
+            });
+        }
+    };
+
+
     const posts = [
         {
             id: '1',
@@ -156,15 +179,15 @@ const HomePage = () => {
 
             {/* 상단 메뉴 */}
             <View style={styles.menuContainer}>
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사질문')}>
                     <Image source={require('../../assets/farmingquestions4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사질문</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사공부')}>
                     <Image source={require('../../assets/studyfarming4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사공부</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Homepage/postpage')}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('자유주제')}>
                     <Image source={require('../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>

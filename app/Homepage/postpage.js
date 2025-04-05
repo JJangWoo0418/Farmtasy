@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, } from 'react';
 import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -13,6 +13,12 @@ const PostPage = () => {
     // ✅ 글쓰기 버튼 애니메이션 관련 상태
     const writeButtonAnim = useRef(new Animated.Value(1)).current;
     const [showText, setShowText] = useState(true);
+    const route = useRoute();
+    const {
+        categoryTitle = '카테고리 없음',
+        categoryDesc = '',
+        categoryIcon = require('../../assets/Xicon.png'),
+    } = route.params || {};
 
     const animateWriteButton = (visible) => {
         Animated.timing(writeButtonAnim, {
@@ -171,11 +177,12 @@ const PostPage = () => {
                             </TouchableOpacity>
                             <Text style={styles.title}>게시글</Text>
                         </View>
+                        {/* 카테고리 설명 부분 */}
                         <View style={styles.topicBox}>
-                            <Image source={require('../../assets/freetopic2.png')} style={styles.topicIcon} />
+                            <Image source={categoryIcon} style={styles.topicIcon} />
                             <View>
-                                <Text style={styles.topicText}>화목한 농부들의 자유주제</Text>
-                                <Text style={styles.topicSub}>다양한 주제로 소통해 보세요</Text>
+                                <Text style={styles.topicText}>{categoryTitle}</Text>
+                                <Text style={styles.topicSub}>{categoryDesc}</Text>
                             </View>
                         </View>
                         <View style={styles.searchBox}>
