@@ -1,10 +1,23 @@
-import React from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, ScrollView, Animated, Dimensions } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation } from '@react-navigation/native';
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
 const PostPage = () => {
     const navigation = useNavigation();
+    const [selectedFilter, setSelectedFilter] = useState('전체');
+    const underlineAnim = useRef(new Animated.Value(0)).current;
+
+    const handleTabPress = (item, index) => {
+        setSelectedFilter(item);
+        Animated.timing(underlineAnim, {
+            toValue: index * (SCREEN_WIDTH / 4),
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+    };
 
     const posts = [
         {
@@ -43,15 +56,15 @@ const PostPage = () => {
             {item.image && <Image source={item.image} style={styles.postImage} />}
             <View style={styles.iconRow}>
                 <View style={styles.iconGroup}>
-                    <Image source={require('../../assets/goodicon.png')} style={styles.icon} />
+                    <Image source={require('../../assets/hearticon.png')} style={styles.icon} />
                     <Text style={styles.iconText}>{item.likes}</Text>
                 </View>
                 <View style={styles.iconGroup}>
-                    <Image source={require('../../assets/commenticon.png')} style={styles.icon} />
+                    <Image source={require('../../assets/commenticon2.png')} style={styles.icon2} />
                     <Text style={styles.iconText}>{item.comments}</Text>
                 </View>
                 <View style={styles.iconGroup}>
-                    <Image source={require('../../assets/bookmarkicon.png')} style={styles.icon} />
+                    <Image source={require('../../assets/bookmarkicon.png')} style={styles.icon3} />
                     <Text style={styles.iconText}>{item.bookmarks}</Text>
                 </View>
             </View>
@@ -88,11 +101,26 @@ const PostPage = () => {
             </View>
 
             {/* 필터 탭 */}
-            <View style={styles.filterRow}>
-                <Text style={styles.filterText}>전체</Text>
-                <Text style={styles.filterText}>인기순</Text>
-                <Text style={styles.filterText}>최신순</Text>
-                <Text style={styles.filterText}>오래된 순</Text>
+            <View style={styles.tabContainer}>
+                {['전체', '인기순', '최신순', '오래된 순'].map((item, index) => (
+                    <TouchableOpacity
+                        key={item}
+                        style={styles.tabItem}
+                        onPress={() => handleTabPress(item, index)}
+                    >
+                        <Text style={[styles.tabText, selectedFilter === item && styles.activeTabText]}>
+                            {item}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+                <Animated.View
+                    style={[
+                        styles.underline,
+                        {
+                            transform: [{ translateX: underlineAnim }],
+                        },
+                    ]}
+                />
             </View>
 
             {/* 게시글 리스트 */}

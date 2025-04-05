@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default StyleSheet.create({
     container: {
@@ -80,6 +80,7 @@ export default StyleSheet.create({
     },
     postBox: {
         padding: 16,
+        paddingTop: 15,
         borderBottomWidth: 1,
         borderColor: '#f0f0f0',
         backgroundColor: '#fff',
@@ -97,14 +98,16 @@ export default StyleSheet.create({
     },
     username: {
         fontWeight: 'bold',
-        fontSize: 14,
+        fontSize: 16,
     },
     time: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#888',
     },
     moreBtn: {
         marginLeft: 'auto',
+        width: 22,
+        height: 23,
     },
     postText: {
         fontSize: 15,
@@ -120,6 +123,7 @@ export default StyleSheet.create({
     iconRow: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
+        marginTop: 5
     },
     iconGroup: {
         flexDirection: 'row',
@@ -127,13 +131,27 @@ export default StyleSheet.create({
         marginRight: 16,
     },
     icon: {
-        width: 18,
-        height: 18,
+        width: 24.01,
+        height: 22.01,
         marginRight: 4,
+        resizeMode: 'contain',
+    },
+    icon2: {
+        width: 24,
+        height: 24,
+        marginRight: 4,
+        resizeMode: 'contain',
+    },
+    icon3: {
+        width: 16,
+        height: 20,
+        marginRight: 4,
+        resizeMode: 'contain',
+        marginLeft: 217
     },
     iconText: {
         fontSize: 13,
-        color: '#333',
+        fontWeight: 'bold',
     },
     writeButton: {
         position: 'absolute',
@@ -161,5 +179,55 @@ export default StyleSheet.create({
         width: 18,
         height: 18,
         tintColor: '#fff',
+    },
+    filterButton: {
+        alignItems: 'center',
+        paddingHorizontal: 10,
+    },
+
+    activeFilter: {
+        fontWeight: 'bold',
+        color: '#000',
+    },
+
+    activeBar: {
+        marginTop: 4,
+        width: 70,
+        height: 3,
+        backgroundColor: '#000',
+        borderRadius: 2,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+        position: 'relative',
+        marginTop: 25
+    },
+
+    tabItem: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+
+    tabText: {
+        fontSize: 16,
+        color: '#888',
+    },
+
+    activeTabText: {
+        color: '#000',
+        fontWeight: 'bold',
+    },
+
+    underline: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        width: SCREEN_WIDTH / 4,
+        height: 3,
+        backgroundColor: '#000',
+        borderRadius: 2,
     },
 });
