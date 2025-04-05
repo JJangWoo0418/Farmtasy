@@ -131,15 +131,15 @@ const HomePage = () => {
 
                     {/* 농사 게시판 */}
                     <Text style={styles.drawerTitle}>농사 게시판</Text>
-                    <TouchableOpacity style={styles.drawerItem}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('자유주제')}>
                         <Image source={require('../../assets/freetopic2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>자유주제</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사공부')}>
                         <Image source={require('../../assets/studyfarming2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>농사공부</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사질문')}>
                         <Image source={require('../../assets/farmingquestions2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>농사질문</Text>
                     </TouchableOpacity>
