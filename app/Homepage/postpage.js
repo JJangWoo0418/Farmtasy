@@ -70,10 +70,10 @@ const PostPage = () => {
 
             {/* 카테고리 설명 */}
             <View style={styles.topicBox}>
-                <Image source={require('../../assets/freetopic.png')} style={styles.topicIcon} />
+                <Image source={require('../../assets/freetopic2.png')} style={styles.topicIcon} />
                 <View>
                     <Text style={styles.topicText}>화목한 농부들의 자유주제</Text>
-                    <Text style={styles.topicSub}>다양한 주제로 소통해 보세요!</Text>
+                    <Text style={styles.topicSub}>다양한 주제로 소통해 보세요</Text>
                 </View>
             </View>
 
@@ -82,7 +82,7 @@ const PostPage = () => {
                 <Image source={require('../../assets/searchicon.png')} style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="제목이나 키워드로 게시글을 찾아보세요!"
+                    placeholder="  제목이나 키워드로 게시글 검색"
                     placeholderTextColor="#aaa"
                 />
             </View>

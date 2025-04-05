@@ -6,6 +6,11 @@ export default StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
     },
     header: {
         flexDirection: 'row',
@@ -18,26 +23,27 @@ export default StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginLeft: 12,
+        paddingLeft: 130
     },
     topicBox: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: '#f6f6f6',
     },
     topicIcon: {
-        width: 42,
-        height: 42,
+        width: 60,
+        height: 60,
         marginRight: 12,
     },
     topicText: {
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 'bold',
+        paddingBottom: 5
     },
     topicSub: {
-        fontSize: 13,
+        fontSize: 15,
         color: '#666',
+        paddingBottom: 5
     },
     searchBox: {
         flexDirection: 'row',
@@ -52,7 +58,6 @@ export default StyleSheet.create({
     searchIcon: {
         width: 20,
         height: 20,
-        tintColor: '#aaa',
         marginRight: 6,
     },
     searchInput: {
@@ -67,9 +72,10 @@ export default StyleSheet.create({
         borderBottomWidth: 1,
         borderColor: '#eee',
         paddingBottom: 6,
+        paddingTop: 15
     },
     filterText: {
-        fontSize: 14,
+        fontSize: 18,
         color: '#444',
     },
     postBox: {
