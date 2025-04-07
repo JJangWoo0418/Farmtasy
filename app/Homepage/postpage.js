@@ -9,6 +9,8 @@ const PostPage = () => {
     const navigation = useNavigation();
     const [selectedFilter, setSelectedFilter] = useState('전체');
     const underlineAnim = useRef(new Animated.Value(0)).current;
+    const heartScale = useRef(new Animated.Value(1)).current;
+
 
     // ✅ 글쓰기 버튼 애니메이션 관련 상태
     const writeButtonAnim = useRef(new Animated.Value(1)).current;
@@ -47,6 +49,16 @@ const PostPage = () => {
             useNativeDriver: true,
         }).start();
     };
+
+    const triggerHeartAnimation = () => {
+        heartScale.setValue(0.8); // 처음엔 작게
+        Animated.spring(heartScale, {
+            toValue: 1,
+            friction: 3,
+            useNativeDriver: true,
+        }).start();
+    };
+
 
     const posts = [
         {
@@ -144,7 +156,12 @@ const PostPage = () => {
             {item.image && <Image source={item.image} style={styles.postImage} />}
             <View style={styles.iconRow}>
                 <View style={styles.iconGroup}>
-                    <Image source={require('../../assets/hearticon.png')} style={styles.icon} />
+                    <TouchableOpacity onPress={triggerHeartAnimation}>
+                        <Animated.Image
+                            source={require('../../assets/hearticon.png')}
+                            style={[styles.icon, { transform: [{ scale: heartScale }] }]}
+                        />
+                    </TouchableOpacity>
                     <Text style={styles.iconText}>{item.likes}</Text>
                 </View>
                 <View style={styles.iconGroup}>
