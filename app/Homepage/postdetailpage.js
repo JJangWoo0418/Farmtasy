@@ -8,7 +8,10 @@ const PostDetailPage = () => {
     const route = useRoute();
     const { post } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
     const [isLiked, setIsLiked] = useState(false); // 공감 상태 추가
+    const [isBookmarked, setIsBookmarked] = useState(false); // 북마크 상태 추가
     const scaleAnim = useRef(new Animated.Value(1)).current;
+    const bookmarkScaleAnim = useRef(new Animated.Value(1)).current;
+    const commentAnimations = useRef({}).current;
 
     // 임시 댓글 데이터
     const [comments, setComments] = useState([
@@ -31,7 +34,7 @@ const PostDetailPage = () => {
                         <Text style={styles.headerTitle}>게시글 로딩 중...</Text>
                     </View>
                     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <Text>게시글 정보를 불러오는데 실패했습니다.</Text>
+                        <Text style={styles.errorText}>게시글 정보를 불러오는데 실패했습니다.</Text>
                     </View>
                 </ScrollView>
             </SafeAreaView>
@@ -47,6 +50,24 @@ const PostDetailPage = () => {
                     : comment
             )
         );
+
+        if (!commentAnimations[commentId]) {
+            commentAnimations[commentId] = new Animated.Value(1);
+        }
+
+        Animated.sequence([
+            Animated.timing(commentAnimations[commentId], {
+                toValue: 1.5,
+                duration: 100,
+                useNativeDriver: true,
+            }),
+            Animated.spring(commentAnimations[commentId], {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
     };
 
     const handleLike = () => {
@@ -68,17 +89,36 @@ const PostDetailPage = () => {
         ]).start();
     };
 
+    const handleBookmark = () => {
+        setIsBookmarked(!isBookmarked);
+        
+        // 북마크 애니메이션
+        Animated.sequence([
+            Animated.timing(bookmarkScaleAnim, {
+                toValue: 1.5,
+                duration: 100,
+                useNativeDriver: true,
+            }),
+            Animated.spring(bookmarkScaleAnim, {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             {/* 고정된 헤더 */}
             <View style={styles.header}>
-                <View style={{ width: 30 }}> {/* 뒤로가기 버튼의 너비와 동일하게 설정 */}
+                <View style={{ width: 30 }}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Image source={require('../../assets/gobackicon.png')} />
                     </TouchableOpacity>
                 </View>
                 <Text style={styles.headerTitle}>자유주제</Text>
-                <View style={{ width: 30 }} /> {/* 오른쪽에도 동일한 너비의 빈 공간 추가 */}
+                <View style={{ width: 30 }} />
             </View>
 
             {/* 스크롤 가능한 내용 */}
@@ -87,7 +127,7 @@ const PostDetailPage = () => {
                 <View style={styles.postContainer}>
                     <View style={styles.postHeader}>
                         <Image source={post.profile} style={styles.profileImg} />
-                        <View>
+                        <View style={styles.userInfoContainer}>
                             <Text style={styles.username}>{post.user}</Text>
                             <Text style={styles.userInfo}>고양이가 제일 좋아요 · {post.time}</Text>
                         </View>
@@ -102,11 +142,17 @@ const PostDetailPage = () => {
                 {/* 좋아요 / 댓글 수 */}
                 <View style={styles.statsRow}>
                     <View style={styles.statsItem}>
-                        <Image source={require('../../assets/heartgreenicon.png')} style={styles.statsIcon} />
+                        <Image 
+                            source={require('../../assets/heartgreenicon.png')} 
+                            style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]} 
+                        />
                         <Text style={styles.statsText}>{post.likes}</Text>
                     </View>
                     <View style={styles.statsItem}>
-                        <Image source={require('../../assets/commenticon2.png')} style={styles.statsIconComment} />
+                        <Image 
+                            source={require('../../assets/commenticon.png')} 
+                            style={[styles.statsIconComment, { resizeMode: 'contain' }]} 
+                        />
                         <Text style={styles.statsText}>{post.comments}</Text>
                     </View>
                 </View>
@@ -123,14 +169,22 @@ const PostDetailPage = () => {
                                 style={styles.actionIcon} 
                             />
                         </Animated.View>
-                        <Text style={styles.actionText}>공감</Text>
+                        <Text style={styles.actionText}>좋아요</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionButton}>
-                        <Image source={require('../../assets/commenticon2.png')} style={styles.actionIcon} />
+                        <Image source={require('../../assets/commenticon.png')} style={styles.actionIcon} />
                         <Text style={styles.actionText}>댓글</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionButton}>
-                        <Image source={require('../../assets/bookmarkgreenicon.png')} style={styles.actionIcon} />
+                    <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={handleBookmark}
+                    >
+                        <Animated.View style={{ transform: [{ scale: bookmarkScaleAnim }] }}>
+                            <Image 
+                                source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')} 
+                                style={styles.actionIcon} 
+                            />
+                        </Animated.View>
                         <Text style={styles.actionText}>저장</Text>
                     </TouchableOpacity>
                 </View>
@@ -149,16 +203,20 @@ const PostDetailPage = () => {
 
                 {/* 댓글 목록 */}
                 {comments.map(comment => (
-                    <View key={comment.id} style={styles.commentContainer}>
+                    <View key={comment.id} style={[styles.commentContainer, comment.user === '충북음성 이준호2' ? { marginLeft: 35 } : null]}>
                         <View style={styles.commentHeader}>
                             <Image source={comment.profile} style={styles.commentProfileImg} />
-                            <Text style={styles.commentUsername}>{comment.user}</Text>
-                            <Text style={styles.commentInfo}>· {comment.time}</Text>
-                            {comment.isAuthor && (
-                                <View style={styles.authorBadge}>
-                                    <Text style={styles.authorBadgeText}>작성자</Text>
+                            <View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Text style={styles.commentUsername}>{comment.user}</Text>
+                                    {comment.isAuthor && (
+                                        <View style={styles.authorBadge}>
+                                            <Text style={styles.authorBadgeText}>작성자</Text>
+                                        </View>
+                                    )}
                                 </View>
-                            )}
+                                <Text style={styles.commentInfo}>고양이가 제일 좋아요 · {comment.time}</Text>
+                            </View>
                             <TouchableOpacity style={styles.commentMoreBtn}>
                                 <Image source={require('../../assets/moreicon.png')} />
                             </TouchableOpacity>
@@ -166,14 +224,16 @@ const PostDetailPage = () => {
                         <Text style={styles.commentText}>{comment.text}</Text>
                         <View style={styles.commentActions}>
                             <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
-                                <Image
-                                    source={comment.isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
-                                    style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
+                                <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
+                                    <Image
+                                        source={comment.isLiked ? require('../../assets/heartgrayicon.png') : require('../../assets/hearticon.png')}
+                                        style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
+                                </Animated.View>
                                 <Text style={styles.commentLikeText}>{comment.likes}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.commentReplyButton}>
-                                <Image source={require('../../assets/commenticon2.png')} style={styles.commentReplyIcon} />
-                                <Text style={styles.commentReplyText}>답글쓰기</Text>
+                                <Image source={require('../../assets/commenticon.png')} style={styles.commentReplyIcon} />
+                                <Text style={styles.commentReplyText}> 답글쓰기</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

@@ -15,7 +15,7 @@ export default StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingTop: 0,
-        paddingBottom: 12,
+        paddingBottom: 2,
         borderBottomColor: '#eee',
         backgroundColor: '#fff',
         marginBottom: 100,
@@ -34,6 +34,7 @@ export default StyleSheet.create({
     },
     postContainer: {
         padding: 16,
+        paddingBottom: 0
     },
     postHeader: {
         flexDirection: 'row',
@@ -68,7 +69,7 @@ export default StyleSheet.create({
         width: '100%',
         height: 250, // Adjust height as needed
         borderRadius: 10,
-        marginVertical: 10,
+        marginVertical: 2,
     },
     statsRow: {
         flexDirection: 'row',
@@ -81,18 +82,19 @@ export default StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginRight: 15,
+        marginLeft: 18
+        
     },
     statsIcon: {
-        width: 18,
-        height: 18,
-        marginRight: 5,
-        tintColor: '#22CC6B' // Example color for like icon
-    },
-    statsIconComment: {
         width: 16,
         height: 16,
         marginRight: 5,
-        tintColor: '#666'
+    },
+    statsIconComment: {
+        width: 18,
+        height: 18,
+        marginRight: 5,
+        marginLeft: 248
     },
     statsText: {
         fontSize: 14,
@@ -121,8 +123,8 @@ export default StyleSheet.create({
     },
     commentSectionHeader: {
         paddingHorizontal: 16,
-        paddingTop: 20,
-        paddingBottom: 10,
+        paddingTop: 10,
+        paddingBottom: 17,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
@@ -182,7 +184,7 @@ export default StyleSheet.create({
     commentInfo: {
         fontSize: 11,
         color: '#999',
-        marginLeft: 5,
+        marginLeft: 0,
     },
     authorBadge: {
         backgroundColor: '#eee',
@@ -221,10 +223,10 @@ export default StyleSheet.create({
         width: 16,
         height: 16,
         marginRight: 4,
-        tintColor: '#666', // Default color
+        resizeMode: 'contain'
     },
     commentLikedIcon: {
-        tintColor: '#FF6347', // Liked color (example: Tomato)
+        resizeMode: 'contain'
     },
     commentLikeText: {
         fontSize: 13,
@@ -235,13 +237,22 @@ export default StyleSheet.create({
         alignItems: 'center',
     },
     commentReplyIcon: {
-        width: 16,
-        height: 16,
+        width: 14,
+        height: 14,
         marginRight: 4,
     },
     commentReplyText: {
         fontSize: 13,
         color: '#666',
+    },
+    userInfoContainer: {
+        flex: 1,
+        marginLeft: 10,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
     },
     // ... add more styles if needed for replies, input fields, etc.
 });
