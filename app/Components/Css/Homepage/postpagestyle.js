@@ -96,6 +96,10 @@ export default StyleSheet.create({
         borderRadius: 19,
         marginRight: 10,
     },
+    userInfoContainer: {
+        flex: 1,
+        marginRight: 10,
+    },
     username: {
         fontWeight: 'bold',
         fontSize: 16,
@@ -105,9 +109,10 @@ export default StyleSheet.create({
         color: '#888',
     },
     moreBtn: {
-        marginLeft: 'auto',
-        width: 22,
-        height: 23,
+        width: 1,
+        height: 1,
+        marginRight: 20,
+        marginBottom: 30
     },
     postText: {
         fontSize: 15,
@@ -125,33 +130,40 @@ export default StyleSheet.create({
         justifyContent: 'flex-start',
         marginTop: 5
     },
+    iconButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     iconGroup: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 16,
+        marginRight: 15,
     },
     icon: {
-        width: 24.01,
-        height: 22.01,
-        marginRight: 4,
+        width: 26,
+        height: 26,
         resizeMode: 'contain',
+        marginRight: 3,
+    },
+    iconText: {
+        fontSize: 14,
+        color: '#666',
+        marginLeft: 2,
+        width: 20,
+        textAlign: 'center',
     },
     icon2: {
         width: 24,
         height: 24,
-        marginRight: 4,
+        marginRight: 1,
         resizeMode: 'contain',
     },
     icon3: {
-        width: 16,
-        height: 20,
-        marginRight: 4,
+        width: 18,
+        height: 22,
+        marginRight: 1,
         resizeMode: 'contain',
-        marginLeft: 217
-    },
-    iconText: {
-        fontSize: 13,
-        fontWeight: 'bold',
+        marginLeft: 190
     },
     writeButton: {
         position: 'absolute',
