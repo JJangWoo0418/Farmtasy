@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
 
@@ -131,7 +131,18 @@ const PostDetailPage = () => {
                             <Text style={styles.username}>{post.user}</Text>
                             <Text style={styles.userInfo}>고양이가 제일 좋아요 · {post.time}</Text>
                         </View>
-                        <TouchableOpacity style={styles.moreBtn}>
+                        <TouchableOpacity style={styles.moreBtn} onPress={() => {
+                            Alert.alert(
+                                "신고하기",
+                                "무엇을 신고하시겠습니까?",
+                                [
+                                    { text: "게시글 신고하기", onPress: () => console.log("게시글 신고하기") },
+                                    { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
+                                    { text: "취소", style: "cancel" }
+                                ],
+                                { cancelable: true }
+                            );
+                        }}>
                             <Image source={require('../../assets/moreicon.png')} />
                         </TouchableOpacity>
                     </View>
@@ -217,7 +228,17 @@ const PostDetailPage = () => {
                                 </View>
                                 <Text style={styles.commentInfo}>고양이가 제일 좋아요 · {comment.time}</Text>
                             </View>
-                            <TouchableOpacity style={styles.commentMoreBtn}>
+                            <TouchableOpacity style={styles.commentMoreBtn} onPress={() => {
+                                Alert.alert(
+                                    "신고하기",
+                                    "유저를 신고하시겠습니까?",
+                                    [
+                                        { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
+                                        { text: "취소", style: "cancel" }
+                                    ],
+                                    { cancelable: true }
+                                );
+                            }}>
                                 <Image source={require('../../assets/moreicon.png')} />
                             </TouchableOpacity>
                         </View>
@@ -230,10 +251,6 @@ const PostDetailPage = () => {
                                         style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
                                 </Animated.View>
                                 <Text style={styles.commentLikeText}>{comment.likes}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.commentReplyButton}>
-                                <Image source={require('../../assets/commenticon.png')} style={styles.commentReplyIcon} />
-                                <Text style={styles.commentReplyText}> 답글쓰기</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
