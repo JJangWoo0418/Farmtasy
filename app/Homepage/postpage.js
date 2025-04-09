@@ -9,8 +9,8 @@ const PostPage = () => {
     const navigation = useNavigation();
     const [selectedFilter, setSelectedFilter] = useState('전체');
     const underlineAnim = useRef(new Animated.Value(0)).current;
-    const heartScale = useRef(new Animated.Value(1)).current;
-
+    const [heartAnimations, setHeartAnimations] = useState({});
+    const [likedPosts, setLikedPosts] = useState({});
 
     // ✅ 글쓰기 버튼 애니메이션 관련 상태
     const writeButtonAnim = useRef(new Animated.Value(1)).current;
@@ -50,15 +50,38 @@ const PostPage = () => {
         }).start();
     };
 
-    const triggerHeartAnimation = () => {
-        heartScale.setValue(0.8); // 처음엔 작게
-        Animated.spring(heartScale, {
-            toValue: 1,
-            friction: 3,
-            useNativeDriver: true,
-        }).start();
-    };
+    const triggerHeartAnimation = (postId) => {
+        // 애니메이션 값이 없으면 새로 생성
+        if (!heartAnimations[postId]) {
+            const newAnimation = new Animated.Value(1);
+            setHeartAnimations(prev => ({
+                ...prev,
+                [postId]: newAnimation
+            }));
+            // 새로 생성된 애니메이션으로 바로 실행
+            newAnimation.setValue(0.8);
+            Animated.spring(newAnimation, {
+                toValue: 1,
+                friction: 3,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            // 기존 애니메이션 실행
+            const currentAnimation = heartAnimations[postId];
+            currentAnimation.setValue(0.8);
+            Animated.spring(currentAnimation, {
+                toValue: 1,
+                friction: 3,
+                useNativeDriver: true,
+            }).start();
+        }
 
+        // 좋아요 상태 토글
+        setLikedPosts(prev => ({
+            ...prev,
+            [postId]: !prev[postId]
+        }));
+    };
 
     const posts = [
         {
@@ -140,41 +163,46 @@ const PostPage = () => {
         },
     ];
 
-    const renderPost = ({ item }) => (
-        <View style={styles.postBox}>
-            <View style={styles.postHeader}>
-                <Image source={item.profile} style={styles.profileImg} />
-                <View>
-                    <Text style={styles.username}>{item.user}</Text>
-                    <Text style={styles.time}>{item.time}</Text>
-                </View>
-                <TouchableOpacity style={styles.moreBtn}>
-                    <Image source={require('../../assets/moreicon.png')} />
-                </TouchableOpacity>
-            </View>
-            <Text style={styles.postText}>{item.text}</Text>
-            {item.image && <Image source={item.image} style={styles.postImage} />}
-            <View style={styles.iconRow}>
-                <View style={styles.iconGroup}>
-                    <TouchableOpacity onPress={triggerHeartAnimation}>
-                        <Animated.Image
-                            source={require('../../assets/hearticon.png')}
-                            style={[styles.icon, { transform: [{ scale: heartScale }] }]}
-                        />
+    const renderPost = ({ item }) => {
+        const isLiked = likedPosts[item.id] || false;
+        const heartAnimation = heartAnimations[item.id] || new Animated.Value(1);
+
+        return (
+            <View style={styles.postBox}>
+                <View style={styles.postHeader}>
+                    <Image source={item.profile} style={styles.profileImg} />
+                    <View>
+                        <Text style={styles.username}>{item.user}</Text>
+                        <Text style={styles.time}>{item.time}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.moreBtn}>
+                        <Image source={require('../../assets/moreicon.png')} />
                     </TouchableOpacity>
-                    <Text style={styles.iconText}>{item.likes}</Text>
                 </View>
-                <View style={styles.iconGroup}>
-                    <Image source={require('../../assets/commenticon2.png')} style={styles.icon2} />
-                    <Text style={styles.iconText}>{item.comments}</Text>
-                </View>
-                <View style={styles.iconGroup}>
-                    <Image source={require('../../assets/bookmarkicon.png')} style={styles.icon3} />
-                    <Text style={styles.iconText}>{item.bookmarks}</Text>
+                <Text style={styles.postText}>{item.text}</Text>
+                {item.image && <Image source={item.image} style={styles.postImage} />}
+                <View style={styles.iconRow}>
+                    <View style={styles.iconGroup}>
+                        <TouchableOpacity onPress={() => triggerHeartAnimation(item.id)}>
+                            <Animated.Image
+                                source={isLiked ? require('../../assets/hearticon.png') : require('../../assets/hearticon.png')}
+                                style={[styles.icon, { transform: [{ scale: heartAnimation }] }]}
+                            />
+                        </TouchableOpacity>
+                        <Text style={styles.iconText}>{isLiked ? item.likes + 1 : item.likes}</Text>
+                    </View>
+                    <View style={styles.iconGroup}>
+                        <Image source={require('../../assets/commenticon2.png')} style={styles.icon2} />
+                        <Text style={styles.iconText}>{item.comments}</Text>
+                    </View>
+                    <View style={styles.iconGroup}>
+                        <Image source={require('../../assets/bookmarkicon.png')} style={styles.icon3} />
+                        <Text style={styles.iconText}>{item.bookmarks}</Text>
+                    </View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     return (
         <View style={styles.container}>
