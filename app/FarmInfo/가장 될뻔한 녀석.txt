@@ -1,17 +1,24 @@
 // app/Components/Css/FarmInfo/WeatherAPI.js
 import axios from 'axios';
 import { WEATHER_API_KEY_PORTAL, WEATHER_API_KEY_KMA } from '../../API/apikey';
-import { XMLParser } from 'fast-xml-parser';  // fast-xml-parser 사용
+import { XMLParser } from 'fast-xml-parser';
 
-// 공통 API 요청 함수 (공공데이터포털 전용)
-const fetchAPI = async (url, params) => {
+// XML 파서 설정
+const parser = new XMLParser();
+
+// 공통 API 요청 함수
+const fetchAPI = async (url, params, useKmaKey = false) => {
   try {
-    const response = await axios.get(url, { params });
+    const finalParams = {
+      ...params,
+      ...(url.includes('data.go.kr')
+        ? { serviceKey: WEATHER_API_KEY_PORTAL }
+        : { authKey: WEATHER_API_KEY_KMA }),
+    };
+
+    const response = await axios.get(url, { params: finalParams });
     const xml = response.data;
     console.log('[LOG] 날씨 API 원 응답:', xml);
-
-    // fast-xml-parser로 XML을 JSON으로 변환
-    const parser = new XMLParser();
     const json = parser.parse(xml);
     return json;
   } catch (error) {
@@ -54,7 +61,6 @@ export const fetchWeather = async (type, params) => {
 // 초단기실황조회
 export const fetchUltraSrtNcst = async ({ nx, ny, base_date, base_time }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
     pageNo: 1,
     numOfRows: 1000,
     dataType: 'XML',
@@ -68,7 +74,6 @@ export const fetchUltraSrtNcst = async ({ nx, ny, base_date, base_time }) => {
 // 초단기예보조회
 export const fetchUltraSrtFcst = async ({ nx, ny, base_date, base_time }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
     pageNo: 1,
     numOfRows: 1000,
     dataType: 'XML',
@@ -82,7 +87,6 @@ export const fetchUltraSrtFcst = async ({ nx, ny, base_date, base_time }) => {
 // 단기예보조회
 export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
     pageNo: 1,
     numOfRows: 1000,
     dataType: 'XML',
@@ -96,8 +100,7 @@ export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
 // 중기육상예보
 export const fetchMidLandFcst = async ({ regId, tmFc }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
-    serviceKey: WEATHER_API_KEY_KMA, // 기상청 API Key
-    dataType: 'JSON',
+    dataType: 'XML',
     regId,
     tmFc,
   });
@@ -106,30 +109,27 @@ export const fetchMidLandFcst = async ({ regId, tmFc }) => {
 // 중기기온예보
 export const fetchMidTa = async ({ regId, tmFc }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
-    serviceKey: WEATHER_API_KEY_KMA, // 기상청 API Key
-    dataType: 'JSON',
+    dataType: 'XML',
     regId,
     tmFc,
   });
 };
 
-// 기상특보 조회
+// 기상특보
 export const fetchWarningNow = async () => {
   return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/wrn_now_data.php', {
-    authKey: WEATHER_API_KEY_KMA, // 기상청 API Key
     fe: 'f',
-  });
+  }, true);
 };
 
-// 태풍정보 조회
+// 태풍정보
 export const fetchTyphoon = async ({ YY, typ, seq, mode }) => {
   return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/typ_data.php', {
-    authKey: WEATHER_API_KEY_KMA, // 기상청 API Key
     YY,
     typ,
     seq,
     mode,
-  });
+  }, true);
 };
 
 // 위경도 → 격자변환
@@ -142,7 +142,7 @@ export const convertLatLonToGrid = async ({ lat, lon }) => {
       params: {
         lat,
         lon,
-        authKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+        authKey: WEATHER_API_KEY_KMA,
       },
     });
 
@@ -163,7 +163,9 @@ export const convertLatLonToGrid = async ({ lat, lon }) => {
       return null;
     }
   } catch (error) {
-    console.error('[ERROR] 격자 변환 요청 오류:', error.response || error.message);
+    console.error('[ERROR] 격자 변환 요청 오류:', error);
     return null;
   }
 };
+
+가장 될뻔한 코드 Weather.js
