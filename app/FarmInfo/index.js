@@ -1,9 +1,24 @@
 // app/FarmInfo/index.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Button, ScrollView, TouchableOpacity } from 'react-native';
 import * as Location from 'expo-location';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
-import styles from '../Components/Css/FarmInfo/index.css';
+import styles from '../Components/Css/FarmInfo/index.js';
+
+const getBaseDateTime = () => {
+  const date = new Date();
+  date.setMinutes(date.getMinutes() - 30);
+  const yyyy = date.getFullYear();
+  const mm = ('0' + (date.getMonth() + 1)).slice(-2);
+  const dd = ('0' + date.getDate()).slice(-2);
+  const hh = ('0' + date.getHours()).slice(-2);
+  const min = date.getMinutes();
+  const roundedMin = min < 30 ? '00' : '30';
+  return {
+    base_date: `${yyyy}${mm}${dd}`,
+    base_time: `${hh}${roundedMin}`,
+  };
+};
 
 const FarmInfo = () => {
   const [mode, setMode] = useState('farm');
@@ -25,14 +40,13 @@ const FarmInfo = () => {
         console.error('[ERROR] 위치 권한 거부');
         return;
       }
-
       const currentPosition = await Location.getCurrentPositionAsync({});
       coords = {
         latitude: currentPosition.coords.latitude,
         longitude: currentPosition.coords.longitude,
       };
-      setLocation(coords);
       console.log('[LOG] 현위치 좌표:', coords);
+      setLocation(coords);
     } else {
       console.log('[LOG] 농장 좌표:', coords);
     }
@@ -48,20 +62,14 @@ const FarmInfo = () => {
       lon: coords.longitude,
     });
 
-    if (!grid || !grid.x || !grid.y) {
+    if (!grid) {
       console.error('[ERROR] 격자 정보 없음.');
-      console.log('[LOG] 격자 정보:', grid);
       return;
     }
 
     console.log('[LOG] 격자 정보:', grid);
 
-    const now = new Date();
-    const base_date = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const hour = now.getHours();
-    const roundedHour = hour < 10 ? `0${hour}` : `${hour}`;
-    const base_time = `${roundedHour}00`;
-
+    const { base_date, base_time } = getBaseDateTime();
     console.log('[LOG] 기준 날짜:', base_date, '기준 시간:', base_time);
 
     const result = await fetchWeather('ultraFcst', {
@@ -71,24 +79,16 @@ const FarmInfo = () => {
       base_time,
     });
 
-    if (!result) {
-      console.error('[ERROR] 날씨 데이터 없음');
+    console.log('[LOG] 날씨 API 원 응답:', JSON.stringify(result));
+
+    if (!result || typeof result !== 'object' || result.response === undefined) {
+      console.error('[ERROR] API 응답 오류:', result?.response);
       return;
     }
 
-    if (result?.response?.header?.resultMsg !== 'NORMAL_SERVICE') {
-      console.error('[ERROR] API 응답 오류:', result?.response?.header?.resultMsg);
-    }
-
     console.log('[LOG] 날씨 데이터:', result);
-    setWeatherData(result);
-  };
 
-  const getTemperature = () => {
-    const items = weatherData?.response?.body?.items?.item;
-    if (!items || items.length === 0) return '-';
-    const tempItem = items.find(item => item.category === 'T1H');
-    return tempItem ? tempItem.fcstValue : '-';
+    setWeatherData(result);
   };
 
   return (
@@ -107,7 +107,7 @@ const FarmInfo = () => {
         <Text style={styles.loading}>로딩중...</Text>
       ) : (
         <View style={styles.weatherBox}>
-          <Text>기온: {getTemperature()}°C</Text>
+          <Text>기온: {weatherData.response?.body?.items?.item[0]?.fcstValue || '-'}°C</Text>
         </View>
       )}
 

@@ -5,13 +5,25 @@ import { WEATHER_API_KEY } from '../../API/apikey';
 // 공통 API 요청 함수
 const fetchAPI = async (url, params) => {
   try {
-    const response = await axios.get(url, { params });
+    const query = new URLSearchParams(params).toString();
+    const fullUrl = `${url}?${query}`;
+
+    const response = await axios.get(fullUrl, {
+      headers: {
+        Accept: 'application/json', // JSON 명시
+      },
+      responseType: 'json', // 이 부분 추가
+    });
+
     return response.data;
   } catch (error) {
     console.error('[ERROR] 기상청 API 요청 오류:', error);
     return null;
   }
 };
+
+
+
 
 // 통합 호출 함수
 export const fetchWeather = async (type, params) => {
