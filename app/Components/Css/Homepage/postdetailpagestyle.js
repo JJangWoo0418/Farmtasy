@@ -295,8 +295,13 @@ export default StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'flex-end',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
     },
     modalContent: {
         backgroundColor: '#fff',
@@ -328,11 +333,17 @@ export default StyleSheet.create({
     },
     modalCloseButton: {
         alignItems: 'center',
-        padding: 10,
+        marginBottom: 12,
+
     },
     modalCloseText: {
         fontSize: 16,
         color: '#333',
+    },
+    modalCloseIcon: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     // ... add more styles if needed for replies, input fields, etc.
 });

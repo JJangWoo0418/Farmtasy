@@ -304,7 +304,12 @@ const PostDetailPage = () => {
             >
                 <Animated.View style={[styles.modalContainer, { transform: [{ translateY: modalAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] }) }] }]}> 
                     <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>사진 올리기 선택</Text>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
+                            <Image source={require('../../assets/closeicon.png')} style={styles.modalCloseIcon} />
+                        </TouchableOpacity>
+                        </View> 
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={styles.modalButton} onPress={() => console.log('사진 촬영')}>
                                 <Image source={require('../../assets/cameraicon2.png')} style={styles.modalIcon} />
@@ -315,9 +320,6 @@ const PostDetailPage = () => {
                                 <Text style={styles.modalButtonText}>앨범 선택</Text>
                             </TouchableOpacity>
                         </View>
-                        <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
-                            <Text style={styles.modalCloseText}>닫기</Text>
-                        </TouchableOpacity>
                     </View>
                 </Animated.View>
             </Modal>
