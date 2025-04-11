@@ -307,7 +307,7 @@ const PostDetailPage = () => {
                         <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>사진 올리기 선택</Text>
                         <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
-                            <Image source={require('../../assets/closeicon.png')} style={styles.modalCloseIcon} />
+                            <Text style={styles.modalCloseText}>✕</Text>
                         </TouchableOpacity>
                         </View> 
                         <View style={styles.modalButtons}>

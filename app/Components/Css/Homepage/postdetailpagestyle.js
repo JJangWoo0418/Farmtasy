@@ -4,6 +4,11 @@ export default StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        position: 'absolute',
+        top: 0,
+        bottom: 50,
+        left: 0,
+        right: 0,
     },
     header: {
         position: 'absolute',
@@ -31,7 +36,6 @@ export default StyleSheet.create({
     scrollView: {
         flex: 1,
         marginTop: 60, // 헤더 높이에 맞게 조정
-        marginBottom: 60, // 아래 여백 추가
     },
     postContainer: {
         padding: 16,
@@ -84,7 +88,7 @@ export default StyleSheet.create({
         alignItems: 'center',
         marginRight: 15,
         marginLeft: 18
-        
+
     },
     statsIcon: {
         width: 16,
@@ -301,13 +305,21 @@ export default StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 30,
     },
     modalContent: {
         backgroundColor: '#fff',
         padding: 20,
         borderTopLeftRadius: 10,
         borderTopRightRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     modalTitle: {
         fontSize: 18,
@@ -317,7 +329,7 @@ export default StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: 20,
+        marginBottom: 40,
     },
     modalButton: {
         alignItems: 'center',
@@ -325,7 +337,7 @@ export default StyleSheet.create({
     modalIcon: {
         width: 50,
         height: 50,
-        marginBottom: 5,
+        marginBottom: 12,
         resizeMode: 'contain',
     },
     modalButtonText: {
@@ -337,8 +349,9 @@ export default StyleSheet.create({
 
     },
     modalCloseText: {
-        fontSize: 16,
-        color: '#333',
+        fontSize: 20,
+        color: 'black',
+        fontWeight: 'bold',
     },
     modalCloseIcon: {
         width: 24,
