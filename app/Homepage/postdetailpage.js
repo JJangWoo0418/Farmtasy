@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
 
@@ -14,6 +14,8 @@ const PostDetailPage = () => {
     const commentAnimations = useRef({}).current;
     const [isCommentInputVisible, setIsCommentInputVisible] = useState(false);
     const commentInputAnim = useRef(new Animated.Value(0)).current;
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const modalAnim = useRef(new Animated.Value(0)).current;
 
     // 임시 댓글 데이터
     const [comments, setComments] = useState([
@@ -114,6 +116,15 @@ const PostDetailPage = () => {
         setIsCommentInputVisible(!isCommentInputVisible);
         Animated.timing(commentInputAnim, {
             toValue: isCommentInputVisible ? 0 : 1,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const toggleModal = () => {
+        setIsModalVisible(!isModalVisible);
+        Animated.timing(modalAnim, {
+            toValue: isModalVisible ? 0 : 1,
             duration: 300,
             useNativeDriver: true,
         }).start();
@@ -272,7 +283,7 @@ const PostDetailPage = () => {
 
             {/* 댓글 입력 섹션 */}
             <Animated.View style={[styles.commentInputSection, { transform: [{ translateY: commentInputAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }]}>
-                <TouchableOpacity style={styles.cameraButton}>
+                <TouchableOpacity style={styles.cameraButton} onPress={toggleModal}>
                     <Image source={require('../../assets/cameraicon.png')} style={styles.icon} />
                 </TouchableOpacity>
                 <TextInput
@@ -284,6 +295,32 @@ const PostDetailPage = () => {
                     <Image source={require('../../assets/arrowrighticon.png')} style={styles.icon} />
                 </TouchableOpacity>
             </Animated.View>
+
+            <Modal
+                transparent={true}
+                visible={isModalVisible}
+                animationType="none"
+                onRequestClose={toggleModal}
+            >
+                <Animated.View style={[styles.modalContainer, { transform: [{ translateY: modalAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] }) }] }]}> 
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>사진 올리기 선택</Text>
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => console.log('사진 촬영')}>
+                                <Image source={require('../../assets/cameraicon2.png')} style={styles.modalIcon} />
+                                <Text style={styles.modalButtonText}>사진 촬영</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButton} onPress={() => console.log('앨범 선택')}>
+                                <Image source={require('../../assets/galleryicon.png')} style={styles.modalIcon} />
+                                <Text style={styles.modalButtonText}>앨범 선택</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
+                            <Text style={styles.modalCloseText}>닫기</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            </Modal>
         </View>
     );
 };

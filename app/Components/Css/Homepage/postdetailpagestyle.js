@@ -290,5 +290,49 @@ export default StyleSheet.create({
         height: 24,
         resizeMode: 'contain',
     },
+    modalContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        marginBottom: 20,
+    },
+    modalButton: {
+        alignItems: 'center',
+    },
+    modalIcon: {
+        width: 50,
+        height: 50,
+        marginBottom: 5,
+        resizeMode: 'contain',
+    },
+    modalButtonText: {
+        fontSize: 14,
+    },
+    modalCloseButton: {
+        alignItems: 'center',
+        padding: 10,
+    },
+    modalCloseText: {
+        fontSize: 16,
+        color: '#333',
+    },
     // ... add more styles if needed for replies, input fields, etc.
 });
