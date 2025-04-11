@@ -31,6 +31,7 @@ export default StyleSheet.create({
     scrollView: {
         flex: 1,
         marginTop: 60, // 헤더 높이에 맞게 조정
+        marginBottom: 60, // 아래 여백 추가
     },
     postContainer: {
         padding: 16,
@@ -253,6 +254,41 @@ export default StyleSheet.create({
         fontSize: 16,
         color: '#666',
         textAlign: 'center',
+    },
+    commentInputSection: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        backgroundColor: '#fff',
+    },
+    commentInput: {
+        flex: 1,
+        height: 40,
+        borderColor: '#ddd',
+        borderWidth: 1,
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        marginRight: 10,
+        fontSize: 14,
+        backgroundColor: '#F4F2F8',
+    },
+    cameraButton: {
+        marginRight: 10,
+    },
+    sendButton: {
+        marginRight: 0,
+    },
+    icon: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     // ... add more styles if needed for replies, input fields, etc.
 });
