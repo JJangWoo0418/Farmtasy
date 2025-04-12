@@ -45,4 +45,26 @@ export default StyleSheet.create({
     fontStyle: 'italic',
     color: 'gray',
   },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  time: {
+    width: 50,
+    fontWeight: 'bold',
+  },
+  temp: {
+    width: 40,
+    textAlign: 'right',
+  },
+  reh: {
+    width: 40,
+    textAlign: 'right',
+  },
+  errorText: {
+    color: 'red',
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
 });

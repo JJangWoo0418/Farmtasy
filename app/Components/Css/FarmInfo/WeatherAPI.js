@@ -96,8 +96,8 @@ export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
 // 중기육상예보
 export const fetchMidLandFcst = async ({ regId, tmFc }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
-    serviceKey: WEATHER_API_KEY_KMA, // 기상청 API Key
-    dataType: 'JSON',
+    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+    dataType: 'XML',
     regId,
     tmFc,
   });
@@ -106,7 +106,7 @@ export const fetchMidLandFcst = async ({ regId, tmFc }) => {
 // 중기기온예보
 export const fetchMidTa = async ({ regId, tmFc }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
-    serviceKey: WEATHER_API_KEY_KMA, // 기상청 API Key
+    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
     dataType: 'JSON',
     regId,
     tmFc,
@@ -142,7 +142,7 @@ export const convertLatLonToGrid = async ({ lat, lon }) => {
       params: {
         lat,
         lon,
-        authKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+        authKey: WEATHER_API_KEY_KMA, // 기상청 API Key
       },
     });
 
