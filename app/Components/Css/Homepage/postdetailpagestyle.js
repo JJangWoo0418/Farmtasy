@@ -6,7 +6,7 @@ export default StyleSheet.create({
         backgroundColor: '#fff',
         position: 'absolute',
         top: 0,
-        bottom: 50,
+        bottom: 0,
         left: 0,
         right: 0,
     },
@@ -36,6 +36,7 @@ export default StyleSheet.create({
     scrollView: {
         flex: 1,
         marginTop: 60, // 헤더 높이에 맞게 조정
+        marginBottom: 60,
     },
     postContainer: {
         padding: 16,
@@ -300,6 +301,12 @@ export default StyleSheet.create({
         left: 0,
         right: 0,
         justifyContent: 'flex-end',
+        maxHeight: '50%',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
     },
     modalHeader: {
         flexDirection: 'row',
@@ -342,6 +349,7 @@ export default StyleSheet.create({
     },
     modalButtonText: {
         fontSize: 14,
+        fontWeight: 'bold',
     },
     modalCloseButton: {
         alignItems: 'center',

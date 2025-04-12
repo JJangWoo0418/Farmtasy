@@ -314,26 +314,46 @@ const PostDetailPage = () => {
                 animationType="none"
                 onRequestClose={toggleModal}
             >
-                <Animated.View style={[styles.modalContainer, { transform: [{ translateY: modalAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] }) }] }]}> 
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>사진 올리기 선택</Text>
-                        <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
-                            <Text style={styles.modalCloseText}>✕</Text>
-                        </TouchableOpacity>
-                        </View> 
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity style={styles.modalButton} onPress={() => console.log('사진 촬영')}>
-                                <Image source={require('../../assets/cameraicon2.png')} style={styles.modalIcon} />
-                                <Text style={styles.modalButtonText}>사진 촬영</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalButton} onPress={() => console.log('앨범 선택')}>
-                                <Image source={require('../../assets/galleryicon.png')} style={styles.modalIcon} />
-                                <Text style={styles.modalButtonText}>앨범 선택</Text>
-                            </TouchableOpacity>
+                <TouchableOpacity 
+                    style={styles.modalOverlay} 
+                    activeOpacity={1} 
+                    onPress={toggleModal}
+                >
+                    <Animated.View 
+                        style={[
+                            styles.modalContainer, 
+                            { 
+                                transform: [{ 
+                                    translateY: modalAnim.interpolate({ 
+                                        inputRange: [0, 1], 
+                                        outputRange: [300, 0] 
+                                    }) 
+                                }] 
+                            }
+                        ]}
+                    > 
+                        <View style={styles.modalContent}>
+                            <View style={styles.modalHeader}>
+                                <Text style={styles.modalTitle}>사진 올리기 선택</Text>
+                                <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
+                                    <Text style={styles.modalCloseText}>✕</Text>
+                                </TouchableOpacity>
+                            </View> 
+                            <ScrollView>
+                                <View style={styles.modalButtons}>
+                                    <TouchableOpacity style={styles.modalButton} onPress={() => console.log('사진 촬영')}>
+                                        <Image source={require('../../assets/cameraicon2.png')} style={styles.modalIcon} />
+                                        <Text style={styles.modalButtonText}>사진 촬영</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.modalButton} onPress={() => console.log('앨범 선택')}>
+                                        <Image source={require('../../assets/galleryicon.png')} style={styles.modalIcon} />
+                                        <Text style={styles.modalButtonText}>앨범 선택</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </ScrollView>
                         </View>
-                    </View>
-                </Animated.View>
+                    </Animated.View>
+                </TouchableOpacity>
             </Modal>
         </View>
     );
