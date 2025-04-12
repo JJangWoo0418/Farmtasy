@@ -122,12 +122,24 @@ const PostDetailPage = () => {
     };
 
     const toggleModal = () => {
-        setIsModalVisible(!isModalVisible);
-        Animated.timing(modalAnim, {
-            toValue: isModalVisible ? 0 : 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
+        if (isModalVisible) {
+            // 모달이 열려있을 때는 애니메이션을 먼저 실행하고 상태를 변경
+            Animated.timing(modalAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setIsModalVisible(false);
+            });
+        } else {
+            // 모달이 닫혀있을 때는 상태를 먼저 변경하고 애니메이션 실행
+            setIsModalVisible(true);
+            Animated.timing(modalAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        }
     };
 
     return (
