@@ -121,7 +121,7 @@ const RegisterAuth = () => {
     const showResendAlert = () => {
         Alert.alert(
             '알림',
-            '인증번호가 문자로 오지 않나요?\n1644-4372 번호가 차단되어 있다면,\n해제 후 다시 시도해주세요.',
+            '인증번호가 문자로 오지 않나요?',
             [
                 { text: '닫기', style: 'cancel' },
                 { text: '재전송', onPress: resendVerificationCode }

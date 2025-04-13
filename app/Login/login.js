@@ -53,7 +53,7 @@ const Login = () => {
                     style={[styles.GreenTalkButton, { transform: [{ translateY: floatAnim }] }]}
                 />
 
-                <TouchableOpacity onPress={() => navigation.navigate('Homepage/homepage')}>
+                <TouchableOpacity onPress={() => navigation.navigate('Login/registerpw')}>
                     <Image source={require('../../assets/KakaoTalkButton2.png')} style={styles.kakaoIcon} />
                 </TouchableOpacity>
 
