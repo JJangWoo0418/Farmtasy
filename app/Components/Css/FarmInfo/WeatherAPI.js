@@ -1,23 +1,37 @@
 // app/Components/Css/FarmInfo/WeatherAPI.js
+
 import axios from 'axios';
 import { WEATHER_API_KEY_PORTAL, WEATHER_API_KEY_KMA } from '../../API/apikey';
-import { XMLParser } from 'fast-xml-parser';  // fast-xml-parser 사용
+import { XMLParser } from 'fast-xml-parser';
 
-// 공통 API 요청 함수 (공공데이터포털 전용)
+// fast-xml-parser 설정
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '',
+  isArray: (name) => name === 'item',
+});
+
+// 공통 API 요청 함수
 const fetchAPI = async (url, params) => {
   try {
     const response = await axios.get(url, { params });
     const xml = response.data;
     console.log('[LOG] 날씨 API 원 응답:', xml);
-
-    // fast-xml-parser로 XML을 JSON으로 변환
-    const parser = new XMLParser();
-    const json = parser.parse(xml);
-    return json;
+    return parser.parse(xml);
   } catch (error) {
     console.error('[ERROR] 기상청 API 요청 오류:', error);
     return null;
   }
+};
+
+// fallback 날짜 구하기 함수 (어제 날짜)
+const getFallbackDate = (baseDate) => {
+  const date = new Date(baseDate.slice(0, 4), baseDate.slice(4, 6) - 1, baseDate.slice(6, 8));
+  date.setDate(date.getDate() - 1);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}`;
 };
 
 // 통합 호출 함수
@@ -37,14 +51,8 @@ export const fetchWeather = async (type, params) => {
       return await fetchWarningNow();
     case 'typhoon':
       return await fetchTyphoon(params);
-    case 'latlon': {
-      const { lat, lon } = params || {};
-      if (lat === undefined || lon === undefined) {
-        console.error('[ERROR] 격자 변환 파라미터 누락');
-        return null;
-      }
-      return await convertLatLonToGrid({ lat, lon });
-    }
+    case 'latlon':
+      return await convertLatLonToGrid(params);
     default:
       console.error('[ERROR] 알 수 없는 요청 유형:', type);
       return null;
@@ -54,7 +62,7 @@ export const fetchWeather = async (type, params) => {
 // 초단기실황조회
 export const fetchUltraSrtNcst = async ({ nx, ny, base_date, base_time }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+    serviceKey: WEATHER_API_KEY_PORTAL,
     pageNo: 1,
     numOfRows: 1000,
     dataType: 'XML',
@@ -65,24 +73,37 @@ export const fetchUltraSrtNcst = async ({ nx, ny, base_date, base_time }) => {
   });
 };
 
-// 초단기예보조회
-export const fetchUltraSrtFcst = async ({ nx, ny, base_date, base_time }) => {
-  return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+// 초단기예보조회 (fallback 적용)
+export const fetchUltraSrtFcst = async (params) => {
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
     pageNo: 1,
     numOfRows: 1000,
     dataType: 'XML',
-    base_date,
-    base_time,
-    nx,
-    ny,
+    ...params,
   });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 초단기예보 NO_DATA fallback 적용');
+    const fallbackDate = getFallbackDate(params.base_date);
+    return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
+      ...params,
+      base_date: fallbackDate,
+      serviceKey: WEATHER_API_KEY_PORTAL,
+      pageNo: 1,
+      numOfRows: 1000,
+      dataType: 'XML',
+    });
+  }
+
+  return res;
 };
 
 // 단기예보조회
 export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
   return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+    serviceKey: WEATHER_API_KEY_PORTAL,
     pageNo: 1,
     numOfRows: 1000,
     dataType: 'XML',
@@ -93,38 +114,76 @@ export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
   });
 };
 
-// 중기육상예보
+// 중기육상예보 (fallback 적용)
 export const fetchMidLandFcst = async ({ regId, tmFc }) => {
-  return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
     dataType: 'XML',
     regId,
     tmFc,
   });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 중기육상예보 NO_DATA fallback 적용');
+    const fallbackDate = getFallbackDate(tmFc.slice(0, 8)) + tmFc.slice(8);
+    return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
+      serviceKey: WEATHER_API_KEY_PORTAL,
+      dataType: 'XML',
+      regId,
+      tmFc: fallbackDate,
+    });
+  }
+
+  return res;
 };
 
-// 중기기온예보
+// 중기기온예보 (fallback 적용)
 export const fetchMidTa = async ({ regId, tmFc }) => {
-  return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
-    serviceKey: WEATHER_API_KEY_PORTAL, // 공공데이터포털 API Key
-    dataType: 'JSON',
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    dataType: 'XML',
     regId,
     tmFc,
   });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 중기기온예보 NO_DATA fallback 적용');
+    const fallbackDate = getFallbackDate(tmFc.slice(0, 8)) + tmFc.slice(8);
+    return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+      serviceKey: WEATHER_API_KEY_PORTAL,
+      dataType: 'XML',
+      regId,
+      tmFc: fallbackDate,
+    });
+  }
+
+  return res;
 };
 
-// 기상특보 조회
+// 기상특보 조회 (fallback 적용)
 export const fetchWarningNow = async () => {
-  return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/wrn_now_data.php', {
-    authKey: WEATHER_API_KEY_KMA, // 기상청 API Key
-    fe: 'f',
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    dataType: 'XML',
+    pageNo: 1,
+    numOfRows: 100,
   });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 기상특보 NO_DATA fallback 적용 - 이전 날 기준 요청 없음');
+    return null;
+  }
+
+  return res;
 };
 
-// 태풍정보 조회
+// 태풍정보
 export const fetchTyphoon = async ({ YY, typ, seq, mode }) => {
   return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/typ_data.php', {
-    authKey: WEATHER_API_KEY_KMA, // 기상청 API Key
+    authKey: WEATHER_API_KEY_KMA,
     YY,
     typ,
     seq,
@@ -142,7 +201,7 @@ export const convertLatLonToGrid = async ({ lat, lon }) => {
       params: {
         lat,
         lon,
-        authKey: WEATHER_API_KEY_KMA, // 기상청 API Key
+        authKey: WEATHER_API_KEY_KMA,
       },
     });
 

@@ -91,18 +91,31 @@ export default function FarmInfo() {
     console.log('[기상 특보] 응답:', warning);
 
     if (forecast) setWeatherData(forecast);
+
+    // ✅ 주간 날씨 파싱 로직 개선 (중요)
+    const itemRaw = midForecast?.response?.body?.items?.item;
+    const itemArray = itemRaw
+      ? Array.isArray(itemRaw)
+        ? itemRaw
+        : [itemRaw]
+      : [];
+
+    const filteredItems = itemArray.filter(
+      (item) => item.wfAm || item.wfPm
+    );
+
     if (
       midForecast?.response?.header?.resultCode === '00' &&
-      Array.isArray(midForecast?.response?.body?.items?.item)
+      filteredItems.length > 0
     ) {
-      const items = midForecast.response.body.items.item;
-      const validItems = items.filter(item => item.wfAm || item.wfPm);
-      setWeeklyData({ response: { body: { items: { item: validItems } } } });
+      setWeeklyData({
+        response: { body: { items: { item: filteredItems } } },
+      });
     } else {
       console.warn('[주간 날씨] 유효하지 않은 응답 또는 데이터 없음:', midForecast);
     }
-    if (typeof warning === 'string') setWarningData(warning);
 
+    if (typeof warning === 'string') setWarningData(warning);
     setLoading(false);
   };
 
@@ -200,7 +213,7 @@ export default function FarmInfo() {
 
     return items.map((item, idx) => (
       <View key={idx} style={styles.row}>
-        <Text style={styles.time}>{item.fcstDate}</Text>
+        <Text style={styles.time}>{item.fcstDate || `Day ${idx + 1}`}</Text>
         <Text style={styles.value}>{getEmoji(item.wfAm)} / {getEmoji(item.wfPm)}</Text>
         <Text style={styles.value}>{item.wfAm} / {item.wfPm}</Text>
       </View>
