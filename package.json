@@ -13,6 +13,7 @@
     "@react-navigation/bottom-tabs": "^7.3.3",
     "@react-navigation/native": "^7.0.19",
     "axios": "^1.8.4",
+    "coolsms-node-sdk": "^2.1.0",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.5.0",

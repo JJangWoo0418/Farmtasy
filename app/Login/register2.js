@@ -3,7 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert }
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../Components/Css/Login/register2style';
-import { registerUser, validatePhone, validateName } from '../DB/register2db';
+import { validatePhone, validateName } from '../DB/register2db';
+import API_CONFIG from '../DB/api.js';
 
 const Register2 = () => {
     const [name, setName] = useState('');
@@ -20,7 +21,7 @@ const Register2 = () => {
         return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
     };
 
-    const handleRegister = async () => {
+    const handleNext = async () => {
         if (!isValid) return;
 
         if (!validateName(name)) {
@@ -33,43 +34,11 @@ const Register2 = () => {
             return;
         }
 
-        setIsLoading(true);
-        try {
-            console.log('회원가입 시도:', { name, phone });
-            const result = await registerUser({
-                phone: phone.replace(/\D+/g, ''), // 하이픈 제거
-                name,
-                password: '임시비밀번호',
-                region: null,
-                profile: null,
-                introduction: null
-            });
-            console.log('서버 응답:', result);
-
-            if (result.success) {
-                Alert.alert('성공', '회원가입이 완료되었습니다.', [
-                    {
-                        text: '확인',
-                        onPress: () => {
-                            navigation.navigate('Login/registerauth', {
-                                phone: phone,
-                                name: name
-                            });
-                        }
-                    }
-                ]);
-            } else {
-                Alert.alert('오류', result.message || '회원가입 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('회원가입 오류:', error);
-            Alert.alert(
-                '오류',
-                '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.'
-            );
-        } finally {
-            setIsLoading(false);
-        }
+        // 인증 페이지로 이동
+        navigation.navigate('Login/registerauth', {
+            phone: phone.replace(/\D+/g, ''),
+            name: name
+        });
     };
 
     return (
@@ -114,7 +83,7 @@ const Register2 = () => {
                     isLoading && { opacity: 0.7 }
                 ]}
                 disabled={!isValid || isLoading}
-                onPress={handleRegister}
+                onPress={handleNext}
             >
                 <Text style={styles.buttonText}>
                     {isLoading ? '처리중...' : '다음'}

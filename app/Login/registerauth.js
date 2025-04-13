@@ -9,6 +9,7 @@ const RegisterAuth = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const phone = route.params?.phone || '';
+    const name = route.params?.name || '';
     const [code, setCode] = useState('');
     const [timeLeft, setTimeLeft] = useState(180); // 3분 (초 단위)
 
@@ -83,13 +84,13 @@ const RegisterAuth = () => {
         }
 
         try {
-            console.log('인증번호 발송 요청:', { phone });
+            console.log('인증번호 발송 요청:', { phone, name });
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/send-verification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ phone }),
+                body: JSON.stringify({ phone, name }),
             });
 
             console.log('서버 응답 상태:', response.status);

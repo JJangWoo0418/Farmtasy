@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
 require('dotenv').config();
+const coolsms = require('coolsms-node-sdk').default;
 
 // 데이터베이스 연결 설정
 const pool = mysql.createPool({
@@ -22,33 +23,45 @@ async function initDatabase() {
         connection = await pool.getConnection();
         console.log('데이터베이스 연결 성공');
 
-        // User 테이블 존재 여부 확인
+        // 테이블 존재 여부 확인
         const [tables] = await connection.query(
-            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'User'",
+            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME IN ('user', 'verification')",
             [process.env.DB_NAME]
         );
         console.log('테이블 확인 결과:', tables);
 
-        if (tables.length === 0) {
-            // User 테이블이 없으면 생성
-            await connection.query(`
-                CREATE TABLE IF NOT EXISTS User (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    phone VARCHAR(11) UNIQUE NOT NULL,
-                    name VARCHAR(30) NOT NULL,
-                    password VARCHAR(20) NOT NULL,
-                    region VARCHAR(30),
-                    profile VARCHAR(30),
-                    introduction TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-            console.log('User 테이블 생성 완료');
-        } else {
-            // 현재 데이터 확인
-            const [users] = await connection.query('SELECT * FROM User');
-            console.log('현재 User 테이블 데이터:', users);
-        }
+        // user 테이블 생성
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS user (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                phone VARCHAR(11) UNIQUE NOT NULL,
+                name VARCHAR(30) NOT NULL,
+                password VARCHAR(20) NOT NULL,
+                region VARCHAR(30),
+                profile VARCHAR(30),
+                introduction TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('user 테이블 확인 완료');
+
+        // verification 테이블 생성
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS verification (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                phone VARCHAR(11) UNIQUE NOT NULL,
+                code VARCHAR(6) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_phone (phone),
+                INDEX idx_created_at (created_at)
+            )
+        `);
+        console.log('verification 테이블 확인 완료');
+
+        // 현재 데이터 확인
+        const [users] = await connection.query('SELECT * FROM user');
+        console.log('현재 user 테이블 데이터:', users);
+
     } catch (error) {
         console.error('데이터베이스 초기화 중 오류:', error);
     } finally {
@@ -59,13 +72,23 @@ async function initDatabase() {
 // 서버 시작 시 데이터베이스 초기화 실행
 initDatabase();
 
-// SMS 발송 함수 (테스트용 더미 함수)
-async function sendSMS(phone, verificationCode) {
-    console.log('SMS 발송 (테스트용):', {
-        to: phone,
-        message: `[Farmtasy] 인증번호: ${verificationCode}`
-    });
-    return true;
+// CoolSMS 초기화
+const messageService = new coolsms(process.env.COOLSMS_API_KEY, process.env.COOLSMS_API_SECRET);
+
+// SMS 발송 함수
+async function sendSMS(phone, code) {
+    try {
+        const result = await messageService.sendOne({
+            to: phone,
+            from: process.env.SENDER_PHONE,
+            text: `[Farmtasy] 인증번호는 [${code}] 입니다.`
+        });
+        console.log('SMS 발송 결과:', result);
+        return true;
+    } catch (error) {
+        console.error('SMS 발송 실패:', error);
+        return false;
+    }
 }
 
 // 인증번호 저장을 위한 임시 저장소 (실제 프로덕션에서는 Redis 사용 권장)
@@ -76,74 +99,48 @@ function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// SMS 인증번호 발송
+// 인증번호 발송 엔드포인트
 router.post('/send-verification', async (req, res) => {
-    console.log('인증번호 발송 요청:', req.body);
-    const { phone } = req.body;
+    const { phone, name } = req.body;
+    console.log('인증번호 발송 요청 받음:', { phone, name });
 
-    if (!phone) {
-        return res.status(400).json({ 
-            success: false,
-            message: '전화번호가 필요합니다.' 
-        });
-    }
-    
-    let connection;
     try {
-        connection = await pool.getConnection();
+        // 임시로 6자리 랜덤 숫자 생성
+        const verificationCode = Math.floor(100000 + Math.random() * 900000);
         
-        // 현재 모든 사용자 데이터 확인
-        const [allUsers] = await connection.query('SELECT * FROM User');
-        console.log('현재 모든 사용자 데이터:', allUsers);
-        
-        // 특정 전화번호로 사용자 조회
-        const [users] = await connection.query(
-            'SELECT * FROM User WHERE phone = ?', 
-            [phone]
-        );
-        console.log(`전화번호 ${phone}로 조회한 결과:`, users);
-        
-        if (users.length > 0) {
-            console.log('이미 가입된 전화번호 발견:', phone);
-            console.log('기존 사용자 정보:', users[0]);
-            return res.status(400).json({ 
-                success: false,
-                message: '이미 가입된 전화번호입니다.' 
-            });
+        // SMS 발송
+        const smsSent = await sendSMS(phone, verificationCode);
+        if (!smsSent) {
+            throw new Error('SMS 발송 실패');
         }
-
-        // 인증번호 생성
-        const verificationCode = generateVerificationCode();
-        console.log('생성된 인증번호:', verificationCode);
         
-        // 테스트용 SMS 발송
-        await sendSMS(phone, verificationCode);
-        
-        // 인증번호 저장 (5분 후 만료)
-        verificationStore.set(phone, {
-            code: verificationCode,
-            expiresAt: Date.now() + 5 * 60 * 1000
-        });
-        
-        console.log('인증번호 저장됨:', { phone, verificationCode });
-        res.json({ 
-            success: true,
-            message: '인증번호가 발송되었습니다.' 
-        });
+        // 인증번호를 데이터베이스에 저장
+        const connection = await pool.getConnection();
+        try {
+            await connection.query(
+                'INSERT INTO verification (phone, code, created_at) VALUES (?, ?, NOW()) ' +
+                'ON DUPLICATE KEY UPDATE code = ?, created_at = NOW()',
+                [phone, verificationCode, verificationCode]
+            );
+            
+            res.json({ 
+                success: true, 
+                message: '인증번호가 발송되었습니다.'
+            });
+        } finally {
+            connection.release();
+        }
     } catch (error) {
-        console.error('인증번호 발송 실패:', error);
+        console.error('인증번호 발송 중 오류:', error);
         res.status(500).json({ 
-            success: false,
-            message: '서버 오류가 발생했습니다.',
-            error: error.message 
+            success: false, 
+            message: '인증번호 발송 중 오류가 발생했습니다.' 
         });
-    } finally {
-        if (connection) connection.release();
     }
 });
 
 // 인증번호 확인
-router.post('/verify-code', (req, res) => {
+router.post('/verify-code', async (req, res) => {
     console.log('인증번호 확인 요청:', req.body);
     const { phone, code } = req.body;
 
@@ -153,38 +150,61 @@ router.post('/verify-code', (req, res) => {
             message: '전화번호와 인증번호가 필요합니다.' 
         });
     }
-    
-    const verification = verificationStore.get(phone);
-    console.log('저장된 인증 정보:', { phone, verification });
 
-    if (!verification) {
-        return res.status(400).json({ 
-            success: false,
-            message: '인증번호를 먼저 요청해주세요.' 
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        
+        // 인증번호 확인
+        const [verifications] = await connection.query(
+            'SELECT * FROM verification WHERE phone = ? ORDER BY created_at DESC LIMIT 1',
+            [phone]
+        );
+        
+        console.log('저장된 인증 정보:', verifications[0]);
+
+        if (verifications.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: '인증번호를 먼저 요청해주세요.' 
+            });
+        }
+
+        const verification = verifications[0];
+        
+        // 5분(300초) 이내에 생성된 인증번호인지 확인
+        const createdAt = new Date(verification.created_at).getTime();
+        const now = Date.now();
+        if (now - createdAt > 300000) {
+            return res.status(400).json({ 
+                success: false,
+                message: '인증번호가 만료되었습니다.' 
+            });
+        }
+        
+        if (verification.code !== code) {
+            return res.status(400).json({ 
+                success: false,
+                message: '잘못된 인증번호입니다.' 
+            });
+        }
+        
+        // 인증 성공 후 해당 인증번호 삭제
+        await connection.query('DELETE FROM verification WHERE phone = ?', [phone]);
+        
+        res.json({ 
+            success: true,
+            message: '인증이 완료되었습니다.' 
         });
-    }
-    
-    if (Date.now() > verification.expiresAt) {
-        verificationStore.delete(phone);
-        return res.status(400).json({ 
+    } catch (error) {
+        console.error('인증번호 확인 중 오류:', error);
+        res.status(500).json({ 
             success: false,
-            message: '인증번호가 만료되었습니다.' 
+            message: '인증번호 확인 중 오류가 발생했습니다.' 
         });
+    } finally {
+        if (connection) connection.release();
     }
-    
-    if (verification.code !== code) {
-        return res.status(400).json({ 
-            success: false,
-            message: '잘못된 인증번호입니다.' 
-        });
-    }
-    
-    // 인증 성공
-    verificationStore.delete(phone);
-    res.json({ 
-        success: true,
-        message: '인증이 완료되었습니다.' 
-    });
 });
 
 router.post('/register', async (req, res) => {
@@ -205,7 +225,7 @@ router.post('/register', async (req, res) => {
 
         // 1. 먼저 전화번호 중복 체크
         const [existingUsers] = await connection.query(
-            'SELECT * FROM User WHERE phone = ?',
+            'SELECT * FROM user WHERE phone = ?',
             [phone]
         );
 
@@ -220,7 +240,7 @@ router.post('/register', async (req, res) => {
         // 2. 중복이 없으면 새 사용자 등록
         console.log('회원가입 시도:', { phone, name, region });
         const [result] = await connection.query(
-            'INSERT INTO User (phone, name, password, region, profile, introduction) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO user (phone, name, password, region, profile, introduction) VALUES (?, ?, ?, ?, ?, ?)',
             [phone, name, password, region || null, profile || null, introduction || null]
         );
 
@@ -229,7 +249,7 @@ router.post('/register', async (req, res) => {
             
             // 3. 등록된 사용자 정보 반환
             const [newUser] = await connection.query(
-                'SELECT id, phone, name, region, profile, introduction FROM User WHERE id = ?',
+                'SELECT id, phone, name, region, profile, introduction FROM user WHERE id = ?',
                 [result.insertId]
             );
 
