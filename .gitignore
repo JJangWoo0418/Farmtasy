@@ -41,4 +41,4 @@ app-example
 server/.env
 
 # API 설정 파일
-app/config/api.js
+app/DB/api.js

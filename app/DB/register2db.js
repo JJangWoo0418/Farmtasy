@@ -1,4 +1,4 @@
-import API_CONFIG from '../config/api.js';
+import API_CONFIG from './api.js';
 
 // 회원가입 함수
 async function registerUser(userData) {

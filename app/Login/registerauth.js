@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Login/registerauthstyle';
+import API_CONFIG from '../DB/api.js';
 
 const RegisterAuth = () => {
     const navigation = useNavigation();
+    const route = useRoute();
+    const phone = route.params?.phone || '';
     const [code, setCode] = useState('');
     const [timeLeft, setTimeLeft] = useState(180); // 3분 (초 단위)
 
@@ -26,16 +29,113 @@ const RegisterAuth = () => {
         return `${m}:${s}`;
     };
 
+    // 인증번호 확인
+    const verifyCode = async () => {
+        if (!phone) {
+            Alert.alert('오류', '전화번호가 없습니다.');
+            return;
+        }
+
+        try {
+            console.log('인증번호 확인 요청:', { phone, code });
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/verify-code`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone, code }),
+            });
+
+            console.log('서버 응답 상태:', response.status);
+            const data = await response.text(); // 먼저 텍스트로 받아서 확인
+            console.log('서버 응답 데이터:', data);
+
+            let jsonData;
+            try {
+                jsonData = JSON.parse(data);
+            } catch (e) {
+                console.error('JSON 파싱 오류:', e);
+                Alert.alert('오류', '서버 응답을 처리할 수 없습니다.');
+                return;
+            }
+
+            if (response.ok) {
+                Alert.alert('알림', '인증이 완료되었습니다.', [
+                    {
+                        text: '확인',
+                        onPress: () => navigation.navigate('Register', { phone, isVerified: true })
+                    }
+                ]);
+            } else {
+                Alert.alert('오류', jsonData.message || '인증에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('인증번호 확인 실패:', error);
+            Alert.alert('오류', '인증번호 확인에 실패했습니다.');
+        }
+    };
+
+    // 인증번호 재전송
+    const resendVerificationCode = async () => {
+        if (!phone) {
+            Alert.alert('오류', '전화번호가 없습니다.');
+            return;
+        }
+
+        try {
+            console.log('인증번호 발송 요청:', { phone });
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/send-verification`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone }),
+            });
+
+            console.log('서버 응답 상태:', response.status);
+            const data = await response.text(); // 먼저 텍스트로 받아서 확인
+            console.log('서버 응답 데이터:', data);
+
+            let jsonData;
+            try {
+                jsonData = JSON.parse(data);
+            } catch (e) {
+                console.error('JSON 파싱 오류:', e);
+                Alert.alert('오류', '서버 응답을 처리할 수 없습니다.');
+                return;
+            }
+
+            if (response.ok) {
+                setTimeLeft(180); // 타이머 초기화
+                Alert.alert('알림', '인증번호가 발송되었습니다.');
+            } else {
+                Alert.alert('오류', jsonData.message || '인증번호 발송에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('인증번호 발송 실패:', error);
+            Alert.alert('오류', '인증번호 발송에 실패했습니다.');
+        }
+    };
+
     const showResendAlert = () => {
         Alert.alert(
             '알림',
             '인증번호가 문자로 오지 않나요?\n1644-4372 번호가 차단되어 있다면,\n해제 후 다시 시도해주세요.',
             [
                 { text: '닫기', style: 'cancel' },
-                { text: '재전송', onPress: () => console.log('재전송 시도') }
+                { text: '재전송', onPress: resendVerificationCode }
             ]
         );
     };
+
+    // 컴포넌트 마운트 시 자동으로 인증번호 발송
+    useEffect(() => {
+        if (phone) {
+            resendVerificationCode();
+        } else {
+            console.log('전화번호가 없어서 자동 발송하지 않음');
+        }
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -64,9 +164,10 @@ const RegisterAuth = () => {
             </View>
 
             {/* 다음 버튼 */}
-            <TouchableOpacity
+            <TouchableOpacity 
                 style={[styles.button, { backgroundColor: isValid ? '#22CC6B' : '#d1d1d1' }]}
                 disabled={!isValid}
+                onPress={verifyCode}
             >
                 <Text style={styles.buttonText}>다음</Text>
             </TouchableOpacity>
