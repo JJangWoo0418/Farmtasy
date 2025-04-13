@@ -64,7 +64,10 @@ const RegisterAuth = () => {
                 Alert.alert('알림', '인증이 완료되었습니다.', [
                     {
                         text: '확인',
-                        onPress: () => navigation.navigate('Register', { phone, isVerified: true })
+                        onPress: () => navigation.navigate('Login/registerpw', { 
+                            phone: phone,
+                            name: name
+                        })
                     }
                 ]);
             } else {
