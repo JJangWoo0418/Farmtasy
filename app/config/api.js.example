@@ -1,0 +1,7 @@
+// API 설정 예시 파일
+const API_CONFIG = {
+    BASE_URL: 'http://your-ip-address:3000',  // 본인의 IP 주소로 변경하세요
+    TIMEOUT: 15000,  // 타임아웃 설정 (15초)
+};
+
+export default API_CONFIG; 

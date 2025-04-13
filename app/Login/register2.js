@@ -1,22 +1,75 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../Components/Css/Login/register2style';
+import { registerUser, validatePhone, validateName } from '../DB/register2db';
 
 const Register2 = () => {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const navigation = useNavigation();
 
     const isValid = name.trim() !== '' && phone.trim().length === 11;
 
     const formatPhone = (value) => {
-        const cleaned = value.replace(/\D+/g, ''); // 숫자 이외 제거
-    
+        const cleaned = value.replace(/\D+/g, '');
         if (cleaned.length <= 3) return cleaned;
         if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
         return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
+    };
+
+    const handleRegister = async () => {
+        if (!isValid) return;
+
+        if (!validateName(name)) {
+            Alert.alert('알림', '이름을 2자 이상 입력해주세요.');
+            return;
+        }
+
+        if (!validatePhone(phone)) {
+            Alert.alert('알림', '올바른 전화번호를 입력해주세요.');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            console.log('회원가입 시도:', { name, phone });
+            const result = await registerUser({
+                phone: phone.replace(/\D+/g, ''), // 하이픈 제거
+                name,
+                password: '임시비밀번호',
+                region: null,
+                profile: null,
+                introduction: null
+            });
+            console.log('서버 응답:', result);
+
+            if (result.success) {
+                Alert.alert('성공', '회원가입이 완료되었습니다.', [
+                    {
+                        text: '확인',
+                        onPress: () => {
+                            navigation.navigate('Login/registerauth', {
+                                phone: phone,
+                                name: name
+                            });
+                        }
+                    }
+                ]);
+            } else {
+                Alert.alert('오류', result.message || '회원가입 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('회원가입 오류:', error);
+            Alert.alert(
+                '오류',
+                '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.'
+            );
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -49,17 +102,23 @@ const Register2 = () => {
                 value={formatPhone(phone)}
                 onChangeText={(text) => {
                     const onlyNums = text.replace(/\D+/g, '');
-                    setPhone(onlyNums.slice(0, 11)); // 최대 11자리 제한
+                    setPhone(onlyNums.slice(0, 11));
                 }}
             />
 
             {/* 다음 버튼 */}
             <TouchableOpacity
-                style={[styles.button, { backgroundColor: isValid ? '#22CC6B' : '#d1d1d1' }]}
-                disabled={!isValid}
-                onPress={() => navigation.navigate('Login/registerauth')}
+                style={[
+                    styles.button,
+                    { backgroundColor: isValid ? '#22CC6B' : '#d1d1d1' },
+                    isLoading && { opacity: 0.7 }
+                ]}
+                disabled={!isValid || isLoading}
+                onPress={handleRegister}
             >
-                <Text style={styles.buttonText}>다음</Text>
+                <Text style={styles.buttonText}>
+                    {isLoading ? '처리중...' : '다음'}
+                </Text>
             </TouchableOpacity>
         </View>
     );

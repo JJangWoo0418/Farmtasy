@@ -35,7 +35,7 @@ const Login = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
             {/* 앱 타이틀 */}
-            <Image source={require('../../assets/IntroLogo.png')} style={styles.Logo} />
+            <Image source={require('../../assets/IntroLogo3.png')} style={styles.Logo} />
 
             {/* 기관 로고 및 텍스트 */}
             <View style={styles.orgContainer}>
@@ -49,12 +49,12 @@ const Login = () => {
                 
                 {/* ✅ 애니메이션 적용 */}
                 <Animated.Image
-                    source={require('../../assets/GreenTalkButton.png')}
+                    source={require('../../assets/GreenTalkButton2.png')}
                     style={[styles.GreenTalkButton, { transform: [{ translateY: floatAnim }] }]}
                 />
 
                 <TouchableOpacity onPress={() => navigation.navigate('Homepage/homepage')}>
-                    <Image source={require('../../assets/KakaoTalkButton.png')} style={styles.kakaoIcon} />
+                    <Image source={require('../../assets/KakaoTalkButton2.png')} style={styles.kakaoIcon} />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Login/register')}>
