@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘 추가
 import styles from '../Components/Css/Login/registerstyle'; // 스타일 파일 분리
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import API_CONFIG from '../DB/api';
+
+// API 기본 설정
+const api = axios.create({
+    baseURL: API_CONFIG.BASE_URL,
+    timeout: API_CONFIG.TIMEOUT,
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
 
 const Register = () => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigation = useNavigation();
 
@@ -20,6 +32,40 @@ const Register = () => {
         return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
     };
 
+    const handleLogin = async () => {
+        if (!isValid) return;
+
+        try {
+            setIsLoading(true);
+            const response = await api.post('/api/auth/login', {
+                phone: phone.replace(/\D+/g, ''),
+                password: password
+            });
+
+            if (response.data.success) {
+                // 로그인 성공 처리
+                // 토큰 저장
+                // 메인 화면으로 이동
+                navigation.replace('Homepage/homepage');
+                Alert.alert('성공', '로그인이 완료되었습니다.');
+            } else {
+                Alert.alert('로그인 실패', '휴대폰 번호 또는 비밀번호를 확인해주세요.');
+            }
+        } catch (error) {
+            if (error.code === 'ECONNABORTED') {
+                Alert.alert('시간 초과', '서버 응답 시간이 초과되었습니다. 다시 시도해주세요.');
+            } else if (!error.response) {
+                Alert.alert('네트워크 오류', '서버에 연결할 수 없습니다. 인터넷 연결을 확인해주세요.');
+            } else if (error.response.status === 401) {
+                Alert.alert('로그인 실패', '휴대폰 번호 또는 비밀번호가 올바르지 않습니다.');
+            } else {
+                Alert.alert('오류', '로그인 중 문제가 발생했습니다. 다시 시도해주세요.');
+            }
+            console.error('Login error:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -64,9 +110,10 @@ const Register = () => {
             {/* 로그인 버튼 */}
             <TouchableOpacity
                 style={[styles.loginButton, { backgroundColor: isValid ? '#22CC6B' : '#d1d1d1' }]}
-                disabled={!isValid}
+                disabled={!isValid || isLoading}
+                onPress={handleLogin}
             >
-                <Text style={styles.loginText}>로그인</Text>
+                <Text style={styles.loginText}>{isLoading ? '로그인 중...' : '로그인'}</Text>
             </TouchableOpacity>
 
             {/* 비밀번호 변경 */}

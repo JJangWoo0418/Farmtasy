@@ -274,4 +274,68 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// 로그인 API
+router.post('/login', async (req, res) => {
+    const { phone, password } = req.body;
+    console.log('로그인 요청 받음:', { phone });
+
+    if (!phone || !password) {
+        return res.status(400).json({
+            success: false,
+            message: '전화번호와 비밀번호를 모두 입력해주세요.'
+        });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        
+        // 사용자 조회
+        const [users] = await connection.query(
+            'SELECT * FROM user WHERE phone = ?',
+            [phone]
+        );
+
+        if (users.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: '등록되지 않은 전화번호입니다.'
+            });
+        }
+
+        const user = users[0];
+
+        // 비밀번호 확인
+        if (user.password !== password) {
+            return res.status(401).json({
+                success: false,
+                message: '비밀번호가 일치하지 않습니다.'
+            });
+        }
+
+        // 로그인 성공
+        res.json({
+            success: true,
+            message: '로그인 성공',
+            user: {
+                id: user.id,
+                phone: user.phone,
+                name: user.name,
+                region: user.region,
+                profile: user.profile,
+                introduction: user.introduction
+            }
+        });
+
+    } catch (error) {
+        console.error('로그인 처리 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '로그인 처리 중 오류가 발생했습니다.'
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 module.exports = router; 
