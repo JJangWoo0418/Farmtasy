@@ -338,4 +338,56 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// 비밀번호 변경 API
+router.post('/change-password', async (req, res) => {
+    const { phone, newPassword } = req.body;
+    console.log('비밀번호 변경 요청 받음:', { phone });
+
+    if (!phone || !newPassword) {
+        return res.status(400).json({
+            success: false,
+            message: '전화번호와 새 비밀번호를 모두 입력해주세요.'
+        });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        
+        // 사용자 조회
+        const [users] = await connection.query(
+            'SELECT * FROM user WHERE phone = ?',
+            [phone]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '등록되지 않은 전화번호입니다.'
+            });
+        }
+
+        // 비밀번호 변경
+        await connection.query(
+            'UPDATE user SET password = ? WHERE phone = ?',
+            [newPassword, phone]
+        );
+
+        // 비밀번호 변경 성공
+        res.json({
+            success: true,
+            message: '비밀번호가 변경되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('비밀번호 변경 처리 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '비밀번호 변경 처리 중 오류가 발생했습니다.'
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 module.exports = router; 

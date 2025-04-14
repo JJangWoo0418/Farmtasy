@@ -63,6 +63,29 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
+    codeInputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        height: 64,
+        marginBottom: 20,
+        justifyContent: 'space-between'
+    },
+    input2: {
+        flex: 1,
+        fontSize: 16,
+        paddingRight: 10,
+    },
+    resendText: {
+        textAlign: 'center',
+        fontSize: 14,
+        color: '#888',
+        textDecorationLine: 'underline',
+        marginTop: 20,
+    },
 });
 
 export default styles;
