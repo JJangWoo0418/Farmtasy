@@ -76,7 +76,7 @@ const Login = () => {
                 />
 
                 <TouchableOpacity 
-                    // onPress={handleKakaoLogin}
+                    onPress={handleKakaoLogin}
                     disabled={isLoading}
                 >
                     <Image 

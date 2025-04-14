@@ -1,5 +1,4 @@
 import API_CONFIG from './api.js';
-import { KAKAO_APP_KEY, KAKAO_REST_API_KEY } from '@env';
 
 // 카카오 로그인 함수
 export async function kakaoLogin(kakaoUserData) {
@@ -9,7 +8,7 @@ export async function kakaoLogin(kakaoUserData) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${KAKAO_REST_API_KEY}`
+                'Authorization': `Bearer ${API_CONFIG.KAKAO_REST_API_KEY}`
             },
             body: JSON.stringify(kakaoUserData),
         });
@@ -84,7 +83,7 @@ export async function getKakaoUserInfo() {
 export function initKakaoLogin() {
     try {
         // 카카오 SDK 초기화
-        window.Kakao.init(KAKAO_APP_KEY);
+        window.Kakao.init(API_CONFIG.KAKAO_REST_API_KEY);
         return {
             success: true,
             message: '카카오 SDK가 초기화되었습니다.'
