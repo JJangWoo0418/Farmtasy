@@ -1,11 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StatusBar, Animated } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, StatusBar, Animated, Alert } from 'react-native';
 import styles from '../Components/Css/Login/loginstyle'; // 스타일 파일 분리
 import { useNavigation } from '@react-navigation/native'; // ✅ 네비게이션 가져오기
+import { executeKakaoLogin } from '../DB/kakaologindb';
 
 const Login = () => {
     console.log("Login Screen Loaded");
     const navigation = useNavigation(); // ✅ 네비게이션 설정
+    const [isLoading, setIsLoading] = useState(false);
 
     // ✅ 애니메이션 값 설정
     const floatAnim = useRef(new Animated.Value(0)).current;
@@ -27,6 +29,26 @@ const Login = () => {
             ])
         ).start();
     }, []);
+
+    // 카카오 로그인 처리 함수
+    const handleKakaoLogin = async () => {
+        try {
+            setIsLoading(true);
+            const result = await executeKakaoLogin();
+            
+            if (result.success) {
+                // 로그인 성공 시 홈페이지로 이동
+                navigation.replace('Homepage/homepage');
+            } else {
+                Alert.alert('로그인 실패', result.message || '카카오 로그인에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('카카오 로그인 오류:', error);
+            Alert.alert('오류', '카카오 로그인 중 오류가 발생했습니다.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -53,8 +75,14 @@ const Login = () => {
                     style={[styles.GreenTalkButton, { transform: [{ translateY: floatAnim }] }]}
                 />
 
-                <TouchableOpacity onPress={() => navigation.navigate('Homepage/homepage')}>
-                    <Image source={require('../../assets/KakaoTalkButton2.png')} style={styles.kakaoIcon} />
+                <TouchableOpacity 
+                    onPress={handleKakaoLogin}
+                    disabled={isLoading}
+                >
+                    <Image 
+                        source={require('../../assets/KakaoTalkButton2.png')} 
+                        style={[styles.kakaoIcon, isLoading ? { opacity: 0.7 } : null]} 
+                    />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Login/register')}>
