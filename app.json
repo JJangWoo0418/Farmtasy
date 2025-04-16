@@ -5,6 +5,62 @@
       "expo-router"
     ],
     "name": "Farmtasy-app",
-    "slug": "Farmtasy-app"
+    "slug": "Farmtasy-app",
+    "android": {
+      "package": "com.yourcompany.farmtasyapp"
+    },
+    "ios": {
+      "bundleIdentifier": "com.yourcompany.farmtasyapp"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "sdkVersion": "51.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.Farmtasy-app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.anonymous.Farmtasyapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "35bb62b5-583f-4e33-9085-6acb5f5ba5f9"
+      }
+    },
+    "owner": "jh122",
+    "newArchEnabled": true
   }
 }
