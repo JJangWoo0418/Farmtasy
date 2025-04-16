@@ -8,8 +8,11 @@ import { XMLParser } from 'fast-xml-parser';
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '',
-  isArray: (name) => name === 'item',
+  isArray: (name, jpath, isLeafNode, isAttribute) => {
+    return name === 'item'; // item만 배열로 처리
+  }
 });
+
 
 // 공통 API 요청 함수
 const fetchAPI = async (url, params) => {

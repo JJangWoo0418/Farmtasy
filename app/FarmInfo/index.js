@@ -49,10 +49,7 @@ export default function FarmInfo() {
     const now = new Date();
     const currentHour = now.getHours();
     const baseDate = new Date(now);
-
-    if (currentHour < 6) {
-      baseDate.setDate(baseDate.getDate() - 1);
-    }
+    if (currentHour < 6) baseDate.setDate(baseDate.getDate() - 1);
 
     const yyyy = baseDate.getFullYear();
     const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
@@ -92,28 +89,27 @@ export default function FarmInfo() {
 
     if (forecast) setWeatherData(forecast);
 
-    // ✅ 주간 날씨 파싱 로직 개선 (중요)
     const itemRaw = midForecast?.response?.body?.items?.item;
-    const itemArray = itemRaw
-      ? Array.isArray(itemRaw)
-        ? itemRaw
-        : [itemRaw]
-      : [];
+    const itemArray = Array.isArray(itemRaw) ? itemRaw : itemRaw ? [itemRaw] : [];
 
-    const filteredItems = itemArray.filter(
-      (item) => item.wfAm || item.wfPm
-    );
+    const hasValidForecast = (item) => {
+      const keys = Object.keys(item || {});
+      return keys.some((key) => /^wf[5-9](Am|Pm)?$/.test(key) || key === 'wf10');
+    };
 
-    if (
-      midForecast?.response?.header?.resultCode === '00' &&
-      filteredItems.length > 0
-    ) {
-      setWeeklyData({
-        response: { body: { items: { item: filteredItems } } },
-      });
+    const filteredItems = itemArray.filter((item) => hasValidForecast(item));
+    console.log('[주간 날씨] 응답 원본 item:', itemArray);
+    console.log('[주간 날씨] 필터링된 item:', filteredItems);
+
+    // 🛠 수정: filteredItems가 존재할 경우 첫 번째 요소로 set
+    if (midForecast?.response?.header?.resultCode === '00' && filteredItems.length > 0) {
+      setWeeklyData(filteredItems[0]);
+      console.log('[주간 날씨] 최종 파싱된 데이터:', filteredItems[0]);
     } else {
       console.warn('[주간 날씨] 유효하지 않은 응답 또는 데이터 없음:', midForecast);
     }
+
+    
 
     if (typeof warning === 'string') setWarningData(warning);
     setLoading(false);
@@ -130,7 +126,7 @@ export default function FarmInfo() {
       case '2': return '🌦 ';
       case '3': return '❄ ';
       case '4': return '🌨 ';
-      default: return '☁ ';
+      default: return '☀ ';
     }
   };
 
@@ -139,7 +135,7 @@ export default function FarmInfo() {
       case '1': return '☀ ';
       case '3': return '⛅ ';
       case '4': return '☁ ';
-      default: return '☁ ';
+      default: return '☀ ';
     }
   };
 
@@ -198,11 +194,25 @@ export default function FarmInfo() {
   };
 
   const renderWeekly = () => {
-    const items = weeklyData?.response?.body?.items?.item || [];
-    console.log('[주간 날씨] 원시 데이터:', items);
-    if (items.length === 0) return <Text style={styles.noWarning}>주간 예보 데이터 없음</Text>;
-
+    const itemList = weeklyData?.response?.body?.items?.item;
+  
+    // itemList가 undefined 또는 비어있으면 에러 메시지 표시
+    if (!itemList || (Array.isArray(itemList) && itemList.length === 0)) {
+      console.log('[주간 날씨] itemList 없음 또는 비어있음:', itemList);
+      return <Text style={styles.noWarning}>주간 예보 데이터 없음</Text>;
+    }
+  
+    // item은 항상 첫 번째 항목 사용
+    const item = Array.isArray(itemList) ? itemList[0] : itemList;
+  
+    console.log('[주간 날씨] 원시 데이터:', item);
+  
+    if (!item || typeof item !== 'object' || Object.keys(item).length === 0) {
+      return <Text style={styles.noWarning}>주간 예보 데이터 없음</Text>;
+    }
+  
     const getEmoji = (text) => {
+      if (!text) return '❓';
       if (text.includes('맑')) return '☀ ';
       if (text.includes('구름많')) return '⛅ ';
       if (text.includes('흐림')) return '☁ ';
@@ -210,15 +220,42 @@ export default function FarmInfo() {
       if (text.includes('눈')) return '❄ ';
       return '❓';
     };
-
-    return items.map((item, idx) => (
-      <View key={idx} style={styles.row}>
-        <Text style={styles.time}>{item.fcstDate || `Day ${idx + 1}`}</Text>
-        <Text style={styles.value}>{getEmoji(item.wfAm)} / {getEmoji(item.wfPm)}</Text>
-        <Text style={styles.value}>{item.wfAm} / {item.wfPm}</Text>
-      </View>
-    ));
+  
+    const dayList = [
+      { am: 'wf5Am', pm: 'wf5Pm' },
+      { am: 'wf6Am', pm: 'wf6Pm' },
+      { am: 'wf7Am', pm: 'wf7Pm' },
+      { am: 'wf8', pm: null },
+      { am: 'wf9', pm: null },
+      { am: 'wf10', pm: null },
+    ];
+  
+    const today = new Date();
+    const weeklyDates = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 5 + i);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    });
+  
+    return (
+      <ScrollView style={{ maxHeight: 400 }} nestedScrollEnabled={true}>
+        {dayList.map((field, idx) => {
+          const amText = item?.[field.am];
+          const pmText = field.pm ? item?.[field.pm] : null;
+          const emoji = `${getEmoji(amText)}${pmText ? '/ ' + getEmoji(pmText) : ''}`;
+          const desc = `${amText || ''}${pmText ? ' / ' + pmText : ''}`;
+          return (
+            <View key={idx} style={styles.row}>
+              <Text style={styles.time}>{weeklyDates[idx]}</Text>
+              <Text style={styles.value}>{emoji}</Text>
+              <Text style={styles.value}>{desc}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    );
   };
+  
 
   const renderWarning = () => {
     const lines = typeof warningData === 'string'
@@ -238,29 +275,17 @@ export default function FarmInfo() {
 
       <View style={styles.weatherBox}>
         <Text style={styles.sectionTitle}>[시간대별 날씨]</Text>
-        {loading ? (
-          <Text style={styles.loading}>로딩중...</Text>
-        ) : (
-          renderForecast()
-        )}
+        {loading ? <Text style={styles.loading}>로딩중...</Text> : renderForecast()}
       </View>
 
       <View style={styles.weatherBox}>
         <Text style={styles.sectionTitle}>[주간 날씨]</Text>
-        {loading ? (
-          <Text style={styles.loading}>로딩중...</Text>
-        ) : (
-          renderWeekly()
-        )}
+        {loading ? <Text style={styles.loading}>로딩중...</Text> : renderWeekly()}
       </View>
 
       <View style={styles.weatherBox}>
         <Text style={styles.sectionTitle}>[기상 특보]</Text>
-        {loading ? (
-          <Text style={styles.loading}>로딩중...</Text>
-        ) : (
-          renderWarning()
-        )}
+        {loading ? <Text style={styles.loading}>로딩중...</Text> : renderWarning()}
       </View>
     </ScrollView>
   );
