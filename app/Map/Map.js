@@ -26,6 +26,9 @@ const Map = () => {
     const mapRef = useRef(null);
     const [centerAddress, setCenterAddress] = useState('');
     const [isFetchingAddress, setIsFetchingAddress] = useState(false);
+    const [isMapMoving, setIsMapMoving] = useState(false);
+    const pinAnimation = useRef(new Animated.Value(0)).current;
+    const lastRegion = useRef(region);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -62,14 +65,50 @@ const Map = () => {
     ).current;
     // ------------------------------------
 
-    // --- 지도 이동 완료 시 region 업데이트 및 주소 가져오기 ---
+    // 지도 움직임 시작 시 핀 애니메이션
+    const handleRegionChangeStart = () => {
+        setIsMapMoving(true);
+        Animated.spring(pinAnimation, {
+            toValue: 1,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+        }).start();
+    };
+
+    // 지도 움직임 종료 시 핀 애니메이션
     const handleRegionChangeComplete = (newRegion) => {
+        setIsMapMoving(false);
+        Animated.spring(pinAnimation, {
+            toValue: 0,
+            friction: 8,
+            tension: 40,
+            useNativeDriver: true,
+        }).start();
+        
         if (!isDrawingMode) {
-            setRegion(newRegion); // 현재 지도 중심 정보 업데이트
-            debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude); // Debounce된 주소 가져오기 호출
+            setRegion(newRegion);
+            debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
         }
     };
-    // ----------------------------------------------------
+
+    // 핀 애니메이션 스타일
+    const pinAnimatedStyle = {
+        transform: [
+            {
+                translateY: pinAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, -15]
+                })
+            },
+            {
+                scale: pinAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.2]
+                })
+            }
+        ]
+    };
 
     // --- 컴포넌트 마운트 시 첫 주소 가져오기 (초기 region 기반) ---
     useEffect(() => {
@@ -281,6 +320,7 @@ const Map = () => {
                 region={region}
                 scrollEnabled={!isDrawingMode}
                 zoomEnabled={!isDrawingMode}
+                onRegionChangeStart={handleRegionChangeStart}
                 onRegionChangeComplete={handleRegionChangeComplete}
                 onPanDrag={handlePanDrag}
                 onTouchStart={handleMapTouchStart}
@@ -369,12 +409,11 @@ const Map = () => {
                 </View>
             )}
 
-            {/* 중앙 고정 핀 (Emoji 사용) */}
+            {/* 중앙 핀 애니메이션 적용 */}
             {!isDrawingMode && (
-                <View style={styles.centerPinContainer} pointerEvents="none">
-                    {/* View 대신 Text와 Emoji 사용 */}
+                <Animated.View style={[styles.centerPinContainer, pinAnimatedStyle]} pointerEvents="none">
                     <Text style={styles.centerPinEmoji}>📍</Text>
-                </View>
+                </Animated.View>
             )}
 
             {/* --- 지도 중앙 주소 표시 --- */}
@@ -518,11 +557,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         zIndex: 99,
     },
-    centerPinEmoji: { // Emoji 스타일
-        fontSize: 40, // 이모지 크기 조정
-        // Y축 오프셋 조정 (핀의 뾰족한 부분이 중앙에 오도록)
-        // 이모지 폰트 및 크기에 따라 미세 조정 필요
-        transform: [{ translateY: -20 }] // 대략적인 값
+    centerPinEmoji: {
+        fontSize: 40,
+        transform: [{ translateY: -20 }]
     },
     // --------------------
 
