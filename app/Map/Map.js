@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import MapView, { Polygon, Polyline, Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
@@ -29,6 +29,8 @@ const Map = () => {
     const [isMapMoving, setIsMapMoving] = useState(false);
     const pinAnimation = useRef(new Animated.Value(0)).current;
     const lastRegion = useRef(region);
+    const [managedCrops, setManagedCrops] = useState([]);
+    const [isAddingCropMode, setIsAddingCropMode] = useState(false);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -65,8 +67,9 @@ const Map = () => {
     ).current;
     // ------------------------------------
 
-    // 지도 움직임 시작 시 핀 애니메이션
+    // 지도 움직임 시작 시 핀 애니메이션 및 키보드 닫기
     const handleRegionChangeStart = () => {
+        Keyboard.dismiss(); // 키보드 닫기 추가
         setIsMapMoving(true);
         Animated.spring(pinAnimation, {
             toValue: 1,
@@ -76,7 +79,7 @@ const Map = () => {
         }).start();
     };
 
-    // 지도 움직임 종료 시 핀 애니메이션
+    // 지도 움직임 종료 시 핀 애니메이션 및 (조건부) 주소 가져오기
     const handleRegionChangeComplete = (newRegion) => {
         setIsMapMoving(false);
         Animated.spring(pinAnimation, {
@@ -85,10 +88,13 @@ const Map = () => {
             tension: 40,
             useNativeDriver: true,
         }).start();
-        
+
+        // isDrawingMode가 아니고, isAddingCropMode일 때만 주소 가져오기
         if (!isDrawingMode) {
             setRegion(newRegion);
-            debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
+            if (isAddingCropMode) {
+                debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
+            }
         }
     };
 
@@ -110,44 +116,46 @@ const Map = () => {
         ]
     };
 
-    // --- 컴포넌트 마운트 시 첫 주소 가져오기 (초기 region 기반) ---
+    // --- 컴포넌트 마운트 시 초기 작업 ---
     useEffect(() => {
-        if (region) { // region이 설정되면 초기 주소 로드
-            fetchCenterAddress(region.latitude, region.longitude);
-        }
-        // 컴포넌트 언마운트 시 debounce 취소
+        // 컴포넌트 언마운트 시 debounce 취소만 수행
         return () => {
             debouncedFetchCenterAddress.cancel();
         };
-    }, []); // 마운트 시 한 번만 (region 초기값 기준)
+    }, []); // 의존성 배열 비움
     // -----------------------------------------------------------
 
+    // 메뉴 토글 함수 (작물 추가 모드 비활성화 로직 확인)
     const toggleMenu = () => {
         const toValue = isMenuOpen ? 0 : 1;
+
+        // 메뉴를 열 때 (toValue가 1일 때) 작물 추가 모드 비활성화
+        if (toValue === 1) {
+            setIsAddingCropMode(false);
+        }
+
         Animated.timing(animation, {
             toValue,
             duration: 300,
-            useNativeDriver: false,
+            useNativeDriver: false, // translateX 변경 시 false
         }).start();
         setIsMenuOpen(!isMenuOpen);
     };
 
-    const arrowRotate = animation.interpolate({
+    // 애니메이션 값 설정 (arrowRotate 제거)
+    // 서랍 X축 이동 애니메이션 (오른쪽 화면 밖 -> 제자리)
+    const drawerTranslateX = animation.interpolate({
         inputRange: [0, 1],
-        outputRange: ['0deg', '180deg'],
-    });
-
-    const menuTranslateY = animation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [100, 0],
+        outputRange: [0, -140] // 0: 초기 위치 (화살표만 보임), -140: 왼쪽으로 이동할 거리 (값 조정 필요)
     });
 
     const menuOpacity = animation.interpolate({
         inputRange: [0, 0.5, 1],
-        outputRange: [0, 0, 1],
+        outputRange: [1, 1, 1], // 항상 보이도록 (투명도 조절은 제거 또는 수정 가능)
     });
 
     const handlePanDrag = (e) => {
+        // Keyboard.dismiss(); // 팬 드래그 중에는 키보드를 닫지 않아도 될 수 있음 (필요시 주석 해제)
         if (isDrawingMode && isDragging.current) {
             const coordinate = e.nativeEvent.coordinate;
             setDrawnPath(prevPath => [...prevPath, coordinate]);
@@ -155,6 +163,7 @@ const Map = () => {
     };
 
     const handleMapTouchStart = () => {
+        Keyboard.dismiss(); // 키보드 닫기 추가
         if (isDrawingMode) {
             isDragging.current = true;
         }
@@ -312,6 +321,143 @@ const Map = () => {
         }
     };
 
+    // 작물 추가 모드 활성화 및 초기 주소 로드
+    const activateAddCropMode = () => {
+        setIsAddingCropMode(true);
+        // 현재 region 정보로 즉시 주소 가져오기 시작
+        if (region) {
+            fetchCenterAddress(region.latitude, region.longitude);
+        }
+    };
+
+    // 주소 영역 터치 핸들러 (작물 추가 모드일 때만 동작)
+    const handleAddCropPress = () => {
+        if (isDrawingMode || !isAddingCropMode) return; // 그리기 모드 또는 작물 추가 모드가 아닐 때는 동작 안 함
+
+        Alert.alert(
+            "작물 추가",
+            "☘️ 현재 위치에 관리 작물을 추가하시겠습니까?",
+            [
+                { text: "아니요", style: "cancel" },
+                { text: "예", onPress: () => promptForCropName() }
+            ]
+        );
+    };
+
+    // 작물 이름 입력 받기
+    const promptForCropName = (cropId = null, currentName = '') => {
+        const isModifying = cropId !== null;
+        const title = isModifying ? '작물 이름 수정' : '작물 이름 설정';
+        const message = '관리할 작물의 이름을 입력하세요:';
+        const defaultName = isModifying ? currentName : '';
+
+        const saveCropWithName = (name) => {
+            if (!name) {
+                Alert.alert("오류", "작물 이름은 비워둘 수 없습니다.");
+                return;
+            }
+            if (isModifying) {
+                // 이름 수정 로직
+                setManagedCrops(prevCrops =>
+                    prevCrops.map(crop =>
+                        crop.id === cropId ? { ...crop, name: name } : crop
+                    )
+                );
+                console.log('Crop Name Modified:', { id: cropId, name });
+            } else {
+                // 새 작물 추가 로직
+                saveCrop(name);
+            }
+        };
+
+        if (Platform.OS === 'ios') {
+            Alert.prompt(title, message,
+                [
+                    { text: '취소', style: 'cancel' },
+                    { text: '저장', onPress: saveCropWithName },
+                ],
+                'plain-text',
+                defaultName
+            );
+        } else {
+            // Android: Alert.prompt 미지원 -> 임시 이름 사용 또는 커스텀 모달 필요
+            // 우선 간단하게 임시 이름으로 저장하고 수정 유도
+            if (isModifying) {
+                 // Android 이름 수정은 Alert.prompt 대안 필요 (여기서는 간단히 로그만 남김)
+                 Alert.alert("알림 (Android)", "이름 수정 기능은 커스텀 구현이 필요합니다.");
+                 console.log("Android - Attempted to modify name for crop:", cropId);
+
+            } else {
+                const tempName = `작물 ${managedCrops.length + 1}`;
+                 Alert.alert(
+                    "알림 (Android)",
+                    `이름 입력 기능은 커스텀 모달 구현이 필요합니다. 임시 이름 "${tempName}"으로 저장합니다. '이름 수정' 메뉴를 이용해 변경해주세요.`,
+                    [{ text: "확인", onPress: () => saveCrop(tempName) }]
+                );
+            }
+        }
+    };
+
+     // 작물 정보 저장
+     const saveCrop = (name) => {
+         const newCrop = {
+             id: Date.now(), // 간단한 고유 ID 생성
+             name: name,
+             latitude: region.latitude,
+             longitude: region.longitude,
+         };
+         setManagedCrops(prevCrops => [...prevCrops, newCrop]);
+         console.log('New Crop Saved:', newCrop);
+         Alert.alert("저장 완료", `"${name}" 작물이 현재 위치에 추가되었습니다.`);
+     };
+
+    // 작물 핀 터치 핸들러
+    const handleCropPress = (crop) => {
+         Alert.alert(
+             `작물: ${crop.name}`,
+             "작업을 선택하세요.",
+             [
+                 { text: "취소", style: "cancel" },
+                 { text: "관리", onPress: () => manageCrop(crop.id), style: "default" },
+                 { text: "위치 수정", onPress: () => startModifyCropLocation(crop.id), style: "default" },
+                 { text: "이름 수정", onPress: () => promptForCropName(crop.id, crop.name), style: "default" },
+                 { text: "삭제", onPress: () => deleteCrop(crop.id), style: "destructive" },
+             ]
+         );
+     };
+
+     // 작물 관리 (임시)
+     const manageCrop = (cropId) => {
+         console.log("Manage Crop:", cropId);
+         Alert.alert("관리", "작물 관리 기능은 아직 구현되지 않았습니다.");
+     };
+
+     // 작물 위치 수정 시작 (임시)
+     const startModifyCropLocation = (cropId) => {
+         console.log("Start Modify Crop Location:", cropId);
+         Alert.alert("위치 수정", "작물 위치 수정 기능은 아직 구현되지 않았습니다.");
+         // TODO: 위치 수정 모드 구현 필요
+     };
+
+     // 작물 삭제
+     const deleteCrop = (cropId) => {
+        Alert.alert(
+            "작물 삭제",
+            "정말로 이 작물을 삭제하시겠습니까?",
+            [
+                { text: "취소", style: "cancel" },
+                {
+                    text: "삭제",
+                    onPress: () => {
+                        setManagedCrops(prevCrops => prevCrops.filter(crop => crop.id !== cropId));
+                        console.log('Crop Deleted:', cropId);
+                    },
+                    style: "destructive"
+                },
+            ]
+        );
+     };
+
     return (
         <View style={styles.container}>
             <MapView
@@ -365,6 +511,18 @@ const Map = () => {
                         strokeWidth={4}
                     />
                 )}
+
+                {/* 관리 작물 핀 표시 */}
+                {managedCrops.map((crop) => (
+                    <Marker
+                        key={crop.id}
+                        coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
+                        onPress={() => handleCropPress(crop)}
+                        anchor={{ x: 0.5, y: 0.5 }} // 중앙 정렬
+                    >
+                        <Text style={styles.cropMarker}>☘️</Text>
+                    </Marker>
+                ))}
             </MapView>
 
             <View style={styles.searchContainer}>
@@ -381,52 +539,67 @@ const Map = () => {
                     returnKeyType="search"
                 />
                 <TouchableOpacity style={[styles.shovelButton, isDrawingMode && styles.shovelButtonActive]} onPress={handleShovelPress}>
-                    <Text style={isDrawingMode ? styles.shovelButtonTextActive : {}}>
-                        {isDrawingMode ? '완료/취소' : '삽'}
-                     </Text>
+                    <Image
+                        source={require('../../assets/shovel_icon.png')}
+                        style={styles.shovelIcon}
+                    />
                 </TouchableOpacity>
             </View>
 
+            {/* 하단 서랍 메뉴 (레이아웃 및 애니메이션 수정) */}
             {!isDrawingMode && (
-                <View style={styles.bottomContainer}>
-                    <Animated.View style={[
-                        styles.buttonContainer,
-                        { transform: [{ translateY: menuTranslateY }], opacity: menuOpacity }
-                    ]}>
-                        <TouchableOpacity style={styles.menuButton} onPress={handleQrScanPress}>
-                            <Text style={styles.menuButtonText}>QR스캔</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.menuButton} onPress={handleWeatherPress}>
-                            <Text style={styles.menuButtonText}>날씨</Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-
-                    <TouchableOpacity style={styles.toggleButton} onPress={toggleMenu}>
-                        <Animated.View style={{ transform: [{ rotate: arrowRotate }] }}>
-                            <Text style={styles.arrowIcon}>▼</Text>
-                        </Animated.View>
+                <Animated.View style={[
+                    styles.drawerContainer, // 새로운 서랍 컨테이너 스타일
+                    { transform: [{ translateX: drawerTranslateX }], opacity: menuOpacity }
+                ]}>
+                    {/* 서랍 핸들 (화살표 버튼) */}
+                    <TouchableOpacity style={styles.drawerHandle} onPress={toggleMenu}>
+                        <Text style={styles.arrowIcon}>{isMenuOpen ? '▶' : '◀'}</Text>
                     </TouchableOpacity>
-                </View>
+
+                    {/* 메뉴 버튼들 */}
+                    <TouchableOpacity style={styles.menuButton} onPress={handleQrScanPress}>
+                        <Text style={styles.menuButtonText}>QR스캔</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuButton} onPress={handleWeatherPress}>
+                        <Text style={styles.menuButtonText}>날씨</Text>
+                    </TouchableOpacity>
+                </Animated.View>
             )}
 
-            {/* 중앙 핀 애니메이션 적용 */}
-            {!isDrawingMode && (
+            {/* 중앙 고정 핀 (작물 추가 모드일 때만 표시) */}
+            {!isDrawingMode && isAddingCropMode && (
                 <Animated.View style={[styles.centerPinContainer, pinAnimatedStyle]} pointerEvents="none">
                     <Text style={styles.centerPinEmoji}>📍</Text>
                 </Animated.View>
             )}
 
-            {/* --- 지도 중앙 주소 표시 --- */}
+            {/* 중앙 주소 표시 (터치 가능하게 수정) */}
             {!isDrawingMode && (
-                 <View style={styles.centerAddressContainer}>
-                     {isFetchingAddress ? (
-                         <ActivityIndicator size="small" color="#0000ff" />
-                     ) : (
-                         <Text style={styles.centerAddressText}>{centerAddress}</Text>
-                     )}
-                 </View>
+                 <> 
+                    {!isAddingCropMode ? (
+                        // 초기 상태: 작물 추가 버튼
+                        <TouchableOpacity style={styles.addCropButtonContainer} onPress={activateAddCropMode}>
+                            <View style={styles.addCropButton}>
+                                <Text style={styles.addCropButtonText}>여기를 눌러 작물을 추가해보세요!</Text>
+                            </View>
+                        </TouchableOpacity>
+                    ) : (
+                        // 작물 추가 모드: 주소 표시 영역 (터치 가능)
+                        <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
+                            <View style={styles.centerAddressContainer}>
+                                {isFetchingAddress ? (
+                                    <ActivityIndicator size="small" color="#0000ff" />
+                                ) : (
+                                    <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
+                                        {centerAddress || "주소 정보를 불러오는 중..."}
+                                    </Text>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                </>
             )}
-             {/* ------------------------ */}
         </View>
     );
 };
@@ -466,62 +639,61 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     shovelButton: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
         backgroundColor: '#eee',
         borderRadius: 15,
         marginLeft: 5,
-        minWidth: 50,
+        width: 44,
+        height: 44,
         justifyContent: 'center',
         alignItems: 'center',
     },
     shovelButtonActive: {
         backgroundColor: 'green',
     },
-    shovelButtonTextActive: {
-        color: 'white',
-        fontWeight: 'bold',
+    shovelIcon: {
+        width: 28,
+        height: 28,
+        resizeMode: 'contain',
     },
-    bottomContainer: {
+    drawerContainer: {
         position: 'absolute',
         bottom: 30,
-        right: 20,
-        alignItems: 'flex-end',
-        zIndex: 5,
-    },
-    toggleButton: {
+        right: -140, // Adjust as needed based on content width
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#2ECC71',
-        width: 60,
         height: 60,
-        borderRadius: 30,
+        // borderRadius: 30, // Remove global rounding
+        borderTopLeftRadius: 30, // Round only the left side
+        borderBottomLeftRadius: 30,
+        borderTopRightRadius: 0, // Explicitly set right corners to square
+        borderBottomRightRadius: 0,
+        paddingLeft: 0,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: -1, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        zIndex: 10,
+    },
+    drawerHandle: {
+        width: 60,
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1,
+        // Remove border radius from handle, it inherits from container
+        // borderTopLeftRadius: 30,
+        // borderBottomLeftRadius: 30,
     },
     arrowIcon: {
         fontSize: 24,
         color: 'white',
-    },
-    buttonContainer: {
-       flexDirection: 'row',
-       marginBottom: 15,
-       backgroundColor: '#2ECC71',
-       borderRadius: 25,
-       paddingVertical: 10,
-       paddingHorizontal: 15,
-       elevation: 3,
-       shadowColor: '#000',
-       shadowOffset: { width: 0, height: 1 },
-       shadowOpacity: 0.2,
-       shadowRadius: 1,
+        fontWeight: 'bold',
     },
     menuButton: {
-        marginHorizontal: 10,
-        paddingVertical: 5,
+        paddingHorizontal: 15,
+        height: '100%',
+        justifyContent: 'center',
     },
     menuButtonText: {
         color: 'white',
@@ -564,27 +736,67 @@ const styles = StyleSheet.create({
     // --------------------
 
     // --- 중앙 주소 표시 스타일 --- (위치 변경, zIndex 조정)
+    centerAddressTouchable: {
+         position: 'absolute',
+         bottom: 110,
+         alignSelf: 'center',
+         zIndex: 6,
+     },
     centerAddressContainer: {
-        position: 'absolute',
-        bottom: 110, // 하단 위치 조정 (하단 메뉴와 겹치지 않도록)
-        alignSelf: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         paddingHorizontal: 15,
-        paddingVertical: 8,
+        paddingVertical: 10,
         borderRadius: 15,
-        elevation: 6, // 하단 메뉴(5)보다 높게
+        elevation: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 1,
-        zIndex: 6, // 하단 메뉴(5)보다 높게
+        minWidth: 200,
+        alignItems: 'center',
     },
     centerAddressText: {
         fontSize: 14,
         color: '#333',
         textAlign: 'center',
     },
-    // --------------------------
+    cropMarker: {
+        fontSize: 30,
+    },
+    // cropNameContainer: {
+    //     backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    //     paddingHorizontal: 5,
+    //     paddingVertical: 2,
+    //     borderRadius: 5,
+    //     marginTop: 25,
+    // },
+    // cropNameText: {
+    //     color: 'white',
+    //     fontSize: 10,
+    // },
+    addCropButtonContainer: {
+        position: 'absolute',
+        bottom: 110,
+        alignSelf: 'center',
+        zIndex: 6,
+    },
+    addCropButton: {
+        backgroundColor: '#2ECC71',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 25,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+    },
+    addCropButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
 });
 
 export default Map;
