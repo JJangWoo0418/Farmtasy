@@ -3,9 +3,12 @@ import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, A
 import MapView, { Polygon, Polyline, Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
+import * as Location from 'expo-location';
 
 // Geocoder 초기화 (API 키 확인)
 Geocoder.init('AIzaSyB7uysOUsyE_d6xdLLJx7YxC-Ux7giVNdc'); // 여기에 실제 API 키를 넣어주세요
+
+const locationIcon = '📍';  // 이미지 대신 이모지 사용
 
 const Map = () => {
     // 초기 region을 고정값으로 설정
@@ -32,6 +35,8 @@ const Map = () => {
     const [managedCrops, setManagedCrops] = useState([]);
     const [isAddingCropMode, setIsAddingCropMode] = useState(false);
     const addButtonOffsetY = useRef(new Animated.Value(0)).current; // Add Crop button offset animation value
+    const [userLocation, setUserLocation] = useState(null);
+    const [locationError, setLocationError] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -481,6 +486,72 @@ const Map = () => {
         );
      };
 
+    // GPS 위치 권한 요청 및 위치 추적 설정
+    useEffect(() => {
+        (async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                    setLocationError('위치 권한이 거부되었습니다.');
+                    return;
+                }
+
+                // 현재 위치 가져오기
+                const location = await Location.getCurrentPositionAsync({});
+                const { latitude, longitude } = location.coords;
+                
+                setUserLocation({
+                    latitude,
+                    longitude,
+                });
+
+                // 지도를 현재 위치로 이동
+                setRegion({
+                    latitude,
+                    longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                });
+
+                // 실시간 위치 업데이트 구독
+                const locationSubscription = await Location.watchPositionAsync(
+                    {
+                        accuracy: Location.Accuracy.High,
+                        timeInterval: 5000,
+                        distanceInterval: 10,
+                    },
+                    (newLocation) => {
+                        const { latitude, longitude } = newLocation.coords;
+                        setUserLocation({
+                            latitude,
+                            longitude,
+                        });
+                    }
+                );
+
+                return () => {
+                    if (locationSubscription) {
+                        locationSubscription.remove();
+                    }
+                };
+            } catch (error) {
+                setLocationError('위치를 가져오는데 실패했습니다.');
+                console.error('Location error:', error);
+            }
+        })();
+    }, []);
+
+    // 현재 위치로 이동하는 함수
+    const moveToCurrentLocation = async () => {
+        if (userLocation) {
+            mapRef.current?.animateToRegion({
+                ...userLocation,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+            }, 1000);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <MapView
@@ -495,6 +566,14 @@ const Map = () => {
                 onTouchStart={handleMapTouchStart}
                 onTouchEnd={handleMapTouchEnd}
             >
+                {userLocation && (
+                    <Marker
+                        coordinate={userLocation}
+                        title="현재 위치"
+                        pinColor="blue"
+                        opacity={isAddingCropMode ? 0.5 : 1}
+                    />
+                )}
                 {drawnPath.length > 0 && (
                     <Polyline
                         coordinates={drawnPath}
@@ -541,7 +620,7 @@ const Map = () => {
                         key={crop.id}
                         coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
                         onPress={() => handleCropPress(crop)}
-                        anchor={{ x: 0.5, y: 0.5 }} // 중앙 정렬
+                        anchor={{ x: 0.5, y: 0.5 }}
                     >
                         <Text style={styles.cropMarker}>☘️</Text>
                     </Marker>
@@ -628,6 +707,20 @@ const Map = () => {
                         </TouchableOpacity>
                     )}
                 </>
+            )}
+
+            {/* 현재 위치 버튼 */}
+            <TouchableOpacity
+                style={styles.locationButton}
+                onPress={moveToCurrentLocation}
+            >
+                <Text style={styles.locationIcon}>{locationIcon}</Text>
+            </TouchableOpacity>
+
+            {locationError && (
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{locationError}</Text>
+                </View>
             )}
         </View>
     );
@@ -825,6 +918,55 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',
+    },
+    locationButton: {
+        position: 'absolute',
+        bottom: 16,
+        left: 16,
+        backgroundColor: '#2196F3',
+        borderRadius: 30,
+        width: 48,
+        height: 48,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    locationIcon: {
+        fontSize: 20,
+        color: '#fff'
+    },
+    errorContainer: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        right: 20,
+        backgroundColor: 'rgba(255, 0, 0, 0.8)',
+        padding: 10,
+        borderRadius: 5,
+    },
+    errorText: {
+        color: 'white',
+        textAlign: 'center',
+    },
+    cropCountContainer: {
+        backgroundColor: '#2ECC71',
+        borderRadius: 15,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderWidth: 2,
+        borderColor: 'white',
+    },
+    cropCountText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
 });
 
