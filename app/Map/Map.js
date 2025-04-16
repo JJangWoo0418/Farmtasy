@@ -31,6 +31,7 @@ const Map = () => {
     const lastRegion = useRef(region);
     const [managedCrops, setManagedCrops] = useState([]);
     const [isAddingCropMode, setIsAddingCropMode] = useState(false);
+    const addButtonOffsetY = useRef(new Animated.Value(0)).current; // Add Crop button offset animation value
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -69,42 +70,50 @@ const Map = () => {
 
     // 지도 움직임 시작 시 핀 애니메이션 및 키보드 닫기
     const handleRegionChangeStart = () => {
-        Keyboard.dismiss(); // 키보드 닫기 추가
+        console.log('handleRegionChangeStart - isAddingCropMode:', isAddingCropMode); // 상태 로그 추가
+        if (!isAddingCropMode) return; // 작물 추가 모드가 아닐 때는 애니메이션 안 함
+
+        Keyboard.dismiss();
         setIsMapMoving(true);
-        Animated.spring(pinAnimation, {
+        pinAnimation.stopAnimation();
+        Animated.timing(pinAnimation, {
             toValue: 1,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
+            duration: 200,
+            useNativeDriver: true, // 네이티브 드라이버 사용으로 복원
         }).start();
     };
 
     // 지도 움직임 종료 시 핀 애니메이션 및 (조건부) 주소 가져오기
     const handleRegionChangeComplete = (newRegion) => {
+        console.log('handleRegionChangeComplete - isAddingCropMode:', isAddingCropMode); // 상태 로그 추가
+        if (!isAddingCropMode && !isMapMoving) return; // 상태 확인 추가 (불필요할 수 있음)
+
         setIsMapMoving(false);
-        Animated.spring(pinAnimation, {
+        pinAnimation.stopAnimation();
+        Animated.timing(pinAnimation, {
             toValue: 0,
-            friction: 8,
-            tension: 40,
-            useNativeDriver: true,
+            duration: 150,
+            useNativeDriver: true, // 네이티브 드라이버 사용으로 복원
         }).start();
 
         // isDrawingMode가 아니고, isAddingCropMode일 때만 주소 가져오기
-        if (!isDrawingMode) {
+        if (!isDrawingMode && isAddingCropMode) { // 조건 확인: isAddingCropMode 확실히 체크
             setRegion(newRegion);
-            if (isAddingCropMode) {
-                debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
-            }
+            debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
+        }
+        // 작물 추가 모드가 아닐 때도 region은 업데이트 (선택 사항)
+        else if (!isDrawingMode) {
+             setRegion(newRegion);
         }
     };
 
-    // 핀 애니메이션 스타일
+    // 핀 애니메이션 스타일 (translateY 조정)
     const pinAnimatedStyle = {
         transform: [
             {
                 translateY: pinAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, -15]
+                    outputRange: [0, -25] // Y축 이동 거리 증가
                 })
             },
             {
@@ -125,20 +134,34 @@ const Map = () => {
     }, []); // 의존성 배열 비움
     // -----------------------------------------------------------
 
-    // 메뉴 토글 함수 (작물 추가 모드 비활성화 로직 확인)
+    // 메뉴 토글 함수 수정 (버튼 위치 애니메이션 타겟 조정)
     const toggleMenu = () => {
-        const toValue = isMenuOpen ? 0 : 1;
+        const toValue = isMenuOpen ? 0 : 1; // Drawer animation target value
+        // 닫힐 때(isMenuOpen=true): target=0 (원래 위치)
+        // 열릴 때(isMenuOpen=false): target=-60 (위로 60 이동, 값 조정 가능)
+        const buttonOffsetYTarget = isMenuOpen ? 0 : -70; // Corrected target value
 
-        // 메뉴를 열 때 (toValue가 1일 때) 작물 추가 모드 비활성화
+        // 메뉴를 열 때 작물 추가 모드 비활성화
         if (toValue === 1) {
             setIsAddingCropMode(false);
         }
 
-        Animated.timing(animation, {
-            toValue,
-            duration: 300,
-            useNativeDriver: false, // translateX 변경 시 false
-        }).start();
+        // 서랍과 버튼 애니메이션을 동시에 시작
+        Animated.parallel([
+            // 서랍 애니메이션
+            Animated.timing(animation, {
+                toValue,
+                duration: 300,
+                useNativeDriver: false,
+            }),
+            // "작물 추가" 버튼 위치 애니메이션
+            Animated.timing(addButtonOffsetY, {
+                toValue: buttonOffsetYTarget, // 수정된 타겟 값 사용
+                duration: 300,
+                useNativeDriver: true,
+            })
+        ]).start();
+
         setIsMenuOpen(!isMenuOpen);
     };
 
@@ -574,19 +597,25 @@ const Map = () => {
                 </Animated.View>
             )}
 
-            {/* 중앙 주소 표시 (터치 가능하게 수정) */}
+            {/* 하단 버튼 또는 주소 표시 (작물 추가 모드에 따라 분기) */}
             {!isDrawingMode && (
-                 <> 
+                 <>
                     {!isAddingCropMode ? (
-                        // 초기 상태: 작물 추가 버튼
-                        <TouchableOpacity style={styles.addCropButtonContainer} onPress={activateAddCropMode}>
-                            <View style={styles.addCropButton}>
-                                <Text style={styles.addCropButtonText}>여기를 눌러 작물을 추가해보세요!</Text>
-                            </View>
-                        </TouchableOpacity>
+                        // 초기 상태: 작물 추가 버튼 (Animated.View 추가 및 스타일 수정)
+                        <Animated.View style={[
+                            styles.addCropButtonContainer, // 기본 위치 스타일 (bottom: 40)
+                            { transform: [{ translateY: addButtonOffsetY }] } // Y축 오프셋 애니메이션 적용
+                        ]}>
+                            <TouchableOpacity onPress={activateAddCropMode}>
+                                <View style={styles.addCropButton}>
+                                    <Text style={styles.addCropButtonText}>여기를 눌러 작물을 추가해보세요!</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </Animated.View>
                     ) : (
-                        // 작물 추가 모드: 주소 표시 영역 (터치 가능)
+                        // 작물 추가 모드: 주소 표시 영역 (위치 조정 필요시 addButtonOffsetY 적용 가능)
                         <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
+                            {/* 현재는 주소 영역 위치 고정 */}
                             <View style={styles.centerAddressContainer}>
                                 {isFetchingAddress ? (
                                     <ActivityIndicator size="small" color="#0000ff" />
@@ -776,7 +805,7 @@ const styles = StyleSheet.create({
     // },
     addCropButtonContainer: {
         position: 'absolute',
-        bottom: 110,
+        bottom: 40,
         alignSelf: 'center',
         zIndex: 6,
     },
