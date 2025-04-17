@@ -3,68 +3,264 @@ import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    marginBottom: 16,
+  },
+  navButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  navButtonActive: {
+    backgroundColor: '#4dabf7',
+  },
+  navButtonInactive: {
+    backgroundColor: '#e9ecef',
+  },
+  navText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  navTextActive: {
+    color: '#fff',
+  },
+  navTextInactive: {
+    color: '#495057',
+  },
+  currentWeatherBox: {
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  currentTemp: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#212529',
+    marginBottom: 8,
+  },
+  weatherDesc: {
+    fontSize: 24,
+    color: '#495057',
+    marginBottom: 8,
+  },
+  weatherValue: {
+    fontSize: 18,
+    color: '#868e96',
   },
   tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
+    padding: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
   },
-  tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'gray',
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
     borderRadius: 8,
+    marginHorizontal: 5,
+    alignItems: 'center'
   },
-  activeTab: {
-    backgroundColor: '#007AFF',
+  tabButtonActive: {
+    backgroundColor: '#007AFF'
+  },
+  tabButtonInactive: {
+    backgroundColor: '#f8f8f8'
   },
   tabText: {
-    color: 'black',
-    fontWeight: 'bold',
+    fontSize: 16
+  },
+  tabTextActive: {
+    color: '#fff'
+  },
+  tabTextInactive: {
+    color: '#000'
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '600',
+    marginTop: 20,
+    marginBottom: 15,
+    marginHorizontal: 15
   },
-  weatherBox: {
-    marginBottom: 20,
-    padding: 10,
+  hourlyWeatherScroll: {
+    paddingHorizontal: 15
+  },
+  hourlyWeatherItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    marginRight: 10,
+    width: 80,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    borderColor: '#eee'
   },
-  subInfo: {
-    fontSize: 12,
-    color: 'gray',
+  hourlyWeatherItemCurrent: {
+    backgroundColor: '#f0f8ff',
+    borderColor: '#007AFF'
   },
-  loading: {
-    fontStyle: 'italic',
-    color: 'gray',
+  hourlyTime: {
+    fontSize: 16,
+    marginBottom: 8
   },
-  row: {
+  hourlyTimeCurrent: {
+    color: '#007AFF',
+    fontWeight: '600'
+  },
+  weatherEmoji: {
+    fontSize: 24,
+    marginBottom: 8
+  },
+  weatherTemp: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4
+  },
+  weatherTempCurrent: {
+    color: '#007AFF'
+  },
+  weeklyContainer: {
+    marginHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#eee'
+  },
+  weeklyHeader: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    backgroundColor: '#f8f8f8',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
+  },
+  weeklyHeaderText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666'
+  },
+  weeklyHeaderCenter: {
+    textAlign: 'center'
+  },
+  weeklyHeaderRight: {
+    textAlign: 'right'
+  },
+  weeklyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
   },
-  time: {
-    width: 50,
-    fontWeight: 'bold',
+  weeklyDateColumn: {
+    flex: 1
   },
-  temp: {
-    width: 40,
-    textAlign: 'right',
+  weeklyDate: {
+    fontSize: 16,
+    marginBottom: 2
   },
-  reh: {
-    width: 40,
-    textAlign: 'right',
+  weeklyDayOfWeek: {
+    fontSize: 12,
+    color: '#666'
+  },
+  weeklyWeatherColumn: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  weeklyEmoji: {
+    fontSize: 24,
+    marginBottom: 4
+  },
+  weeklyRain: {
+    fontSize: 12,
+    color: '#666'
+  },
+  weeklyTempColumn: {
+    flex: 1,
+    alignItems: 'flex-end'
+  },
+  weeklyTemp: {
+    fontSize: 16
+  },
+  loading: {
+    textAlign: 'center',
+    padding: 20,
+    color: '#666'
   },
   errorText: {
     color: 'red',
-    fontWeight: 'bold',
-    marginTop: 10,
+    textAlign: 'center',
+    padding: 20
   },
+  noWarning: {
+    textAlign: 'center',
+    padding: 20,
+    color: '#666'
+  },
+  warningContainer: {
+    marginHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#eee'
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%'
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600'
+  },
+  modalCloseButton: {
+    fontSize: 16,
+    color: '#007AFF'
+  },
+  modalWeatherScroll: {
+    maxHeight: '90%'
+  },
+  modalWeatherItem: {
+    width: '100%',
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8
+  }
 });
