@@ -1,19 +1,27 @@
 // writingpage.js
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import styles from '../Components/Css/Homepage/writingpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { router } from 'expo-router';
+import axios from 'axios';
+import API_CONFIG from '../DB/api';
 
 const WritingPage = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const { category, icon } = route.params || {};
+    const { category, icon, userData, name, phone, region } = route.params || {};  // 먼저 route.params 구조분해
+
     const [isCategoryModalVisible, setCategoryModalVisible] = useState(false);
     const [isUploadModalVisible, setUploadModalVisible] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState(category || '자유주제');
-    const [selectedIcon, setSelectedIcon] = useState(icon || require('../../assets/freetopic.png'));
+    // category 값을 받아온 후에 selectedCategory 초기값 설정
+    const [selectedCategory, setSelectedCategory] = useState(category);
+    const [selectedIcon, setSelectedIcon] = useState(icon);
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const uploadAnim = useRef(new Animated.Value(0)).current;
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    
 
     const openCategorySheet = () => {
         setCategoryModalVisible(true);
@@ -59,6 +67,54 @@ const WritingPage = () => {
 
     const sheetTranslateY = sheetAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] });
     const uploadTranslateY = uploadAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] });
+
+    const handleSubmit = async () => {
+        if (!title.trim() || !content.trim()) {
+            Alert.alert('알림', '제목과 내용을 모두 입력해주세요.');
+            return;
+        }
+    
+        try {
+            // API_CONFIG 확인을 위한 로깅 추가
+            console.log('API_CONFIG:', API_CONFIG);
+            console.log('BASE_URL:', API_CONFIG.BASE_URL);
+
+            const postData = {
+                post_title: title,
+                name: name,
+                post_content: content,
+                post_category: selectedCategory,
+                phone: phone,
+                region: region
+            };
+            
+            console.log('전송할 데이터:', postData);
+
+            // 서버 요청
+            const response = await axios.post(`${API_CONFIG.BASE_URL}/api/post`, postData, {
+                timeout: API_CONFIG.TIMEOUT,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+    
+            console.log('서버 응답:', response.data);
+    
+            if (response.status === 200) {
+                Alert.alert('성공', '게시글이 등록되었습니다.', [
+                    {
+                        text: '확인',
+                        onPress: () => navigation.goBack()
+                    }
+                ]);
+            }
+        } catch (error) {
+            console.error('게시글 등록 오류:', error);
+            console.log('에러 상세:', error.response?.data);
+            console.log('현재 사용 중인 BASE_URL:', API_CONFIG.BASE_URL);
+            Alert.alert('오류', '게시글 등록 중 문제가 발생했습니다. 서버 연결을 확인해주세요.');
+        }
+    };
 
     return (
         <KeyboardAvoidingView
@@ -149,6 +205,8 @@ const WritingPage = () => {
                         style={styles.titleInput}
                         placeholder="제목을 입력해 주세요."
                         placeholderTextColor="#999"
+                        value={title}
+                        onChangeText={setTitle}
                     />
 
                     {/* 본문 입력 */}
@@ -157,6 +215,8 @@ const WritingPage = () => {
                         placeholder={"글쓰기로 자유롭게 소통해보세요.\n고민, 농업 정보 무엇이든 나눌 수 있어요."}
                         placeholderTextColor="#999"
                         multiline
+                        value={content}
+                        onChangeText={setContent}
                     />
 
                     {/* 사진 업로드 */}
@@ -166,7 +226,7 @@ const WritingPage = () => {
                     </TouchableOpacity>
 
                     {/* 등록 버튼 */}
-                    <TouchableOpacity style={styles.submitBtn}>
+                    <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
                         <Text style={styles.submitText}>등록</Text>
                     </TouchableOpacity>
                 </View>

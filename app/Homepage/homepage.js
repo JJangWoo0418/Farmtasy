@@ -3,12 +3,14 @@ import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, Sta
 import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { router } from 'expo-router';
 
 const HomePage = () => {
     const navigation = useNavigation();
     const [isDrawerVisible, setDrawerVisible] = useState(false);
     const [isWriteToggleVisible, setWriteToggleVisible] = useState(false);
+    const route = useRoute();
 
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
@@ -302,12 +304,26 @@ const HomePage = () => {
                     zIndex: 888,
                 }}>
                     <TouchableOpacity
-                        onPress={() =>
-                            navigation.navigate('Homepage/writingpage', {
-                                category: '농사질문',
-                                icon: require('../../assets/farmingquestions2.png'),
-                            })
-                        }
+                        onPress={() => {
+                            console.log('현재 route.params:', route.params);
+                            console.log('전달되는 사용자 정보:', {
+                                userData: route.params?.userData,
+                                name: route.params?.name,
+                                phone: route.params?.phone,
+                                region: route.params?.region
+                            });
+                            router.push({
+                                pathname: "/Homepage/writingpage",
+                                params: {
+                                    category: '농사질문',
+                                    icon: require('../../assets/farmingquestions2.png'),
+                                    userData: route.params?.userData,
+                                    name: route.params?.name,
+                                    phone: route.params?.phone,
+                                    region: route.params?.region
+                                }
+                            });
+                        }}
                         style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
                     >
                         <Image
@@ -320,12 +336,26 @@ const HomePage = () => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() =>
-                            navigation.navigate('Homepage/writingpage', {
-                                category: '농사공부',
-                                icon: require('../../assets/studyfarming2.png'),
-                            })
-                        }
+                        onPress={() => {
+                            console.log('현재 route.params:', route.params);
+                            console.log('전달되는 사용자 정보:', {
+                                userData: route.params?.userData,
+                                name: route.params?.name,
+                                phone: route.params?.phone,
+                                region: route.params?.region
+                            });
+                            router.push({
+                                pathname: "/Homepage/writingpage",
+                                params: {
+                                    category: '농사공부',
+                                    icon: require('../../assets/studyfarming2.png'),
+                                    userData: route.params?.userData,
+                                    name: route.params?.name,
+                                    phone: route.params?.phone,
+                                    region: route.params?.region
+                                }
+                            });
+                        }}
                         style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
                     >
                         <Image
@@ -336,12 +366,26 @@ const HomePage = () => {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() =>
-                            navigation.navigate('Homepage/writingpage', {
-                                category: '자유주제',
-                                icon: require('../../assets/freetopic2.png'),
-                            })
-                        }
+                        onPress={() => {
+                            console.log('현재 route.params:', route.params);
+                            console.log('전달되는 사용자 정보:', {
+                                userData: route.params?.userData,
+                                name: route.params?.name,
+                                phone: route.params?.phone,
+                                region: route.params?.region
+                            });
+                            router.push({
+                                pathname: "/Homepage/writingpage",
+                                params: {
+                                    category: '자유주제',
+                                    icon: require('../../assets/freetopic2.png'),
+                                    userData: route.params?.userData,
+                                    name: route.params?.name,
+                                    phone: route.params?.phone,
+                                    region: route.params?.region
+                                }
+                            });
+                        }}
                         style={{ flexDirection: 'row', alignItems: 'center' }}
                     >
                         <Image

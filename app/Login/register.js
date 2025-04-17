@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // 뒤로가기 아이콘 추가
 import styles from '../Components/Css/Login/registerstyle'; // 스타일 파일 분리
+import { router } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import API_CONFIG from '../DB/api';
@@ -43,10 +44,16 @@ const Register = () => {
             });
 
             if (response.data.success) {
-                // 로그인 성공 처리
-                // 토큰 저장
-                // 메인 화면으로 이동
-                navigation.replace('Homepage/homepage');
+                console.log('사용자 정보:', response.data.user);
+                router.push({
+                    pathname: "/Homepage/homepage",
+                    params: {
+                        userData: JSON.stringify(response.data.user),
+                        phone: response.data.user.phone,
+                        name: response.data.user.name,
+                        region: response.data.user.region || '지역 미설정'
+                    }
+                });
                 Alert.alert('성공', '로그인이 완료되었습니다.');
             } else {
                 Alert.alert('로그인 실패', '휴대폰 번호 또는 비밀번호를 확인해주세요.');

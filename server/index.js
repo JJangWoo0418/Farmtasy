@@ -91,6 +91,51 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// 게시글 생성 API 추가
+app.post('/api/post', async (req, res) => {
+    console.log('게시글 작성 요청 받음:', req.body);
+    
+    try {
+        // 테이블 존재 여부 확인 방식 수정
+        const [tables] = await pool.query("SHOW TABLES");
+        const postTableExists = tables.some(table => table.Tables_in_farmtasy_db === 'post');
+        
+        if (postTableExists) {
+            console.log('post 테이블 확인 완료');
+        } else {
+            console.error('post 테이블이 존재하지 않습니다');
+            return res.status(500).json({
+                success: false,
+                message: '서버 설정 오류가 발생했습니다.'
+            });
+        }
+
+        const { post_title, name, post_content, post_category, phone, region } = req.body;
+
+        // 테이블 이름도 소문자로 수정
+        const [result] = await pool.query(
+            `INSERT INTO post (post_title, name, post_content, post_category, phone, region) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [post_title, name, post_content, post_category, phone, region]
+        );
+
+        console.log('게시글 등록 성공:', result);
+
+        res.json({
+            success: true,
+            message: '게시글이 등록되었습니다.',
+            postId: result.insertId
+        });
+
+    } catch (error) {
+        console.error('게시글 등록 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
@@ -100,4 +145,16 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+
+    // 서버 시작 시 테이블 확인
+    pool.query("SHOW TABLES")
+        .then(([tables]) => {
+            console.log('테이블 확인 결과:', tables);
+            tables.forEach(table => {
+                console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);  // TABLE_NAME을 Tables_in_farmtasy_db로 수정
+            });
+        })
+        .catch(err => {
+            console.error('테이블 확인 중 오류 발생:', err);
+        });
 }); 
