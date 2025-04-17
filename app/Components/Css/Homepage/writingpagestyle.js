@@ -122,7 +122,7 @@ export default StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
         elevation: 15, // 안드로이드용 그림자
-        paddingBottom: 80,
+        paddingBottom: 100,
     },
     sheetHeader: {
         flexDirection: 'row',
