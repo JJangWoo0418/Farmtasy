@@ -23,72 +23,72 @@ export default function FarmInfo() {
 
   const loadWeather = async () => {
     try {
-      setLoading(true);
-      let coords = FARM_COORDS;
+    setLoading(true);
+    let coords = FARM_COORDS;
       console.log('[날씨 로드] 시작 - 모드:', mode);
       console.log('[날씨 로드] 좌표:', coords);
 
-      if (mode === 'current') {
-        try {
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== 'granted') {
+    if (mode === 'current') {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
             console.error('[위치 권한] 거부됨');
-            setLoading(false);
-            return;
-          }
-
-          const position = await Location.getCurrentPositionAsync({});
-          coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          console.log('[현재 위치] 좌표:', coords);
-        } catch (error) {
-          console.error('[위치 오류]:', error);
           setLoading(false);
           return;
         }
+
+        const position = await Location.getCurrentPositionAsync({});
+        coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+          console.log('[현재 위치] 좌표:', coords);
+      } catch (error) {
+          console.error('[위치 오류]:', error);
+        setLoading(false);
+        return;
       }
+    }
 
       // 현재 시간 기준으로 base_date와 base_time 설정
-      const now = new Date();
-      const currentHour = now.getHours();
-      const baseDate = new Date(now);
+    const now = new Date();
+    const currentHour = now.getHours();
+    const baseDate = new Date(now);
       
       // 6시 이전이면 전날 18시 발표 데이터 사용
       if (currentHour < 6) {
         baseDate.setDate(baseDate.getDate() - 1);
       }
-      
-      const yyyy = baseDate.getFullYear();
-      const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
-      const dd = String(baseDate.getDate()).padStart(2, '0');
+
+    const yyyy = baseDate.getFullYear();
+    const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(baseDate.getDate()).padStart(2, '0');
       const tmFc = `${yyyy}${mm}${dd}${currentHour < 6 ? '1800' : '0600'}`;
-      
+
       console.log('[시간 설정] tmFc:', tmFc);
 
-      const grid = await fetchWeather('latlon', {
-        lat: coords.latitude,
-        lon: coords.longitude,
-      });
+    const grid = await fetchWeather('latlon', {
+      lat: coords.latitude,
+      lon: coords.longitude,
+    });
       console.log('[격자 변환] 결과:', grid);
 
-      if (!grid || !grid.x || !grid.y) {
+    if (!grid || !grid.x || !grid.y) {
         console.error('[격자 변환] 실패');
-        setLoading(false);
-        return;
-      }
+      setLoading(false);
+      return;
+    }
 
       const { base_date, base_time } = getBaseDateTime();
       console.log('[기준 시간] 설정:', { base_date, base_time });
 
       // 초단기예보 조회
-      const forecast = await fetchWeather('ultraFcst', {
-        nx: grid.x,
-        ny: grid.y,
-        base_date,
-        base_time,
-      });
+    const forecast = await fetchWeather('ultraFcst', {
+      nx: grid.x,
+      ny: grid.y,
+      base_date,
+      base_time,
+    });
       console.log('[초단기예보] 응답:', forecast);
 
       if (forecast?.response?.body?.items?.item) {
@@ -209,16 +209,16 @@ export default function FarmInfo() {
         console.log('[주간 날씨] 파싱된 데이터:', weatherInfo);
         
         setWeeklyData(weatherData);
-      } else {
+    } else {
         console.warn('[주간 날씨] 데이터 없음');
-        setWeeklyData(null);
-      }
+      setWeeklyData(null);
+    }
 
       const warning = await fetchWeather('warning');
       console.log('[기상 특보] 응답:', warning);
 
-      if (typeof warning === 'string') setWarningData(warning);
-      setLoading(false);
+    if (typeof warning === 'string') setWarningData(warning);
+    setLoading(false);
     } catch (error) {
       console.error('[날씨 로드] 전체 중 오류:', error);
       setLoading(false);
@@ -267,11 +267,11 @@ export default function FarmInfo() {
 
   const renderForecast = () => {
     try {
-      const msg = weatherData?.response?.header?.resultMsg;
-      const code = weatherData?.response?.header?.resultCode;
-      if (msg !== 'NORMAL_SERVICE') return <Text style={styles.errorText}>에러: {msg} (코드 {code})</Text>;
+    const msg = weatherData?.response?.header?.resultMsg;
+    const code = weatherData?.response?.header?.resultCode;
+    if (msg !== 'NORMAL_SERVICE') return <Text style={styles.errorText}>에러: {msg} (코드 {code})</Text>;
 
-      const items = weatherData?.response?.body?.items?.item || [];
+    const items = weatherData?.response?.body?.items?.item || [];
       if (!items.length) {
         console.warn('[시간대별 날씨] 데이터 없음');
         return <Text style={styles.noWarning}>시간대별 날씨 데이터가 없습니다.</Text>;
@@ -305,8 +305,8 @@ export default function FarmInfo() {
       const currentHour = currentDate.getHours();
       const currentTimeStr = `${currentHour.toString().padStart(2, '0')}00`;
 
-      return (
-        <ScrollView 
+    return (
+      <ScrollView 
           horizontal={true}
           showsHorizontalScrollIndicator={false}
           style={styles.hourlyWeatherScroll}
@@ -324,10 +324,10 @@ export default function FarmInfo() {
             const t1h = data['T1H'] ? `${data['T1H']}°` : '-°';
             const reh = data['REH'] ? `${data['REH']}%` : '-%';
             const rn1 = data['RN1'] === '강수없음' ? '-' : data['RN1'];
-            const emoji = pty !== '0' ? getEmojiForPty(pty) : getEmojiForSky(sky);
+          const emoji = pty !== '0' ? getEmojiForPty(pty) : getEmojiForSky(sky);
             const isCurrentHour = groupData.time === currentTimeStr;
-
-            return (
+          
+          return (
               <View key={idx} style={[
                 styles.hourlyWeatherItem,
                 isCurrentHour && styles.hourlyWeatherItemCurrent
@@ -343,11 +343,11 @@ export default function FarmInfo() {
                   isCurrentHour && styles.weatherTempCurrent
                 ]}>{t1h}</Text>
                 <Text style={styles.weatherValue}>{reh}</Text>
-              </View>
-            );
+            </View>
+          );
           }).filter(Boolean)}
-        </ScrollView>
-      );
+      </ScrollView>
+    );
     } catch (error) {
       console.error('[시간대별 날씨] 전체 처리 중 오류:', error);
       return <Text style={styles.errorText}>날씨 데이터를 불러오는 중 오류가 발생했습니다.</Text>;
@@ -554,10 +554,10 @@ export default function FarmInfo() {
               const amEmoji = typeof amWeather === 'string' ? getEmoji(amWeather) : (amWeather || '❓');
               const pmEmoji = typeof pmWeather === 'string' ? getEmoji(pmWeather) : (pmWeather || '❓');
               const tempDisplay = (minTemp && maxTemp && minTemp !== '-' && maxTemp !== '-') ? `${minTemp}°/${maxTemp}°` : '-/-';
-
-              return (
-                <TouchableOpacity 
-                  key={idx} 
+            
+            return (
+              <TouchableOpacity 
+                key={idx} 
                   style={[styles.weeklyRow, { height: 60, flexDirection: 'row' }]}
                   onPress={() => handleWeeklyPress(dateInfo.date)}
                 >
@@ -578,10 +578,10 @@ export default function FarmInfo() {
                   <View style={[styles.weeklyTempColumn, { width: 100, alignItems: 'center', justifyContent: 'center' }]}>
                     <Text style={[styles.weeklyTemp, { fontSize: 16 }]}>{tempDisplay}</Text>
                   </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
         </View>
       );
     } catch (e) {
@@ -655,7 +655,7 @@ export default function FarmInfo() {
           ) : (
             <Text style={styles.noWarning}>날씨 데이터를 불러올 수 없습니다.</Text>
           )}
-        </View>
+      </View>
 
         <Text style={styles.sectionTitle}>시간대별 날씨</Text>
         {loading ? (
@@ -677,9 +677,9 @@ export default function FarmInfo() {
         ) : (
           <View style={styles.warningContainer}>
             {renderWarning()}
-          </View>
+      </View>
         )}
-      </ScrollView>
+    </ScrollView>
     </View>
   );
 }
