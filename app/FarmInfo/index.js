@@ -71,7 +71,7 @@ export default function FarmInfo() {
       lat: coords.latitude,
       lon: coords.longitude,
     });
-      console.log('[격자 변환] 결과:', grid);
+      // console.log('[격자 변환] 결과:', grid);  // 긴 로그 주석 처리
 
     if (!grid || !grid.x || !grid.y) {
         console.error('[격자 변환] 실패');
@@ -89,7 +89,7 @@ export default function FarmInfo() {
       base_date,
       base_time,
     });
-      console.log('[초단기예보] 응답:', forecast);
+      // console.log('[초단기예보] 응답:', forecast);  // 긴 로그 주석 처리
 
       if (forecast?.response?.body?.items?.item) {
         console.log('[초단기예보 데이터] 설정');
@@ -145,14 +145,14 @@ export default function FarmInfo() {
         );
       }
 
-      // 가장 최근의 유효한 단기예보 데이터 찾기
+      // 단기예보 API 응답을 처리하는 부분
       const shortTermResults = await Promise.all(shortTermPromises);
       let validShortTermData = null;
       
       for (const result of shortTermResults) {
         if (result?.response?.body?.items?.item) {
           validShortTermData = result;
-          console.log('[단기예보] 유효한 데이터 발견:', result.response.header.resultMsg);
+          // console.log('[단기예보] 유효한 데이터:', result.response.body.items);  // XML 형식의 긴 로그 주석 처리
           break;
         } else {
           console.log('[단기예보] 데이터 없음:', result?.response?.header?.resultMsg);
@@ -179,40 +179,42 @@ export default function FarmInfo() {
       const midForecast = await fetchWeather('midLandFcst', { 
         regId, 
         tmFc,
-        type: 'JSON',
+        type: 'XML',
         numOfRows: '10',
         pageNo: '1',
-        dataType: 'JSON'
+        dataType: 'XML'
       });
       
-      console.log('[주간 날씨] 응답:', midForecast);
+      // 중기기온예보 추가
+      const midTaForecast = await fetchWeather('midTa', {
+        regId,
+        tmFc,
+        type: 'XML',
+        numOfRows: '10',
+        pageNo: '1',
+        dataType: 'XML'
+      });
 
-      // 주간 날씨 데이터 처리
-      const itemRaw = midForecast?.response?.body?.items?.item ?? null;
-      
-      if (itemRaw) {
-        const weatherData = Array.isArray(itemRaw) ? itemRaw[0] : itemRaw;
+      // 중기예보 API 응답 로그
+      // console.log('[중기예보] 육상예보 응답:', midForecast);  // 긴 로그 주석 처리
+      // console.log('[중기예보] 기온예보 응답:', midTaForecast);  // 긴 로그 주석 처리
+
+      // 중기예보 데이터 처리
+      const landFcstData = midForecast?.response?.body?.items?.item?.[0] ?? null;
+      const taFcstData = midTaForecast?.response?.body?.items?.item?.[0] ?? null;
+
+      if (landFcstData || taFcstData) {
+        // 두 데이터 합치기
+        const weatherData = {
+          ...landFcstData,
+          ...taFcstData
+        };
         console.log('[주간 날씨] 병합된 데이터:', weatherData);
-        
-        // 날씨와 온도 데이터 확인
-        const weatherInfo = {};
-        for (let i = 3; i <= 10; i++) {
-          weatherInfo[`day${i}`] = {
-            amWeather: weatherData[`wf${i}Am`] || weatherData[`wf${i}`],
-            pmWeather: weatherData[`wf${i}Pm`] || weatherData[`wf${i}`],
-            amRainProb: weatherData[`rnSt${i}Am`] || weatherData[`rnSt${i}`],
-            pmRainProb: weatherData[`rnSt${i}Pm`] || weatherData[`rnSt${i}`],
-            minTemp: weatherData[`taMin${i}`],
-            maxTemp: weatherData[`taMax${i}`]
-          };
-        }
-        console.log('[주간 날씨] 파싱된 데이터:', weatherInfo);
-        
         setWeeklyData(weatherData);
-    } else {
+      } else {
         console.warn('[주간 날씨] 데이터 없음');
-      setWeeklyData(null);
-    }
+        setWeeklyData(null);
+      }
 
       const warning = await fetchWeather('warning');
       console.log('[기상 특보] 응답:', warning);
@@ -226,7 +228,18 @@ export default function FarmInfo() {
   };
 
   useEffect(() => {
-    loadWeather();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (!isMounted) return;
+      await loadWeather();
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [mode]);
 
   const getEmoji = (text) => {
@@ -360,229 +373,51 @@ export default function FarmInfo() {
         return <Text style={styles.noWarning}>주간 날씨 데이터 없음</Text>;
       }
 
-      // 오늘부터 시작하는 날짜 데이터 생성 (10일치)
-      const today = new Date();
-      const weeklyDates = Array.from({ length: 10 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() + i);  // 오늘부터 시작
-        return {
-          date: i === 0 ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`,
-          dayOfWeek: i === 0 ? '' : `(${getDayOfWeek(d)})`
-        };
-      });
+      // 주간 데이터를 배열로 변환
+      const weeklyArray = [];
+      for (let i = 4; i <= 10; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + (i - 3));
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
 
-      // 이전 날짜의 데이터를 저장할 변수
-      let lastValidData = {
-        amWeather: '맑음',
-        pmWeather: '맑음',
-        amRainProb: '0',
-        pmRainProb: '0',
-        minTemp: '-',
-        maxTemp: '-'
-      };
+        weeklyArray.push({
+          date: `${month}/${day}`,
+          dayOfWeek: `(${dayOfWeek})`,
+          amWeather: i <= 7 ? weeklyData[`wf${i}Am`] : weeklyData[`wf${i}`],
+          pmWeather: i <= 7 ? weeklyData[`wf${i}Pm`] : weeklyData[`wf${i}`],
+          amRainProb: i <= 7 ? weeklyData[`rnSt${i}Am`] : weeklyData[`rnSt${i}`],
+          pmRainProb: i <= 7 ? weeklyData[`rnSt${i}Pm`] : weeklyData[`rnSt${i}`],
+          minTemp: weeklyData[`taMin${i}`] === 0 ? '-' : weeklyData[`taMin${i}`],
+          maxTemp: weeklyData[`taMax${i}`] === 0 ? '-' : weeklyData[`taMax${i}`]
+        });
+      }
 
       return (
-        <View style={[styles.weeklyContainer, { height: 400 }]}>
-          <View style={[styles.weeklyHeader, { flexDirection: 'row' }]}>
-            <View style={[styles.weeklyHeaderCell, { width: 80 }]}>
-              <Text style={styles.weeklyHeaderText}>날짜</Text>
+        <ScrollView style={styles.weeklyScrollView} nestedScrollEnabled={true}>
+          {weeklyArray.map((item, idx) => (
+            <View key={idx} style={[styles.weeklyRow, { height: 60, flexDirection: 'row' }]}>
+              <View style={[styles.weeklyDateColumn, { width: 80, alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={[styles.weeklyDate, { fontSize: 16 }]}>{item.date}</Text>
+                <Text style={[styles.weeklyDayOfWeek, { fontSize: 14 }]}>{item.dayOfWeek}</Text>
+              </View>
+              <View style={[styles.weeklyWeatherColumn, { width: 80, alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={[styles.weeklyEmoji, { fontSize: 24 }]}>{getEmoji(item.amWeather)}</Text>
+                <Text style={[styles.weeklyRainProb, { fontSize: 14 }]}>{item.amRainProb}%</Text>
+              </View>
+              <View style={[styles.weeklyWeatherColumn, { width: 80, alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={[styles.weeklyEmoji, { fontSize: 24 }]}>{getEmoji(item.pmWeather)}</Text>
+                <Text style={[styles.weeklyRainProb, { fontSize: 14 }]}>{item.pmRainProb}%</Text>
+              </View>
+              <View style={[styles.weeklyTempColumn, { width: 100, alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={[styles.weeklyTemp, { fontSize: 16 }]}>
+                  {item.minTemp !== '-' && item.maxTemp !== '-' ? `${item.minTemp}°/${item.maxTemp}°` : '-/-'}
+                </Text>
+              </View>
             </View>
-            <View style={[styles.weeklyHeaderCell, { width: 80 }]}>
-              <Text style={[styles.weeklyHeaderText, styles.weeklyHeaderCenter]}>오전</Text>
-            </View>
-            <View style={[styles.weeklyHeaderCell, { width: 80 }]}>
-              <Text style={[styles.weeklyHeaderText, styles.weeklyHeaderCenter]}>오후</Text>
-            </View>
-            <View style={[styles.weeklyHeaderCell, { width: 100 }]}>
-              <Text style={[styles.weeklyHeaderText, styles.weeklyHeaderRight]}>최저/최고</Text>
-            </View>
-          </View>
-          <ScrollView style={styles.weeklyScrollView} nestedScrollEnabled={true}>
-            {weeklyDates.map((dateInfo, idx) => {
-              let amWeather, pmWeather, amRainProb, pmRainProb, minTemp, maxTemp;
-
-              // 오늘 데이터 (초단기예보)
-              if (idx === 0) {
-                const todayData = weatherData?.response?.body?.items?.item || [];
-                console.log('[오늘 날씨] 초단기예보 데이터:', todayData);
-                
-                if (!todayData.length) {
-                  console.warn('[오늘 날씨] 초단기예보 데이터가 없습니다.');
-                  return null;
-                }
-
-                // 현재 시간 이후의 데이터만 필터링
-                const currentHour = new Date().getHours();
-                const morningHour = currentHour <= 6 ? '0600' : (currentHour <= 15 ? '1500' : '0600');
-                const afternoonHour = currentHour <= 15 ? '1500' : '1500';
-
-                // 오전/오후 날씨 상태
-                const amSky = todayData.find(item => item.fcstTime === morningHour && item.category === 'SKY')?.fcstValue || '1';
-                const amPty = todayData.find(item => item.fcstTime === morningHour && item.category === 'PTY')?.fcstValue || '0';
-                const pmSky = todayData.find(item => item.fcstTime === afternoonHour && item.category === 'SKY')?.fcstValue || '1';
-                const pmPty = todayData.find(item => item.fcstTime === afternoonHour && item.category === 'PTY')?.fcstValue || '0';
-
-                // 강수확률
-                amRainProb = todayData.find(item => item.fcstTime === morningHour && item.category === 'POP')?.fcstValue || '0';
-                pmRainProb = todayData.find(item => item.fcstTime === afternoonHour && item.category === 'POP')?.fcstValue || '0';
-
-                // 최저/최고 기온
-                const temps = todayData
-                  .filter(item => item.category === 'T1H')
-                  .map(item => parseInt(item.fcstValue));
-                minTemp = temps.length ? Math.min(...temps) : '0';
-                maxTemp = temps.length ? Math.max(...temps) : '0';
-
-                // 날씨 상태 결정
-                amWeather = amPty !== '0' ? getEmojiForPty(amPty) : getEmojiForSky(amSky);
-                pmWeather = pmPty !== '0' ? getEmojiForPty(pmPty) : getEmojiForSky(pmSky);
-
-                console.log('[오늘 날씨] 파싱된 데이터:', {
-                  amWeather,
-                  pmWeather,
-                  amRainProb,
-                  pmRainProb,
-                  minTemp,
-                  maxTemp,
-                  amSky,
-                  amPty,
-                  pmSky,
-                  pmPty
-                });
-
-                // 유효한 데이터가 있으면 저장
-                if (amWeather && pmWeather) {
-                  lastValidData = {
-                    amWeather,
-                    pmWeather,
-                    amRainProb,
-                    pmRainProb,
-                    minTemp,
-                    maxTemp
-                  };
-                }
-              }
-              // 단기예보 데이터 (1~2일차)
-              else if (idx <= 2) {
-                const shortTermItems = shortTermData?.response?.body?.items?.item || [];
-                const targetDate = new Date(today);
-                targetDate.setDate(targetDate.getDate() + idx);
-                const targetDateStr = `${targetDate.getFullYear()}${String(targetDate.getMonth() + 1).padStart(2, '0')}${String(targetDate.getDate()).padStart(2, '0')}`;
-
-                // 해당 날짜의 데이터만 필터링
-                const dayData = shortTermItems.filter(item => item.fcstDate === targetDateStr);
-                
-                // 오전 6시와 오후 3시의 날씨 상태
-                const amSky = dayData.find(item => item.fcstTime === '0600' && item.category === 'SKY')?.fcstValue;
-                const amPty = dayData.find(item => item.fcstTime === '0600' && item.category === 'PTY')?.fcstValue;
-                const pmSky = dayData.find(item => item.fcstTime === '1500' && item.category === 'SKY')?.fcstValue;
-                const pmPty = dayData.find(item => item.fcstTime === '1500' && item.category === 'PTY')?.fcstValue;
-                
-                // 강수확률
-                amRainProb = dayData.find(item => item.fcstTime === '0600' && item.category === 'POP')?.fcstValue || '-';
-                pmRainProb = dayData.find(item => item.fcstTime === '1500' && item.category === 'POP')?.fcstValue || '-';
-
-                // 최저/최고 기온 (TMN: 일 최저기온, TMX: 일 최고기온)
-                minTemp = dayData.find(item => item.category === 'TMN')?.fcstValue;
-                maxTemp = dayData.find(item => item.category === 'TMX')?.fcstValue;
-
-                // 날씨 상태 결정
-                amWeather = amPty !== '0' ? getEmojiForPty(amPty) : getEmojiForSky(amSky);
-                pmWeather = pmPty !== '0' ? getEmojiForPty(pmPty) : getEmojiForSky(pmSky);
-
-                // 유효한 데이터가 있으면 저장
-                if (amWeather && pmWeather) {
-                  lastValidData = {
-                    amWeather,
-                    pmWeather,
-                    amRainProb,
-                    pmRainProb,
-                    minTemp,
-                    maxTemp
-                  };
-                }
-              }
-              // 중기예보 데이터 (3~10일차)
-              else {
-                const dayKey = idx + 3;  // 3일차부터 시작하도록 수정
-                if (dayKey <= 10) {  // 3일차부터 10일차까지
-                  // 날씨 데이터 가져오기
-                  amWeather = weeklyData[`wf${dayKey}Am`] || weeklyData[`wf${dayKey}`] || lastValidData.amWeather;
-                  pmWeather = weeklyData[`wf${dayKey}Pm`] || weeklyData[`wf${dayKey}`] || lastValidData.pmWeather;
-                  
-                  // 강수확률 가져오기
-                  amRainProb = weeklyData[`rnSt${dayKey}Am`] || weeklyData[`rnSt${dayKey}`] || lastValidData.amRainProb;
-                  pmRainProb = weeklyData[`rnSt${dayKey}Pm`] || weeklyData[`rnSt${dayKey}`] || lastValidData.pmRainProb;
-                  
-                  // 온도 데이터 가져오기
-                  minTemp = weeklyData[`taMin${dayKey}`] || lastValidData.minTemp;
-                  maxTemp = weeklyData[`taMax${dayKey}`] || lastValidData.maxTemp;
-
-                  console.log(`[주간 날씨] ${dayKey}일차 데이터:`, {
-                    amWeather,
-                    pmWeather,
-                    amRainProb,
-                    pmRainProb,
-                    minTemp,
-                    maxTemp
-                  });
-
-                  // 새로운 유효한 데이터가 있으면 저장
-                  if (amWeather && pmWeather) {
-                    lastValidData = {
-                      amWeather,
-                      pmWeather,
-                      amRainProb,
-                      pmRainProb,
-                      minTemp,
-                      maxTemp
-                    };
-                  }
-                }
-              }
-
-              // 데이터가 없는 경우 이전 유효한 데이터 사용
-              if (!amWeather || !pmWeather) {
-                amWeather = lastValidData.amWeather;
-                pmWeather = lastValidData.pmWeather;
-                amRainProb = lastValidData.amRainProb;
-                pmRainProb = lastValidData.pmRainProb;
-                minTemp = lastValidData.minTemp;
-                maxTemp = lastValidData.maxTemp;
-              }
-
-              const amEmoji = typeof amWeather === 'string' ? getEmoji(amWeather) : (amWeather || '❓');
-              const pmEmoji = typeof pmWeather === 'string' ? getEmoji(pmWeather) : (pmWeather || '❓');
-              const tempDisplay = (minTemp && maxTemp && minTemp !== '-' && maxTemp !== '-') ? `${minTemp}°/${maxTemp}°` : '-/-';
-            
-            return (
-              <TouchableOpacity 
-                key={idx} 
-                  style={[styles.weeklyRow, { height: 60, flexDirection: 'row' }]}
-                  onPress={() => handleWeeklyPress(dateInfo.date)}
-                >
-                  <View style={[styles.weeklyDateColumn, { width: 80, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Text style={[styles.weeklyDate, { fontSize: 16 }]}>{dateInfo.date}</Text>
-                    {dateInfo.dayOfWeek && (
-                      <Text style={[styles.weeklyDayOfWeek, { fontSize: 14 }]}>{dateInfo.dayOfWeek}</Text>
-                    )}
-                  </View>
-                  <View style={[styles.weeklyWeatherColumn, { width: 80, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Text style={[styles.weeklyEmoji, { fontSize: 24 }]}>{amEmoji}</Text>
-                    <Text style={[styles.weeklyRainProb, { fontSize: 14 }]}>{amRainProb}%</Text>
-                  </View>
-                  <View style={[styles.weeklyWeatherColumn, { width: 80, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Text style={[styles.weeklyEmoji, { fontSize: 24 }]}>{pmEmoji}</Text>
-                    <Text style={[styles.weeklyRainProb, { fontSize: 14 }]}>{pmRainProb}%</Text>
-                  </View>
-                  <View style={[styles.weeklyTempColumn, { width: 100, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Text style={[styles.weeklyTemp, { fontSize: 16 }]}>{tempDisplay}</Text>
-                  </View>
-              </TouchableOpacity>
-            );
-          })}
+          ))}
         </ScrollView>
-        </View>
       );
     } catch (e) {
       console.error('[주간 날씨] 렌더 중 오류:', e);

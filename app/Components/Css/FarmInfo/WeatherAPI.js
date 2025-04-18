@@ -19,7 +19,7 @@ const fetchAPI = async (url, params) => {
   try {
     const response = await axios.get(url, { params });
     const xml = response.data;
-    console.log('[LOG] 날씨 API 원 응답:', xml);
+    // console.log('[LOG] 날씨 API 원 응답:', xml);
     return parser.parse(xml);
   } catch (error) {
     console.error('[ERROR] 기상청 API 요청 오류:', error);
@@ -108,7 +108,7 @@ export const fetchUltraSrtFcst = async (params) => {
 // 단기예보조회
 export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
   try {
-    console.log('단기예보 API 호출:', { nx, ny, base_date, base_time });  // 로그 추가
+    // console.log('단기예보 API 호출:', { nx, ny, base_date, base_time });  // 로그 추가
     const response = await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst', {
       serviceKey: WEATHER_API_KEY_PORTAL,
       pageNo: 1,
@@ -119,7 +119,7 @@ export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
       nx,
       ny,
     });
-    console.log('단기예보 응답:', response);    // 로그 추가
+    // console.log('단기예보 응답:', response);    // 로그 추가
     return response;
   } catch (error) {
     console.error('단기예보 API 오류:', error); // 로그 추가
@@ -130,14 +130,14 @@ export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
 // 중기육상예보 (fallback 적용)
 export const fetchMidLandFcst = async ({ regId, tmFc }) => {
   try {
-    console.log('중기예보 API 호출:', { regId, tmFc });  // 로그 추가
+    // console.log('중기예보 API 호출:', { regId, tmFc });  // 로그 추가
     const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
       serviceKey: WEATHER_API_KEY_PORTAL,
       dataType: 'XML',
       regId,
       tmFc,
     });
-    console.log('중기예보 응답:', res);    // 로그 추가
+    // console.log('중기예보 응답:', res);    // 로그 추가
 
     const code = res?.response?.header?.resultCode;
     if (code === '03' || !res?.response?.body?.items?.item?.length) {
@@ -184,26 +184,45 @@ export const fetchMidSeaFcst = async ({ regId, tmFc }) => {
 
 // 중기기온예보 (fallback 적용)
 export const fetchMidTa = async ({ regId, tmFc }) => {
-  const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
-    serviceKey: WEATHER_API_KEY_PORTAL,
-    dataType: 'XML',
-    regId,
-    tmFc,
-  });
-
-  const code = res?.response?.header?.resultCode;
-  if (code === '03' || !res?.response?.body?.items?.item?.length) {
-    console.warn('[WARN] 중기기온예보 NO_DATA fallback 적용');
-    const fallbackDate = getFallbackDate(tmFc.slice(0, 8)) + tmFc.slice(8);
-    return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+  try {
+    console.log('[중기기온예보] API 호출:', { regId, tmFc });
+    const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
       serviceKey: WEATHER_API_KEY_PORTAL,
       dataType: 'XML',
       regId,
-      tmFc: fallbackDate,
+      tmFc,
     });
-  }
 
-  return res;
+    const code = res?.response?.header?.resultCode;
+    if (code === '03' || !res?.response?.body?.items?.item?.length) {
+      console.warn('[WARN] 중기기온예보 NO_DATA fallback 적용');
+      const fallbackDate = getFallbackDate(tmFc.slice(0, 8)) + tmFc.slice(8);
+      return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+        serviceKey: WEATHER_API_KEY_PORTAL,
+        dataType: 'XML',
+        regId,
+        tmFc: fallbackDate,
+      });
+    }
+
+    // 온도 데이터 처리
+    const item = res?.response?.body?.items?.item?.[0];
+    if (item) {
+      for (let i = 4; i <= 10; i++) {
+        if (item[`taMax${i}`] === '0' || item[`taMax${i}`] === 0) {
+          item[`taMax${i}`] = item[`taMax${i}High`] || item[`taMax${i}Low`] || '-';
+        }
+        if (item[`taMin${i}`] === '0' || item[`taMin${i}`] === 0) {
+          item[`taMin${i}`] = item[`taMin${i}High`] || item[`taMin${i}Low`] || '-';
+        }
+      }
+    }
+
+    return res;
+  } catch (error) {
+    console.error('[ERROR] 중기기온예보 API 오류:', error);
+    return null;
+  }
 };
 
 // 기상특보 조회 (fallback 적용)
@@ -362,8 +381,14 @@ export const fetchWeeklyWeather = async ({ regId, tmFc }) => {
 
         const existingData = weeklyData.find(d => d.date === formattedDate);
         if (existingData) {
-          existingData.maxTemp = item.taMax;
-          existingData.minTemp = item.taMin;
+          // 3일차부터 10일차까지의 온도 데이터 처리
+          for (let i = 3; i <= 10; i++) {
+            if (item[`taMax${i}`] && item[`taMin${i}`]) {
+              existingData.maxTemp = parseInt(item[`taMax${i}`]);
+              existingData.minTemp = parseInt(item[`taMin${i}`]);
+              break;
+            }
+          }
         }
       });
     }
@@ -378,7 +403,36 @@ export const fetchWeeklyWeather = async ({ regId, tmFc }) => {
       return aMonth - bMonth;
     });
 
-    return weeklyData;
+    // 데이터 검증 및 로깅
+    console.log('[주간 날씨] 최종 데이터:', weeklyData);
+
+    // 중기예보 데이터 처리
+    const landFcstData = landData?.response?.body?.items?.item?.[0] ?? null;
+    const taFcstData = taData?.response?.body?.items?.item?.[0] ?? null;
+
+    if (landFcstData || taFcstData) {
+      // 두 데이터 합치기
+      const weatherData = {
+        ...landFcstData,
+        ...taFcstData
+      };
+      
+      // 온도 데이터가 0인 경우 처리
+      for (let i = 4; i <= 10; i++) {
+        if (weatherData[`taMax${i}`] === 0) {
+          weatherData[`taMax${i}`] = weatherData[`taMax${i}High`] || weatherData[`taMax${i}Low`] || '-';
+        }
+        if (weatherData[`taMin${i}`] === 0) {
+          weatherData[`taMin${i}`] = weatherData[`taMin${i}High`] || weatherData[`taMin${i}Low`] || '-';
+        }
+      }
+      
+      console.log('[주간 날씨] 병합된 데이터:', weatherData);
+      return weatherData;
+    } else {
+      console.warn('[주간 날씨] 데이터 없음');
+      return null;
+    }
   } catch (error) {
     console.error('[ERROR] 주간 날씨 데이터 통합 오류:', error);
     return null;
