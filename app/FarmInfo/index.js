@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, ScrollView, TouchableOpacity } from 'react-native';
 import styles from '../Components/Css/FarmInfo/index.js';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
-import { getBaseDateTime } from '../Components/Utils/timeUtils';
+import { getBaseDateTime, getMidFcstTime } from '../Components/Utils/timeUtils';
 import { getMidLandRegId } from '../Components/Utils/regionMapper';
 import * as Location from 'expo-location';
 
@@ -19,189 +19,117 @@ export default function FarmInfo() {
   const [weeklyData, setWeeklyData] = useState(null);
   const [warningData, setWarningData] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
 
   const loadWeather = async () => {
     try {
-    setLoading(true);
-    let coords = FARM_COORDS;
+      setLoading(true);
+      let coords = FARM_COORDS;
       console.log('[날씨 로드] 시작 - 모드:', mode);
       console.log('[날씨 로드] 좌표:', coords);
 
-    if (mode === 'current') {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
+      if (mode === 'current') {
+        setLoadingStep('위치 정보를 가져오는 중...');
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') {
             console.error('[위치 권한] 거부됨');
+            setLoading(false);
+            return;
+          }
+
+          const position = await Location.getCurrentPositionAsync({});
+          coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          console.log('[현재 위치] 좌표:', coords);
+        } catch (error) {
+          console.error('[위치 오류]:', error);
           setLoading(false);
           return;
         }
+      }
 
-        const position = await Location.getCurrentPositionAsync({});
-        coords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-          console.log('[현재 위치] 좌표:', coords);
-      } catch (error) {
-          console.error('[위치 오류]:', error);
+      // 중기예보 시간 설정
+      const tmFc = getMidFcstTime();
+      console.log('[시간 설정] tmFc:', tmFc);
+
+      // 격자 변환
+      setLoadingStep('위치 정보를 변환하는 중...');
+      const grid = await fetchWeather('latlon', {
+        lat: coords.latitude,
+        lon: coords.longitude,
+      });
+
+      if (!grid || !grid.x || !grid.y) {
+        console.error('[격자 변환] 실패');
         setLoading(false);
         return;
       }
-    }
 
-      // 현재 시간 기준으로 base_date와 base_time 설정
-    const now = new Date();
-    const currentHour = now.getHours();
-    const baseDate = new Date(now);
-      
-      // 6시 이전이면 전날 18시 발표 데이터 사용
-      if (currentHour < 6) {
-        baseDate.setDate(baseDate.getDate() - 1);
-      }
-
-    const yyyy = baseDate.getFullYear();
-    const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(baseDate.getDate()).padStart(2, '0');
-      const tmFc = `${yyyy}${mm}${dd}${currentHour < 6 ? '1800' : '0600'}`;
-
-      console.log('[시간 설정] tmFc:', tmFc);
-
-    const grid = await fetchWeather('latlon', {
-      lat: coords.latitude,
-      lon: coords.longitude,
-    });
-      // console.log('[격자 변환] 결과:', grid);  // 긴 로그 주석 처리
-
-    if (!grid || !grid.x || !grid.y) {
-        console.error('[격자 변환] 실패');
-      setLoading(false);
-      return;
-    }
+      // 지역 코드 가져오기
+      setLoadingStep('지역 정보를 가져오는 중...');
+      const regId = await getMidLandRegId(coords.latitude, coords.longitude);
 
       const { base_date, base_time } = getBaseDateTime();
       console.log('[기준 시간] 설정:', { base_date, base_time });
 
-      // 초단기예보 조회
-    const forecast = await fetchWeather('ultraFcst', {
-      nx: grid.x,
-      ny: grid.y,
-      base_date,
-      base_time,
-    });
-      // console.log('[초단기예보] 응답:', forecast);  // 긴 로그 주석 처리
+      // 초단기예보
+      setLoadingStep('현재 날씨를 가져오는 중...');
+      const [current, forecast] = await Promise.all([
+        fetchWeather('ultraNcst', {
+          nx: grid.x,
+          ny: grid.y,
+          base_date,
+          base_time,
+        }),
+        fetchWeather('ultraFcst', {
+          nx: grid.x,
+          ny: grid.y,
+          base_date,
+          base_time,
+        })
+      ]);
 
-      if (forecast?.response?.body?.items?.item) {
-        console.log('[초단기예보 데이터] 설정');
-        setWeatherData(forecast);
+      if (current?.response?.body?.items?.item && forecast?.response?.body?.items?.item) {
+        console.log('[날씨 데이터] 설정');
+        setWeatherData({
+          ...forecast,
+          current: current
+        });
       } else {
-        console.warn('[초단기예보] 데이터 없음:', forecast?.response?.header?.resultMsg);
+        console.warn('[날씨 데이터] 없음:', {
+          current: current?.response?.header?.resultMsg,
+          forecast: forecast?.response?.header?.resultMsg
+        });
       }
 
-      // 단기예보 조회 (최근 3일치 데이터 요청)
-      const shortTermPromises = [];
-      const currentTime = new Date();
-      const hour = currentTime.getHours();
-      
-      // 기상청 API 제공 시간: 0200, 0500, 0800, 1100, 1400, 1700, 2000, 2300
-      let baseTime;
-      if (hour < 2) {
-        baseTime = '2300';  // 전날 23시 데이터
-      } else if (hour < 5) {
-        baseTime = '0200';  // 당일 2시 데이터
-      } else if (hour < 8) {
-        baseTime = '0500';  // 당일 5시 데이터
-      } else if (hour < 11) {
-        baseTime = '0800';  // 당일 8시 데이터
-      } else if (hour < 14) {
-        baseTime = '1100';  // 당일 11시 데이터
-      } else if (hour < 17) {
-        baseTime = '1400';  // 당일 14시 데이터
-      } else if (hour < 20) {
-        baseTime = '1700';  // 당일 17시 데이터
-      } else if (hour < 23) {
-        baseTime = '2000';  // 당일 20시 데이터
-      } else {
-        baseTime = '2300';  // 당일 23시 데이터
-      }
-      
-      console.log('[단기예보] 현재 시간:', hour, '시, 요청 시간:', baseTime);
-      
-      // 현재 날짜 기준으로 3일치 데이터 요청
-      for (let i = 0; i < 3; i++) {
-        const targetDate = new Date(baseDate);
-        targetDate.setDate(targetDate.getDate() - i);
-        const targetDateStr = `${targetDate.getFullYear()}${String(targetDate.getMonth() + 1).padStart(2, '0')}${String(targetDate.getDate()).padStart(2, '0')}`;
-        
-        console.log('[단기예보] 요청 날짜:', targetDateStr, '시간:', baseTime);
-        
-        shortTermPromises.push(
-          fetchWeather('villageFcst', {
-            nx: grid.x,
-            ny: grid.y,
-            base_date: targetDateStr,
-            base_time: baseTime,
-          })
-        );
-      }
+      // 단기예보
+      setLoadingStep('시간대별 날씨를 가져오는 중...');
+      const villageFcst = await fetchWeather('villageFcst', {
+        nx: grid.x,
+        ny: grid.y,
+        base_date,
+        base_time,
+      });
 
-      // 단기예보 API 응답을 처리하는 부분
-      const shortTermResults = await Promise.all(shortTermPromises);
-      let validShortTermData = null;
-      
-      for (const result of shortTermResults) {
-        if (result?.response?.body?.items?.item) {
-          validShortTermData = result;
-          // console.log('[단기예보] 유효한 데이터:', result.response.body.items);  // XML 형식의 긴 로그 주석 처리
-          break;
-        } else {
-          console.log('[단기예보] 데이터 없음:', result?.response?.header?.resultMsg);
-        }
-      }
-
-      if (validShortTermData) {
+      if (villageFcst?.response?.body?.items?.item) {
         console.log('[단기예보 데이터] 설정');
-        setShortTermData(validShortTermData);
-      } else {
-        console.warn('[단기예보] 유효한 데이터 없음');
-        // 단기예보 데이터가 없는 경우 초단기예보 데이터를 활용
-        if (forecast) {
-          console.log('[단기예보] 초단기예보 데이터 활용');
-          setShortTermData(forecast);
-        }
+        setShortTermData(villageFcst);
       }
 
-      // 중기예보 조회
-      const regId = getMidLandRegId(coords.latitude, coords.longitude);
-      console.log('[중기예보] 지역 ID:', regId);
-      
-      // 중기예보 API 호출 (날씨와 온도 데이터 모두 요청)
-      const midForecast = await fetchWeather('midLandFcst', { 
-        regId, 
-        tmFc,
-        type: 'XML',
-        numOfRows: '10',
-        pageNo: '1',
-        dataType: 'XML'
-      });
-      
-      // 중기기온예보 추가
-      const midTaForecast = await fetchWeather('midTa', {
-        regId,
-        tmFc,
-        type: 'XML',
-        numOfRows: '10',
-        pageNo: '1',
-        dataType: 'XML'
-      });
-
-      // 중기예보 API 응답 로그
-      // console.log('[중기예보] 육상예보 응답:', midForecast);  // 긴 로그 주석 처리
-      // console.log('[중기예보] 기온예보 응답:', midTaForecast);  // 긴 로그 주석 처리
+      // 중기예보
+      setLoadingStep('주간 날씨를 가져오는 중...');
+      const [midLandFcst, midTa] = await Promise.all([
+        fetchWeather('midLandFcst', { regId, tmFc }),
+        fetchWeather('midTa', { regId, tmFc })
+      ]);
 
       // 중기예보 데이터 처리
-      const landFcstData = midForecast?.response?.body?.items?.item?.[0] ?? null;
-      const taFcstData = midTaForecast?.response?.body?.items?.item?.[0] ?? null;
+      const landFcstData = midLandFcst?.response?.body?.items?.item?.[0] ?? null;
+      const taFcstData = midTa?.response?.body?.items?.item?.[0] ?? null;
 
       if (landFcstData || taFcstData) {
         // 두 데이터 합치기
@@ -211,19 +139,19 @@ export default function FarmInfo() {
         };
         console.log('[주간 날씨] 병합된 데이터:', weatherData);
         setWeeklyData(weatherData);
-      } else {
-        console.warn('[주간 날씨] 데이터 없음');
-        setWeeklyData(null);
       }
 
+      // 기상특보
+      setLoadingStep('기상 특보를 확인하는 중...');
       const warning = await fetchWeather('warning');
-      console.log('[기상 특보] 응답:', warning);
+      if (typeof warning === 'string') setWarningData(warning);
 
-    if (typeof warning === 'string') setWarningData(warning);
-    setLoading(false);
+      setLoading(false);
+      setLoadingStep('');
     } catch (error) {
       console.error('[날씨 로드] 전체 중 오류:', error);
       setLoading(false);
+      setLoadingStep('');
     }
   };
 
@@ -370,8 +298,11 @@ export default function FarmInfo() {
   const renderWeekly = () => {
     try {
       if (!weeklyData) {
+        console.warn('[주간 날씨 렌더링] 데이터 없음');
         return <Text style={styles.noWarning}>주간 날씨 데이터 없음</Text>;
       }
+
+      console.log('[주간 날씨 렌더링] 시작:', weeklyData);
 
       // 주간 데이터를 배열로 변환
       const weeklyArray = [];
@@ -382,6 +313,35 @@ export default function FarmInfo() {
         const day = date.getDate();
         const dayOfWeek = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
 
+        // 온도 데이터 처리
+        let minTemp = weeklyData[`taMin${i}`];
+        let maxTemp = weeklyData[`taMax${i}`];
+
+        console.log(`[주간 날씨 렌더링] ${i}일차 온도 데이터:`, {
+          minTemp,
+          maxTemp,
+          minTempHigh: weeklyData[`taMin${i}High`],
+          minTempLow: weeklyData[`taMin${i}Low`],
+          maxTempHigh: weeklyData[`taMax${i}High`],
+          maxTempLow: weeklyData[`taMax${i}Low`]
+        });
+
+        // 온도가 0이거나 없는 경우 처리
+        if (minTemp === 0 || minTemp === '0' || !minTemp) {
+          minTemp = weeklyData[`taMin${i}High`] || weeklyData[`taMin${i}Low`] || '-';
+        }
+        if (maxTemp === 0 || maxTemp === '0' || !maxTemp) {
+          maxTemp = weeklyData[`taMax${i}High`] || weeklyData[`taMax${i}Low`] || '-';
+        }
+
+        // 온도값이 문자열인 경우 숫자로 변환
+        if (typeof minTemp === 'string' && minTemp !== '-') {
+          minTemp = parseInt(minTemp);
+        }
+        if (typeof maxTemp === 'string' && maxTemp !== '-') {
+          maxTemp = parseInt(maxTemp);
+        }
+
         weeklyArray.push({
           date: `${month}/${day}`,
           dayOfWeek: `(${dayOfWeek})`,
@@ -389,10 +349,12 @@ export default function FarmInfo() {
           pmWeather: i <= 7 ? weeklyData[`wf${i}Pm`] : weeklyData[`wf${i}`],
           amRainProb: i <= 7 ? weeklyData[`rnSt${i}Am`] : weeklyData[`rnSt${i}`],
           pmRainProb: i <= 7 ? weeklyData[`rnSt${i}Pm`] : weeklyData[`rnSt${i}`],
-          minTemp: weeklyData[`taMin${i}`] === 0 ? '-' : weeklyData[`taMin${i}`],
-          maxTemp: weeklyData[`taMax${i}`] === 0 ? '-' : weeklyData[`taMax${i}`]
+          minTemp: minTemp,
+          maxTemp: maxTemp
         });
       }
+
+      console.log('[주간 날씨 렌더링] 최종 데이터:', weeklyArray);
 
       return (
         <ScrollView style={styles.weeklyScrollView} nestedScrollEnabled={true}>
@@ -458,7 +420,7 @@ export default function FarmInfo() {
       <ScrollView style={styles.scrollContainer} nestedScrollEnabled={true}>
         <View style={styles.currentWeatherBox}>
           {loading ? (
-            <Text style={styles.loading}>로딩중...</Text>
+            <Text style={styles.loading}>{loadingStep || '로딩중...'}</Text>
           ) : weatherData?.response?.body?.items?.item ? (
             <>
               <Text style={styles.currentTemp}>
