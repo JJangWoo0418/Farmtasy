@@ -262,5 +262,12 @@ export default StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#f8f8f8',
     borderRadius: 8
-  }
+  },
+  locationText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
 });
