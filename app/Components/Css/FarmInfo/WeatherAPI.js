@@ -9,7 +9,7 @@ const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '',
   isArray: (name, jpath, isLeafNode, isAttribute) => {
-    return name === 'item'; // item만 배열로 처리
+    return name === 'item'; // item만 배열로 처 리
   }
 });
 

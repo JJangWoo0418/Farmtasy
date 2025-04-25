@@ -39,44 +39,44 @@ export default function FarmInfo() {
 
   const loadWeather = async () => {
     try {
-      setLoading(true);
-      let coords = FARM_COORDS;
+    setLoading(true);
+    let coords = FARM_COORDS;
       console.log('[날씨 로드] 시작 - 모드:', mode);
       console.log('[날씨 로드] 좌표:', coords);
 
-      if (mode === 'current') {
-        try {
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== 'granted') {
+    if (mode === 'current') {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
             console.error('[위치 권한] 거부됨');
-            setLoading(false);
-            return;
-          }
+          setLoading(false);
+          return;
+        }
 
-          const position = await Location.getCurrentPositionAsync({});
-          coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
+        const position = await Location.getCurrentPositionAsync({});
+        coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
           console.log('[현재 위치] 좌표:', coords);
           
           // 현재 위치 이름 설정
           const locationName = await getLocationName(coords.latitude, coords.longitude);
           setCurrentLocation(locationName);
-        } catch (error) {
+      } catch (error) {
           console.error('[위치 오류]:', error);
-          setLoading(false);
-          return;
-        }
+        setLoading(false);
+        return;
+      }
       } else {
         // 내 농장 위치 이름 설정
         const locationName = await getLocationName(FARM_COORDS.latitude, FARM_COORDS.longitude);
         setCurrentLocation(locationName);
-      }
+    }
 
       // 현재 시간 기준으로 API 호출 시간 설정
-      const now = new Date();
-      const currentHour = now.getHours();
+    const now = new Date();
+    const currentHour = now.getHours();
       
       // 단기예보용 시간 설정
       let baseTime;
@@ -179,11 +179,11 @@ export default function FarmInfo() {
       const grid = calculateGrid(coords.latitude, coords.longitude);
       console.log('[격자 변환] 계산된 좌표:', grid);
 
-      if (!grid || !grid.x || !grid.y) {
+    if (!grid || !grid.x || !grid.y) {
         console.error('[격자 변환] 실패');
-        setLoading(false);
-        return;
-      }
+      setLoading(false);
+      return;
+    }
 
       const { base_date, base_time } = getBaseDateTime();
       console.log('[기준 시간] 설정:', { base_date, base_time });
@@ -225,10 +225,10 @@ export default function FarmInfo() {
       // 모든 API 요청을 병렬로 실행
       const [ultraFcst, shortTermFcst, midLandFcst, midTaFcst, warningFcst] = await Promise.all([
         fetchWeather('ultraFcst', {
-          nx: grid.x,
-          ny: grid.y,
-          base_date,
-          base_time,
+      nx: grid.x,
+      ny: grid.y,
+      base_date,
+      base_time,
         }),
         shortTermPromise,
         midLandPromise,
@@ -284,7 +284,7 @@ export default function FarmInfo() {
         }
         
         setWeeklyData(weatherData);
-      } else {
+    } else {
         console.warn('[주간 날씨] 데이터 없음');
         setWeeklyData(null);
       }
@@ -727,7 +727,7 @@ export default function FarmInfo() {
           });
         }
       }
-
+  
       return (
         <ScrollView style={styles.weeklyScrollView} nestedScrollEnabled={true}>
           {weeklyArray.map((item, idx) => (
@@ -839,7 +839,7 @@ export default function FarmInfo() {
           ) : (
             <Text style={styles.noWarning}>날씨 데이터를 불러올 수 없습니다.</Text>
           )}
-        </View>
+      </View>
 
         <Text style={styles.sectionTitle}>시간대별 날씨</Text>
         {loading ? (
@@ -861,9 +861,9 @@ export default function FarmInfo() {
         ) : (
           <View style={styles.warningContainer}>
             {renderWarning()}
-          </View>
+      </View>
         )}
-      </ScrollView>
+    </ScrollView>
     </View>
   );
 }
