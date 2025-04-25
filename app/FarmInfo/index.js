@@ -690,12 +690,12 @@ export default function FarmInfo() {
 
           if (shortTermMin && shortTermMax) {
             // 날씨 상태에 따른 기온 조정
-            const weather = weeklyData[`wf${midIndex}Am`] || weeklyData[`wf${midIndex}Pm`];
+            const weather = weeklyData[`wf${midIndex}Am`] || weeklyData[`wf${midIndex}Pm`] || '';
             let tempAdjustment = 0;
             
-            if (weather.includes('맑음')) tempAdjustment = 1;
-            else if (weather.includes('구름많음')) tempAdjustment = 0;
-            else if (weather.includes('흐림')) tempAdjustment = -1;
+            if (weather && weather.includes('맑음')) tempAdjustment = 1;
+            else if (weather && weather.includes('구름많음')) tempAdjustment = 0;
+            else if (weather && weather.includes('흐림')) tempAdjustment = -1;
             
             // 단기예보 데이터를 기반으로 예측
             minTemp = Math.round(parseInt(shortTermMin) + tempAdjustment);
