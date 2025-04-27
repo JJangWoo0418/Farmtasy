@@ -1,6 +1,6 @@
 // writingpage.js
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import styles from '../Components/Css/Homepage/writingpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
@@ -164,66 +164,71 @@ const WritingPage = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
         >
+            {/* === 바텀시트(모달)와 오버레이를 최상단에 위치 === */}
+            {(isCategoryModalVisible || isUploadModalVisible) && (
+                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => {
+                    isCategoryModalVisible && closeCategorySheet();
+                    isUploadModalVisible && closeUploadSheet();
+                }} />
+            )}
+
+            {/* 카테고리 바텀시트 */}
+            {isCategoryModalVisible && (
+                <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: sheetTranslateY }] }]}>
+                    <View style={styles.sheetHeader}>
+                        <Text style={styles.sheetTitle}>카테고리 선택</Text>
+                        <TouchableOpacity onPress={closeCategorySheet}>
+                            <Text style={styles.sheetClose}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.sheetOptions}>
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사질문'); setSelectedIcon(require('../../assets/farmingquestions2.png')); closeCategorySheet(); }}>
+                            <Image source={require('../../assets/FarmingQuestions.png')} style={styles.sheetIcon} />
+                            <Text style={styles.sheetLabel}>농사질문</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사공부'); setSelectedIcon(require('../../assets/studyfarming2.png')); closeCategorySheet(); }}>
+                            <Image source={require('../../assets/studyfarming.png')} style={styles.sheetIcon} />
+                            <Text style={styles.sheetLabel}>농사공부</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('자유주제'); setSelectedIcon(require('../../assets/freetopic2.png')); closeCategorySheet(); }}>
+                            <Image source={require('../../assets/freetopic.png')} style={styles.sheetIcon} />
+                            <Text style={styles.sheetLabel}>자유주제</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            )}
+
+            {/* 사진 업로드 바텀시트 */}
+            {isUploadModalVisible && (
+                <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: uploadTranslateY }] }]}>
+                    <View style={styles.sheetHeader}>
+                        <Text style={styles.sheetTitle}>사진 올리기 선택</Text>
+                        <TouchableOpacity onPress={closeUploadSheet}>
+                            <Text style={styles.sheetClose}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.sheetOptions}>
+                        <TouchableOpacity style={styles.sheetItem} onPress={handleTakePhoto}>
+                            <Image source={require('../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
+                            <Text style={styles.sheetLabel}>사진 촬영</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.sheetItem} onPress={handlePickImage}>
+                            <Image source={require('../../assets/galleryicon.png')} style={styles.sheetIcon} />
+                            <Text style={styles.sheetLabel}>앨범 선택</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
+            )}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={[styles.container, { marginTop: -60 }]}>
+                <ScrollView style={[styles.container, { marginTop: -60 }]}>
                     {/* dim 처리 */}
                     {(isCategoryModalVisible || isUploadModalVisible) && (
                         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => {
                             isCategoryModalVisible && closeCategorySheet();
                             isUploadModalVisible && closeUploadSheet();
                         }} />
-                    )}
-
-                    {/* 카테고리 바텀시트 */}
-                    {isCategoryModalVisible && (
-                        <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: sheetTranslateY }] }]}
-                        >
-                            <View style={styles.sheetHeader}>
-                                <Text style={styles.sheetTitle}>카테고리 선택</Text>
-                                <TouchableOpacity onPress={closeCategorySheet}>
-                                    <Text style={styles.sheetClose}>✕</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.sheetOptions}>
-                                <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사질문'); setSelectedIcon(require('../../assets/farmingquestions2.png')); closeCategorySheet(); }}>
-                                    <Image source={require('../../assets/FarmingQuestions.png')} style={styles.sheetIcon} />
-                                    <Text style={styles.sheetLabel}>농사질문</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사공부'); setSelectedIcon(require('../../assets/studyfarming2.png')); closeCategorySheet(); }}>
-                                    <Image source={require('../../assets/studyfarming.png')} style={styles.sheetIcon} />
-                                    <Text style={styles.sheetLabel}>농사공부</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('자유주제'); setSelectedIcon(require('../../assets/freetopic2.png')); closeCategorySheet(); }}>
-                                    <Image source={require('../../assets/freetopic.png')} style={styles.sheetIcon} />
-                                    <Text style={styles.sheetLabel}>자유주제</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </Animated.View>
-                    )}
-
-                    {/* 사진 업로드 바텀시트 */}
-                    {isUploadModalVisible && (
-                        <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: uploadTranslateY }] }]}
-                        >
-                            <View style={styles.sheetHeader}>
-                                <Text style={styles.sheetTitle}>사진 올리기 선택</Text>
-                                <TouchableOpacity onPress={closeUploadSheet}>
-                                    <Text style={styles.sheetClose}>✕</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.sheetOptions}>
-                                <TouchableOpacity style={styles.sheetItem} onPress={handleTakePhoto}>
-                                    <Image source={require('../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
-                                    <Text style={styles.sheetLabel}>사진 촬영</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.sheetItem} onPress={handlePickImage}>
-                                    <Image source={require('../../assets/galleryicon.png')} style={styles.sheetIcon} />
-                                    <Text style={styles.sheetLabel}>앨범 선택</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </Animated.View>
                     )}
 
                     {/* 헤더 */}
@@ -275,7 +280,7 @@ const WritingPage = () => {
                     <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
                         <Text style={styles.submitText}>등록</Text>
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );

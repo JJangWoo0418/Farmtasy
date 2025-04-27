@@ -109,7 +109,7 @@ export default StyleSheet.create({
     },
     bottomSheet: {
         position: 'absolute',
-        bottom: 0,
+        bottom: -50,
         left: 0,
         right: 0,
         backgroundColor: 'white',
@@ -133,13 +133,13 @@ export default StyleSheet.create({
     sheetTitle: {
         fontWeight: 'bold',
         fontSize: 16,
-    
+
         marginBottom: 10
     },
     sheetClose: {
         fontSize: 20,
         fontWeight: 'bold',
-    
+
         marginBottom: 10
     },
     sheetOptions: {
@@ -171,12 +171,12 @@ export default StyleSheet.create({
     },
     overlay: {
         position: 'absolute',
-        top: 0,
-        bottom: 0,
+        top: -200,
         left: 0,
         right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-        zIndex: 100, // 반드시 높게
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.3)', // 반투명 검정
+        zIndex: 10,
     },
 
 });
