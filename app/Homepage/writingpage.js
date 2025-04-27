@@ -6,6 +6,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import axios from 'axios';
 import API_CONFIG from '../DB/api';
+import * as ImagePicker from 'expo-image-picker';
 
 const WritingPage = () => {
     const navigation = useNavigation();
@@ -21,7 +22,49 @@ const WritingPage = () => {
     const uploadAnim = useRef(new Animated.Value(0)).current;
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    const handleTakePhoto = async () => {
+        try {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('권한 필요', '카메라 접근 권한이 필요합니다.');
+                return;
+            }
+            const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 1,
+            });
+            console.log(result);
+            if (!result.canceled) {
+                setSelectedImage(result.assets[0].uri);
+            }
+        } catch (e) {
+            Alert.alert('에러', e.message);
+        }
+    };
+
+    const handlePickImage = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('권한 필요', '앨범 접근 권한이 필요합니다.');
+                return;
+            }
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                quality: 1,
+            });
+            console.log(result);
+            if (!result.canceled) {
+                setSelectedImage(result.assets[0].uri);
+            }
+        } catch (e) {
+            Alert.alert('에러', e.message);
+        }
+    };
 
     const openCategorySheet = () => {
         setCategoryModalVisible(true);
@@ -73,7 +116,7 @@ const WritingPage = () => {
             Alert.alert('알림', '제목과 내용을 모두 입력해주세요.');
             return;
         }
-    
+
         try {
             // API_CONFIG 확인을 위한 로깅 추가
             console.log('API_CONFIG:', API_CONFIG);
@@ -87,7 +130,7 @@ const WritingPage = () => {
                 phone: phone,
                 region: region
             };
-            
+
             console.log('전송할 데이터:', postData);
 
             // 서버 요청
@@ -97,9 +140,9 @@ const WritingPage = () => {
                     'Content-Type': 'application/json',
                 }
             });
-    
+
             console.log('서버 응답:', response.data);
-    
+
             if (response.status === 200) {
                 Alert.alert('성공', '게시글이 등록되었습니다.', [
                     {
@@ -122,7 +165,7 @@ const WritingPage = () => {
             style={{ flex: 1 }}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={[styles.container, { marginTop: -60 }]}>
+                <View style={[styles.container, { marginTop: -60 }]}>
                     {/* dim 처리 */}
                     {(isCategoryModalVisible || isUploadModalVisible) && (
                         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => {
@@ -171,11 +214,11 @@ const WritingPage = () => {
                             </View>
 
                             <View style={styles.sheetOptions}>
-                                <TouchableOpacity style={styles.sheetItem}>
+                                <TouchableOpacity style={styles.sheetItem} onPress={handleTakePhoto}>
                                     <Image source={require('../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
                                     <Text style={styles.sheetLabel}>사진 촬영</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.sheetItem}>
+                                <TouchableOpacity style={styles.sheetItem} onPress={handlePickImage}>
                                     <Image source={require('../../assets/galleryicon.png')} style={styles.sheetIcon} />
                                     <Text style={styles.sheetLabel}>앨범 선택</Text>
                                 </TouchableOpacity>
@@ -218,7 +261,10 @@ const WritingPage = () => {
                         value={content}
                         onChangeText={setContent}
                     />
-
+                    {/* 사진 업로드 */}
+                    {selectedImage && (
+                        <Image source={{ uri: selectedImage }} style={{ width: 200, height: 200, alignSelf: 'center', marginBottom: 10 }} />
+                    )}
                     {/* 사진 업로드 */}
                     <TouchableOpacity style={styles.uploadBtn} onPress={openUploadSheet}>
                         <Image source={require('../../assets/cameraicon.png')} style={styles.cameraIcon} />
