@@ -22,8 +22,9 @@ const WritingPage = () => {
     const uploadAnim = useRef(new Animated.Value(0)).current;
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
 
+    // 사진 촬영 함수
     const handleTakePhoto = async () => {
         try {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -36,15 +37,16 @@ const WritingPage = () => {
                 allowsEditing: true,
                 quality: 1,
             });
-            console.log(result);
             if (!result.canceled) {
-                setSelectedImage(result.assets[0].uri);
+                // 촬영은 1장만 가능
+                setSelectedImages(prev => [...prev, result.assets[0].uri]);
             }
         } catch (e) {
             Alert.alert('에러', e.message);
         }
     };
 
+    // 앨범에서 사진 선택 함수
     const handlePickImage = async () => {
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -56,10 +58,15 @@ const WritingPage = () => {
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 quality: 1,
+                allowsMultipleSelection: true, // 여러 장 선택 허용
+                selectionLimit: 5, // 선택 가능 최대 개수 (원하는 만큼)
             });
-            console.log(result);
             if (!result.canceled) {
-                setSelectedImage(result.assets[0].uri);
+                // 여러 장 선택 시 result.assets가 배열로 옴
+                setSelectedImages(prev => [
+                    ...prev,
+                    ...result.assets.map(asset => asset.uri)
+                ]);
             }
         } catch (e) {
             Alert.alert('에러', e.message);
@@ -267,9 +274,39 @@ const WritingPage = () => {
                         onChangeText={setContent}
                     />
                     {/* 사진 업로드 */}
-                    {selectedImage && (
-                        <Image source={{ uri: selectedImage }} style={{ width: 200, height: 200, alignSelf: 'center', marginBottom: 10 }} />
-                    )}
+                    <ScrollView
+                        horizontal={true}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, paddingHorizontal: 10 }}
+                    >
+                        {selectedImages.map((uri, idx) => (
+                            <TouchableOpacity
+                                key={idx}
+                                onPress={() => {
+                                    Alert.alert(
+                                        "사진 삭제",
+                                        "이 사진을 삭제하시겠습니까?",
+                                        [
+                                            { text: "취소", style: "cancel" },
+                                            {
+                                                text: "삭제",
+                                                style: "destructive",
+                                                onPress: () => {
+                                                    setSelectedImages(prev => prev.filter((_, i) => i !== idx));
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <Image
+                                    source={{ uri }}
+                                    style={{ width: 200, height: 200, borderRadius: 10, marginRight: 10, marginLeft: 10 }}
+                                />
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                     {/* 사진 업로드 */}
                     <TouchableOpacity style={styles.uploadBtn} onPress={openUploadSheet}>
                         <Image source={require('../../assets/cameraicon.png')} style={styles.cameraIcon} />
