@@ -4,6 +4,15 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const app = express();
+const multer = require('multer');
+const path = require('path');
+const upload = multer({ dest: 'uploads/' }); // uploads 폴더에 저장
+const AWS = require('aws-sdk');
+const s3 = new AWS.S3({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION,
+});
 
 // CORS 설정을 더 구체적으로
 app.use(cors({
@@ -49,7 +58,7 @@ app.get('/', (req, res) => {
 // 회원가입 API
 app.post('/api/register', async (req, res) => {
     console.log('회원가입 요청 받음:', req.body);
-    
+
     const { phone, name, password, region, profile, introduction } = req.body;
 
     try {
@@ -91,15 +100,41 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+app.post('/api/s3/presign', (req, res) => {
+    const { fileName, fileType } = req.body;
+    const params = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: fileName,
+        Expires: 60,
+        ContentType: fileType,
+        // ACL: 'public-read',
+    };
+    s3.getSignedUrl('putObject', params, (err, url) => {
+        if (err) return res.status(500).json({ error: err });
+        res.json({ url });
+    });
+});
+
+// 이미지 업로드 엔드포인트
+app.post('/api/post/image_urls', upload.array('images'), (req, res) => {
+    try {
+        // 업로드된 파일들의 경로를 배열로 반환
+        const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+        res.json({ imageUrls });
+    } catch (error) {
+        console.error('이미지 업로드 오류:', error);
+        res.status(500).json({ message: '이미지 업로드 중 오류 발생' });
+    }
+});
 // 게시글 생성 API 추가
 app.post('/api/post', async (req, res) => {
     console.log('게시글 작성 요청 받음:', req.body);
-    
+
     try {
         // 테이블 존재 여부 확인 방식 수정
         const [tables] = await pool.query("SHOW TABLES");
         const postTableExists = tables.some(table => table.Tables_in_farmtasy_db === 'post');
-        
+
         if (postTableExists) {
             console.log('post 테이블 확인 완료');
         } else {
@@ -110,13 +145,12 @@ app.post('/api/post', async (req, res) => {
             });
         }
 
-        const { post_title, name, post_content, post_category, phone, region } = req.body;
+        const { post_title, name, post_content, post_category, phone, region, image_urls } = req.body;
 
-        // 테이블 이름도 소문자로 수정
         const [result] = await pool.query(
-            `INSERT INTO post (post_title, name, post_content, post_category, phone, region) 
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [post_title, name, post_content, post_category, phone, region]
+            `INSERT INTO post (post_title, name, post_content, post_category, phone, region, image_urls) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [post_title, name, post_content, post_category, phone, region, JSON.stringify(image_urls)]
         );
 
         console.log('게시글 등록 성공:', result);

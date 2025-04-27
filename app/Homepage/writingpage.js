@@ -125,44 +125,65 @@ const WritingPage = () => {
         }
 
         try {
-            // API_CONFIG 확인을 위한 로깅 추가
-            console.log('API_CONFIG:', API_CONFIG);
-            console.log('BASE_URL:', API_CONFIG.BASE_URL);
-
+            // 1. S3에 이미지 업로드
+            let imageUrls = [];
+            for (const uri of selectedImages) {
+                const filename = uri.split('/').pop();
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : `image`;
+            
+                // 1) presigned URL 요청
+                const presignRes = await axios.post(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
+                    fileName: filename,
+                    fileType: type,
+                });
+                const presignedUrl = presignRes.data.url;
+            
+                // 2) 이미지 파일 읽기 (React Native에서는 fetch로 Blob 변환)
+                const response = await fetch(uri);
+                const blob = await response.blob();
+            
+                // 3) S3에 직접 업로드
+                const uploadRes = await fetch(presignedUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': type },
+                    body: blob,
+                });
+                console.log('S3 upload response:', uploadRes.status, uploadRes.statusText);
+            
+                if (uploadRes.status !== 200) {
+                    // 에러 처리
+                    const errorText = await uploadRes.text();
+                    console.error('S3 upload error:', errorText);
+                    Alert.alert('이미지 업로드 실패', `S3 업로드 실패: ${uploadRes.status}`);
+                    return;
+                }
+            
+                // 4) S3 이미지 URL 생성
+                const s3ImageUrl = presignedUrl.split('?')[0];
+                imageUrls.push(s3ImageUrl);
+            }
+    
+            // 2. 게시글 데이터 전송
             const postData = {
                 post_title: title,
                 name: name,
+                region: region,
                 post_content: content,
+                image_urls: imageUrls, // S3 URL 배열
                 post_category: selectedCategory,
                 phone: phone,
-                region: region
             };
-
-            console.log('전송할 데이터:', postData);
-
-            // 서버 요청
-            const response = await axios.post(`${API_CONFIG.BASE_URL}/api/post`, postData, {
-                timeout: API_CONFIG.TIMEOUT,
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+    
+            await axios.post(`${API_CONFIG.BASE_URL}/api/post`, postData, {
+                headers: { 'Content-Type': 'application/json' }
             });
-
-            console.log('서버 응답:', response.data);
-
-            if (response.status === 200) {
-                Alert.alert('성공', '게시글이 등록되었습니다.', [
-                    {
-                        text: '확인',
-                        onPress: () => navigation.goBack()
-                    }
-                ]);
-            }
+    
+            Alert.alert('성공', '게시글이 등록되었습니다.');
+            navigation.goBack();
         } catch (error) {
             console.error('게시글 등록 오류:', error);
-            console.log('에러 상세:', error.response?.data);
-            console.log('현재 사용 중인 BASE_URL:', API_CONFIG.BASE_URL);
-            Alert.alert('오류', '게시글 등록 중 문제가 발생했습니다. 서버 연결을 확인해주세요.');
+            Alert.alert('오류', '게시글 등록 중 문제가 발생했습니다.');
         }
     };
 
