@@ -143,38 +143,38 @@ const PostPage = () => {
         }).start();
     };
 
-    const triggerHeartAnimation = (postId) => {
-        // 애니메이션 값이 없으면 새로 생성
-        if (!heartAnimations[postId]) {
-            const newAnimation = new Animated.Value(1);
-            setHeartAnimations(prev => ({
-                ...prev,
-                [postId]: newAnimation
-            }));
-            // 새로 생성된 애니메이션으로 바로 실행
-            newAnimation.setValue(0.8);
-            Animated.spring(newAnimation, {
-                toValue: 1,
-                friction: 3,
-                useNativeDriver: true,
-            }).start();
-        } else {
-            // 기존 애니메이션 실행
-            const currentAnimation = heartAnimations[postId];
-            currentAnimation.setValue(0.8);
-            Animated.spring(currentAnimation, {
-                toValue: 1,
-                friction: 3,
-                useNativeDriver: true,
-            }).start();
-        }
+    // const triggerHeartAnimation = (postId) => {
+    //     // 애니메이션 값이 없으면 새로 생성
+    //     if (!heartAnimations[postId]) {
+    //         const newAnimation = new Animated.Value(1);
+    //         setHeartAnimations(prev => ({
+    //             ...prev,
+    //             [postId]: newAnimation
+    //         }));
+    //         // 새로 생성된 애니메이션으로 바로 실행
+    //         newAnimation.setValue(0.8);
+    //         Animated.spring(newAnimation, {
+    //             toValue: 1,
+    //             friction: 3,
+    //             useNativeDriver: true,
+    //         }).start();
+    //     } else {
+    //         // 기존 애니메이션 실행
+    //         const currentAnimation = heartAnimations[postId];
+    //         currentAnimation.setValue(0.8);
+    //         Animated.spring(currentAnimation, {
+    //             toValue: 1,
+    //             friction: 3,
+    //             useNativeDriver: true,
+    //         }).start();
+    //     }
 
-        // 좋아요 상태 토글
-        setLikedPosts(prev => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
-    };
+    //     // 좋아요 상태 토글
+    //     setLikedPosts(prev => ({
+    //         ...prev,
+    //         [postId]: !prev[postId]
+    //     }));
+    // };
 
     // 북마크 애니메이션 트리거 함수 추가
     const triggerBookmarkAnimation = (postId) => {
@@ -203,14 +203,41 @@ const PostPage = () => {
         }));
     };
 
-    const handleLike = (postId) => {
+    const handleLike = async (postId, currentLike) => {
+        // 1. 좋아요 애니메이션 실행 (생략, 기존 코드 유지)
+    
+        // 2. UI likes 상태는 setPosts에서 currentLike만 신뢰!
         setPosts(prevPosts =>
             prevPosts.map(post =>
                 post.id === postId
-                    ? { ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 }
+                    ? {
+                        ...post,
+                        isLiked: !currentLike,
+                        likes: !currentLike ? post.likes + 1 : post.likes - 1
+                    }
                     : post
             )
         );
+    
+        // 3. setLikedPosts는 애니메이션용 (likes 조작 X)
+        setLikedPosts(prev => ({
+            ...prev,
+            [postId]: !currentLike
+        }));
+    
+        // 4. 서버에 좋아요 상태 저장 요청
+        try {
+            await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    postId,
+                    like: !currentLike ? 1 : 0, // 1: 좋아요, 0: 취소
+                }),
+            });
+        } catch (e) {
+            // 실패 시 롤백 등 처리 가능
+        }
     };
 
     const handleBookmark = (postId) => {
@@ -225,7 +252,7 @@ const PostPage = () => {
 
     const renderPost = ({ item }) => {
         console.log('item.image_urls:', item.image_urls); // 추가
-        const isLiked = likedPosts[item.id] || false;
+        const isLiked = item.isLiked; // posts의 isLiked만 신뢰
         const isBookmarked = bookmarkedPosts[item.id] || false;
         const heartAnimation = heartAnimations[item.id] || new Animated.Value(1);
         const bookmarkAnimation = bookmarkAnimations[item.id] || new Animated.Value(1);
@@ -267,16 +294,16 @@ const PostPage = () => {
                 </TouchableOpacity>
                 <View style={styles.iconRow}>
                     <View style={[styles.iconGroup, styles.likeIconGroup]}>
-                        <TouchableOpacity onPress={() => triggerHeartAnimation(item.id)}>
+                        <TouchableOpacity onPress={() => handleLike(item.id, item.isLiked)}>
                             <Animated.Image
                                 source={isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
                                 style={[
                                     styles.icon,
-                                    { transform: [{ scale: heartAnimation }] }
+                                    { transform: [{ scale: heartAnimations[item.id] || new Animated.Value(1) }] }
                                 ]}
                             />
                         </TouchableOpacity>
-                        <Text style={styles.iconText}>{isLiked ? item.likes + 1 : item.likes}</Text>
+                        <Text style={styles.iconText}>{item.likes}</Text>
                     </View>
                     <View style={styles.iconGroup}>
                         <Image source={require('../../assets/commenticon.png')} style={styles.icon2} />

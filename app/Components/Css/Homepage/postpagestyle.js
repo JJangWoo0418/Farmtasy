@@ -91,8 +91,8 @@ export default StyleSheet.create({
         marginBottom: 8,
     },
     profileImg: {
-        width: 32,
-        height: 32,
+        width: 30,
+        height: 30,
         borderRadius: 19,
         marginRight: 10,
         marginBottom: 2

@@ -97,6 +97,20 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// 좋아요 저장 API
+app.post('/api/post/post_like', async (req, res) => {
+    const { postId, like } = req.body;
+    try {
+        await pool.query(
+            'UPDATE post SET post_like = ? WHERE post_id = ?',
+            [like, postId]
+        );
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: '좋아요 저장 실패' });
+    }
+});
+
 // 게시글 목록 조회 API 추가
 app.get('/api/post', async (req, res) => {
     try {
