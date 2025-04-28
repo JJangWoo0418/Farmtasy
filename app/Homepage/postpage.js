@@ -3,6 +3,7 @@ import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dim
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../DB/api';
+import userIcon from '../../assets/usericon.png'; // 실제 경로에 맞게 수정
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -225,7 +226,14 @@ const PostPage = () => {
             <View style={styles.postBox}>
                 <TouchableOpacity onPress={navigateToDetail}>
                     <View style={styles.postHeader}>
-                        <Image source={item.profile} style={styles.profileImg} />
+                        <Image
+                            source={
+                                item.profile
+                                    ? { uri: item.profile }
+                                    : userIcon
+                            }
+                            style={styles.profileImg}
+                        />
                         <View style={styles.userInfoContainer}>
                             <Text style={styles.username}>{item.user}</Text>
                             <Text style={styles.time}>{item.time}</Text>

@@ -91,10 +91,11 @@ export default StyleSheet.create({
         marginBottom: 8,
     },
     profileImg: {
-        width: 38,
-        height: 38,
+        width: 32,
+        height: 32,
         borderRadius: 19,
         marginRight: 10,
+        marginBottom: 2
     },
     userInfoContainer: {
         flex: 1,
