@@ -119,11 +119,21 @@ export default StyleSheet.create({
         lineHeight: 22,
         marginBottom: 10,
     },
+    postImages: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 8,
+        marginBottom: 8,
+        gap: 8, // RN 0.71+ 지원, 아니면 marginRight/marginBottom 사용
+    },
     postImage: {
-        width: '100%',
-        height: 180,
-        borderRadius: 10,
-        marginBottom: 10,
+        width: 200,
+        height: 200,
+        borderRadius: 8,
+        marginRight: 8,
+        marginBottom: 8,
+        backgroundColor: '#eee', // 로딩 중에도 영역 보이게
+        resizeMode: 'cover',
     },
     iconRow: {
         flexDirection: 'row',

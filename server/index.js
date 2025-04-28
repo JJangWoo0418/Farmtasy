@@ -97,6 +97,62 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// 게시글 목록 조회 API 추가
+app.get('/api/post', async (req, res) => {
+    try {
+        const { category } = req.query;
+
+        let query = 'SELECT * FROM post';
+        let params = [];
+
+        if (category) {
+            query += ' WHERE post_category = ?';
+            params.push(category);
+        }
+
+        // 1. DB에서 rows 받아오기
+        const [rows] = await pool.query(query, params);
+
+        // 2. ★★★ 여기에서 image_urls 안전하게 파싱 ★★★
+        const posts = rows.map(row => {
+            let image_urls = [];
+            if (row.image_urls) {
+                try {
+                    image_urls = JSON.parse(row.image_urls);
+                    // 2중 배열일 때만 평탄화
+                    while (Array.isArray(image_urls) && Array.isArray(image_urls[0])) {
+                        image_urls = image_urls[0];
+                    }
+                    if (!Array.isArray(image_urls)) {
+                        image_urls = [image_urls];
+                    }
+                } catch (e) {
+                    image_urls = [row.image_urls];
+                }
+            }
+            console.log('서버에서 최종 image_urls:', image_urls);
+            return {
+                id: row.post_id,
+                user: row.name,
+                time: row.post_created_at,
+                text: row.post_content,
+                image_urls,
+                category: row.post_category,
+                likes: row.post_like || 0,
+            };
+        });
+
+        // 3. 프론트로 posts 배열 반환
+        res.json(posts);
+    } catch (error) {
+        console.error('게시글 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '게시글을 불러오지 못했습니다.'
+        });
+    }
+});
+
 app.post('/api/s3/presign', (req, res) => {
     const { fileName, fileType } = req.body;
     const params = {
