@@ -124,14 +124,13 @@ export default StyleSheet.create({
         flexWrap: 'wrap',
         marginTop: 8,
         marginBottom: 8,
-        gap: 8, // RN 0.71+ 지원, 아니면 marginRight/marginBottom 사용
     },
     postImage: {
-        width: 200,
-        height: 200,
-        borderRadius: 8,
-        marginRight: 8,
+        width: 375,
+        height: 375,
+        marginRight: 10,
         marginBottom: 8,
+        marginLeft: -8,
         backgroundColor: '#eee', // 로딩 중에도 영역 보이게
         resizeMode: 'cover',
     },

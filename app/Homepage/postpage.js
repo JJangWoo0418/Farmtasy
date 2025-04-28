@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing } from 'react-native';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../DB/api';
@@ -29,6 +29,53 @@ const PostPage = () => {
         categoryDesc = '',
         categoryIcon = require('../../assets/Xicon.png'),
     } = route.params || {};
+
+    // 이미지 로딩 애니메이션 추가
+    const RenderImageWithLoading = ({ url }) => {
+        const [loading, setLoading] = useState(true);
+
+        return (
+            <View
+                style={{
+                    width: 375,
+                    height: 375,
+                    marginRight: 10,
+                    marginBottom: 8,
+                    marginLeft: -8,
+                    backgroundColor: '#eee',
+                    borderRadius: 0,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    overflow: 'hidden',
+                }}
+            >
+                {loading && (
+                    <ActivityIndicator
+                        size="large"
+                        color="#22CC6B"
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                    />
+                )}
+                <Image
+                    source={{ uri: url }}
+                    style={{
+                        width: 375,
+                        height: 375,
+                        resizeMode: 'cover',
+                    }}
+                    onLoadEnd={() => setLoading(false)}
+                />
+            </View>
+        );
+    };
 
     // 게시글 데이터 fetch
     useEffect(() => {
@@ -192,7 +239,7 @@ const PostPage = () => {
                         {item.image_urls && item.image_urls.flat().length > 0 && (
                             <View style={styles.postImages}>
                                 {item.image_urls.flat().map((url, idx) => (
-                                    <Image key={url + idx} source={{ uri: url }} style={styles.postImage} />
+                                    <RenderImageWithLoading key={url + idx} url={url} />
                                 ))}
                             </View>
                         )}
