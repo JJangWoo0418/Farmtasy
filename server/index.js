@@ -4,9 +4,6 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const app = express();
-const multer = require('multer');
-const path = require('path');
-const upload = multer({ dest: 'uploads/' }); // uploads 폴더에 저장
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -115,17 +112,6 @@ app.post('/api/s3/presign', (req, res) => {
     });
 });
 
-// 이미지 업로드 엔드포인트
-app.post('/api/post/image_urls', upload.array('images'), (req, res) => {
-    try {
-        // 업로드된 파일들의 경로를 배열로 반환
-        const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
-        res.json({ imageUrls });
-    } catch (error) {
-        console.error('이미지 업로드 오류:', error);
-        res.status(500).json({ message: '이미지 업로드 중 오류 발생' });
-    }
-});
 // 게시글 생성 API 추가
 app.post('/api/post', async (req, res) => {
     console.log('게시글 작성 요청 받음:', req.body);
