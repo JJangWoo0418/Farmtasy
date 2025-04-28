@@ -31,6 +31,18 @@ const PostPage = () => {
         categoryIcon = require('../../assets/Xicon.png'),
     } = route.params || {};
 
+
+    // 날짜 포맷 함수
+    const formatDate = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hour = date.getHours().toString().padStart(2, '0');
+        const min = date.getMinutes().toString().padStart(2, '0');
+        return `${month}월 ${day}일 ${hour}:${min}`;
+    };
+
     // 이미지 로딩 애니메이션 추가
     const RenderImageWithLoading = ({ url }) => {
         const [loading, setLoading] = useState(true);
@@ -236,7 +248,7 @@ const PostPage = () => {
                         />
                         <View style={styles.userInfoContainer}>
                             <Text style={styles.username}>{item.user}</Text>
-                            <Text style={styles.time}>{item.time}</Text>
+                            <Text style={styles.time}>{formatDate(item.time)}</Text>
                         </View>
                         <TouchableOpacity style={styles.moreBtn}>
                             <Image source={require('../../assets/moreicon.png')} />
