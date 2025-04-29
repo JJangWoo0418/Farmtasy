@@ -1497,3 +1497,5 @@ export default function FarmInfo() {
     </ScrollView>
   );
 }
+
+
