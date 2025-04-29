@@ -1,4 +1,4 @@
-// CSV 파일에서 과거 기온 데이터를 읽어오는 함수
+// CSV 파일에서 과거 기온 데이터를 읽어오는 함수수
 export const getHistoricalTemperature = async (date) => {
   try {
     const response = await fetch('../Utils/ta_20250420034032.csv');

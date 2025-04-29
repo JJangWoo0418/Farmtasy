@@ -1,12 +1,14 @@
 // app/FarmInfo/index.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, ScrollView, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/FarmInfo/index.js';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
 import { getBaseDateTime } from '../Components/Utils/timeUtils';
 import { getMidLandRegId } from '../Components/Utils/regionMapper';
 import * as Location from 'expo-location';
 import { getHistoricalTemperature } from '../Components/Utils/weatherUtils';
+import { useWeather } from '../context/WeatherContext';
 
 const FARM_COORDS = {
   latitude: 36.953862288,
@@ -14,12 +16,24 @@ const FARM_COORDS = {
 };
 
 export default function FarmInfo() {
+  const {
+    weatherData,
+    shortTermData,
+    weeklyData,
+    locationName,
+    baseTimeInfo,
+    isLoading,
+    setWeatherData,
+    setShortTermData,
+    setWeeklyData,
+    setLocationName,
+    setBaseTimeInfo,
+    setIsLoading
+  } = useWeather();
+
+  const { weatherData: preloadedWeatherData, shortTermData: preloadedShortTermData, weeklyData: preloadedWeeklyData, locationName: preloadedLocation, baseTime: preloadedBaseTime } = useLocalSearchParams();
   const [mode, setMode] = useState('farm');
-  const [weatherData, setWeatherData] = useState(null);
-  const [shortTermData, setShortTermData] = useState(null);
-  const [weeklyData, setWeeklyData] = useState(null);
   const [warningData, setWarningData] = useState('');
-  const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [forecastDateStr, setForecastDateStr] = useState('');
   const [baseTime, setBaseTime] = useState('');
@@ -39,7 +53,7 @@ export default function FarmInfo() {
 
   const loadWeather = async () => {
     try {
-    setLoading(true);
+    setIsLoading(true);
     let coords = FARM_COORDS;
       console.log('[날씨 로드] 시작 - 모드:', mode);
       console.log('[날씨 로드] 좌표:', coords);
@@ -49,7 +63,7 @@ export default function FarmInfo() {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
             console.error('[위치 권한] 거부됨');
-          setLoading(false);
+          setIsLoading(false);
           return;
         }
 
@@ -65,7 +79,7 @@ export default function FarmInfo() {
           setCurrentLocation(locationName);
       } catch (error) {
           console.error('[위치 오류]:', error);
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
       } else {
@@ -181,7 +195,7 @@ export default function FarmInfo() {
 
     if (!grid || !grid.x || !grid.y) {
         console.error('[격자 변환] 실패');
-      setLoading(false);
+      setIsLoading(false);
       return;
     }
 
@@ -294,27 +308,18 @@ export default function FarmInfo() {
         setWarningData(warningFcst);
       }
 
-    setLoading(false);
+    setIsLoading(false);
     } catch (error) {
       console.error('[날씨 로드] 전체 중 오류:', error);
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
-      if (!isMounted) return;
-      await loadWeather();
-    };
-    
-    loadData();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [mode]);
+    if (!weatherData || !shortTermData || !weeklyData) {
+      loadWeather();
+    }
+  }, [weatherData, shortTermData, weeklyData]);
 
   useEffect(() => {
     const loadHistoricalTemps = async () => {
@@ -362,6 +367,32 @@ export default function FarmInfo() {
     
     loadHistoricalTemps();
   }, [weeklyData]);
+
+  useEffect(() => {
+    // 전달받은 데이터가 있으면 상태 업데이트
+    if (preloadedWeatherData && preloadedShortTermData && preloadedWeeklyData) {
+      try {
+        console.log('[미리 로드된 데이터] 사용');
+        setWeatherData(JSON.parse(preloadedWeatherData));
+        setShortTermData(JSON.parse(preloadedShortTermData));
+        setWeeklyData(JSON.parse(preloadedWeeklyData));
+        
+        // 위치 정보 설정
+        setCurrentLocation(preloadedLocation || '위치 정보 없음');
+        
+        // 기준 시간 정보 설정
+        if (preloadedBaseTime) {
+          const baseTimeInfo = JSON.parse(preloadedBaseTime);
+          setBaseTimeInfo(baseTimeInfo);
+        }
+      } catch (error) {
+        console.error('[미리 로드된 데이터] 파싱 오류:', error);
+        loadWeather();  // 파싱 오류 시 새로 로드
+      }
+    } else {
+      loadWeather();  // 미리 로드된 데이터가 없으면 새로 로드
+    }
+  }, [preloadedWeatherData, preloadedShortTermData, preloadedWeeklyData, preloadedLocation, preloadedBaseTime]);
 
   const getEmoji = (text) => {
     if (!text) return '❓';
@@ -789,7 +820,7 @@ export default function FarmInfo() {
 
       <ScrollView style={styles.scrollContainer} nestedScrollEnabled={true}>
         <View style={styles.currentWeatherBox}>
-          {loading ? (
+          {isLoading ? (
             <Text style={styles.loading}>로딩중...</Text>
           ) : weatherData?.response?.body?.items?.item ? (
             <>
@@ -842,21 +873,21 @@ export default function FarmInfo() {
       </View>
 
         <Text style={styles.sectionTitle}>시간대별 날씨</Text>
-        {loading ? (
+        {isLoading ? (
           <Text style={styles.loading}>로딩중...</Text>
         ) : (
           renderForecast()
         )}
 
         <Text style={styles.sectionTitle}>주간 날씨</Text>
-        {loading ? (
+        {isLoading ? (
           <Text style={styles.loading}>로딩중...</Text>
         ) : (
           renderWeekly()
         )}
 
         <Text style={styles.sectionTitle}>기상 특보</Text>
-        {loading ? (
+        {isLoading ? (
           <Text style={styles.loading}>로딩중...</Text>
         ) : (
           <View style={styles.warningContainer}>
