@@ -137,7 +137,22 @@ const PostPage = () => {
         categoryTitle = '카테고리 없음',
         categoryDesc = '',
         categoryIcon = require('../../assets/Xicon.png'),
+        userData,
+        phone = '',
+        name = '',
+        region = '지역 미설정'
     } = route.params || {};
+
+    // 받은 사용자 정보 로깅
+    useEffect(() => {
+        console.log('PostPage에서 받은 route.params:', route.params);
+        console.log('PostPage에서 받은 사용자 정보:', {
+            userData,
+            phone,
+            name,
+            region
+        });
+    }, [route.params]);
 
     // 날짜 포맷 함수
     const formatDate = (isoString) => {
@@ -247,10 +262,13 @@ const PostPage = () => {
                 body: JSON.stringify({
                     postId,
                     like: !currentLike ? 1 : 0,
+                    phone
                 }),
             });
-        } catch (e) {}
-    }, []);
+        } catch (e) {
+            console.error('좋아요 처리 중 오류:', e);
+        }
+    }, [phone]);
 
     // renderPost useCallback으로 고정
     const renderPost = useCallback(

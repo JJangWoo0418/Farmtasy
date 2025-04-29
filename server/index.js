@@ -99,14 +99,31 @@ app.post('/api/register', async (req, res) => {
 
 // 좋아요 저장 API
 app.post('/api/post/post_like', async (req, res) => {
-    const { postId, like } = req.body;
+    const { postId, like, phone } = req.body;
     try {
+        if (like) {
+            // 좋아요 추가
+            await pool.query(
+                'INSERT INTO post_liked_users (post_id, user_phone) VALUES (?, ?)',
+                [postId, phone]
+            );
+        } else {
+            // 좋아요 취소
+            await pool.query(
+                'DELETE FROM post_liked_users WHERE post_id = ? AND user_phone = ?',
+                [postId, phone]
+            );
+        }
+        
+        // post 테이블의 좋아요 수 업데이트
         await pool.query(
-            'UPDATE post SET post_like = ? WHERE post_id = ?',
-            [like, postId]
+            'UPDATE post SET post_like = (SELECT COUNT(*) FROM post_liked_users WHERE post_id = ?) WHERE post_id = ?',
+            [postId, postId]
         );
+        
         res.json({ success: true });
     } catch (error) {
+        console.error('좋아요 처리 중 오류:', error);
         res.status(500).json({ success: false, message: '좋아요 저장 실패' });
     }
 });

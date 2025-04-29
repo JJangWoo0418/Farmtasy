@@ -35,6 +35,14 @@ const HomePage = () => {
     };
 
     const goToPostPage = (category) => {
+        console.log('현재 route.params:', route.params);
+        console.log('전달되는 사용자 정보:', {
+            userData: route.params?.userData,
+            phone: route.params?.phone,
+            name: route.params?.name,
+            region: route.params?.region
+        });
+
         if (category === '자유주제') {
             router.push({
                 pathname: 'Homepage/postpage',
@@ -43,6 +51,10 @@ const HomePage = () => {
                     categoryTitle: '화목한 농부들의 자유주제',
                     categoryDesc: '다양한 주제로 소통해 보세요',
                     categoryIcon: require('../../assets/freetopic2.png'),
+                    userData: route.params?.userData,
+                    phone: route.params?.phone,
+                    name: route.params?.name,
+                    region: route.params?.region || '지역 미설정'
                 }
             });
         } else if (category === '농사공부') {
@@ -53,6 +65,10 @@ const HomePage = () => {
                     categoryTitle: '똑똑한 농부들의 농사공부',
                     categoryDesc: '유익한 정보들을 공유해보세요',
                     categoryIcon: require('../../assets/studyfarming2.png'),
+                    userData: route.params?.userData,
+                    phone: route.params?.phone,
+                    name: route.params?.name,
+                    region: route.params?.region || '지역 미설정'
                 }
             });
         } else if (category === '농사질문') {
@@ -63,6 +79,10 @@ const HomePage = () => {
                     categoryTitle: '질문은 배움의 시작 농사질문',
                     categoryDesc: '농사에 대한 질문을 남겨보세요',
                     categoryIcon: require('../../assets/farmingquestions2.png'),
+                    userData: route.params?.userData,
+                    phone: route.params?.phone,
+                    name: route.params?.name,
+                    region: route.params?.region || '지역 미설정'
                 }
             });
         }
