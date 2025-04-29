@@ -241,7 +241,24 @@ const PostPage = () => {
     // 좋아요 핸들러 useCallback
     const handleLike = useCallback(async (postId, currentLike) => {
         console.log('handleLike 호출:', { postId, currentLike, phone });
-        
+        // 하트 애니메이션 동작
+        if (!heartAnimationsRef.current[postId]) {
+            heartAnimationsRef.current[postId] = new Animated.Value(1);
+        }
+        Animated.sequence([
+            Animated.timing(heartAnimationsRef.current[postId], {
+                toValue: 1.5,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.spring(heartAnimationsRef.current[postId], {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
+        // 기존 optimistic UI 코드
         setPosts(prevPosts =>
             prevPosts.map(post =>
                 post.id === postId
@@ -258,12 +275,6 @@ const PostPage = () => {
             [postId]: !currentLike
         }));
         try {
-            console.log('좋아요 요청 데이터:', {
-                postId,
-                like: !currentLike ? 1 : 0,
-                phone
-            });
-            
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -273,10 +284,7 @@ const PostPage = () => {
                     phone
                 }),
             });
-
             const result = await response.json();
-            console.log('좋아요 응답:', result);
-
             if (!result.success) {
                 throw new Error(result.message || '좋아요 처리 실패');
             }
