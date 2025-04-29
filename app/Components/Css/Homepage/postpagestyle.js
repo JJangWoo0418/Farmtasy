@@ -169,11 +169,12 @@ export default StyleSheet.create({
         resizeMode: 'contain',
     },
     icon3: {
-        width: 18,
-        height: 22,
+        width: 20,
+        height: 24,
         marginRight: 1,
         resizeMode: 'contain',
-        marginLeft: 190
+        marginLeft: 210,
+        marginBottom: 5
     },
     writeButton: {
         position: 'absolute',

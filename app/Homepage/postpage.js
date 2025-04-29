@@ -9,6 +9,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // PostItem 컴포넌트 분리 및 memo 적용
 const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnimation, isBookmarked, navigateToDetail, formatDate }) => (
+
     <View style={styles.postBox}>
         <TouchableOpacity onPress={navigateToDetail}>
             <View style={styles.postHeader}>
@@ -62,7 +63,6 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                         ]}
                     />
                 </TouchableOpacity>
-                <Text style={styles.iconText}>{isBookmarked ? item.bookmarks + 1 : item.bookmarks}</Text>
             </View>
         </View>
     </View>
@@ -252,16 +252,6 @@ const PostPage = () => {
         } catch (e) {}
     }, []);
 
-    const handleBookmark = (postId) => {
-        setPosts(prevPosts =>
-            prevPosts.map(post =>
-                post.id === postId
-                    ? { ...post, isBookmarked: !post.isBookmarked, bookmarks: post.isBookmarked ? post.bookmarks - 1 : post.bookmarks + 1 }
-                    : post
-            )
-        );
-    };
-
     // renderPost useCallback으로 고정
     const renderPost = useCallback(
         ({ item }) => {
@@ -386,7 +376,7 @@ const PostPage = () => {
                                 opacity: writeButtonAnim,
                             }]}
                         >
-                            글쓰기
+                            글쓰기   
                         </Animated.Text>
                     )}
                     <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
