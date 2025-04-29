@@ -163,69 +163,86 @@ export const MarketPriceService = {
   async getItemCodes(searchKeyword = '') {
     try {
       // 농산물 카테고리 정의
-      const CROP_CATEGORIES = ['과일', '채소', '곡류', '서류', '특작', '버섯'];
-      
-      // 샘플 API 제한으로 인해 페이지당 5개씩 가져오기
-      const pageSize = 5;
+      const CROP_CATEGORIES = {
+        '과일류': ['사과', '배', '복숭아', '포도', '감귤', '단감'],
+        '채소류': ['배추', '무', '양파', '마늘', '대파', '얼갈이배추', '양배추', '시금치', '상추', '수박', '오이', '호박', '토마토'],
+        '특용작물': ['참깨', '땅콩', '들깨', '느타리버섯', '팽이버섯', '새송이버섯'],
+        '곡류': ['쌀', '찹쌀', '보리', '콩', '팥', '녹두', '메밀'],
+        '서류': ['감자', '고구마']
+      };
+
       let allItems = [];
       let currentPage = 1;
-      let hasMoreData = true;
+      const pageSize = 5; // API 제한으로 인해 5개로 고정
 
-      while (hasMoreData && currentPage <= 20) { // 최대 100개까지 가져오기 (5개 * 20페이지)
+      // 전체 데이터를 가져올 때까지 반복
+      while (currentPage <= 10) { // 최대 50개 항목까지만 조회 (5개 * 10페이지)
         const url = `${BASE_URL}/sample/xml/${GRID_IDS.ITEM_CODE}/${currentPage}/${pageSize}?ServiceKey=${MARKET_API_KEY}`;
-        console.log('[DEBUG] 요청 URL:', url);
+        console.log('[DEBUG] 페이지 요청:', currentPage);
         
         const response = await fetch(url);
-        console.log('[DEBUG] 응답 상태:', response.status);
-        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const xmlData = await response.text();
-        console.log('[DEBUG] XML 응답:', xmlData);
-        
         const jsonData = await parseXmlToJson(xmlData);
         
-        if (!jsonData || !jsonData[GRID_IDS.ITEM_CODE]) {
-          break;
-        }
-        
-        const gridData = jsonData[GRID_IDS.ITEM_CODE];
-        
-        if (!gridData.row) {
+        if (!jsonData || !jsonData[GRID_IDS.ITEM_CODE] || !jsonData[GRID_IDS.ITEM_CODE].row) {
           break;
         }
 
-        // 단일 행인 경우 배열로 변환
-        const rows = Array.isArray(gridData.row) ? gridData.row : [gridData.row];
-        
+        const rows = Array.isArray(jsonData[GRID_IDS.ITEM_CODE].row) 
+          ? jsonData[GRID_IDS.ITEM_CODE].row 
+          : [jsonData[GRID_IDS.ITEM_CODE].row];
+
         // 농산물 카테고리에 해당하는 항목만 필터링
-        const filteredRows = rows.filter(item => 
-          item.LARGENAME && CROP_CATEGORIES.includes(item.LARGENAME)
-        );
-        
-        allItems = [...allItems, ...filteredRows];
-        
-        // 더 이상 데이터가 없거나 5개 미만의 결과가 반환된 경우 중단
-        if (rows.length < pageSize) {
-          hasMoreData = false;
+        const filteredRows = rows.filter(item => {
+          // 대분류 체크
+          for (const [category, subcategories] of Object.entries(CROP_CATEGORIES)) {
+            if (item.LARGENAME && item.LARGENAME.includes(category)) {
+              return true;
+            }
+            // 중분류/품목명 체크
+            if (item.MIDNAME && subcategories.some(sub => item.MIDNAME.includes(sub))) {
+              return true;
+            }
+            if (item.GOODNAME && subcategories.some(sub => item.GOODNAME.includes(sub))) {
+              return true;
+            }
+          }
+          return false;
+        });
+
+        if (filteredRows.length > 0) {
+          allItems = [...allItems, ...filteredRows];
+          console.log(`[DEBUG] 필터링된 항목 수:`, filteredRows.length);
         }
-        
+
+        // 검색어가 있는 경우 추가 필터링
+        if (searchKeyword) {
+          const keyword = searchKeyword.toLowerCase();
+          allItems = allItems.filter(item => 
+            (item.GOODNAME && item.GOODNAME.toLowerCase().includes(keyword)) ||
+            (item.MIDNAME && item.MIDNAME.toLowerCase().includes(keyword)) ||
+            (item.LARGENAME && item.LARGENAME.toLowerCase().includes(keyword))
+          );
+        }
+
+        // 다음 페이지로
         currentPage++;
+        
+        // API 응답에서 총 개수가 현재까지 조회한 개수보다 작으면 중단
+        const totalCount = jsonData[GRID_IDS.ITEM_CODE].totalCnt;
+        if (currentPage * pageSize >= totalCount) {
+          break;
+        }
+
+        // 잠시 대기하여 API 호출 제한 방지
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      // 검색어가 있는 경우 필터링
-      if (searchKeyword) {
-        const keyword = searchKeyword.toLowerCase();
-        allItems = allItems.filter(item => 
-          (item.GOODNAME && item.GOODNAME.toLowerCase().includes(keyword)) ||
-          (item.LARGENAME && item.LARGENAME.toLowerCase().includes(keyword)) ||
-          (item.MIDNAME && item.MIDNAME.toLowerCase().includes(keyword))
-        );
-      }
-
-      // 중복 제거 (동일한 품목 코드를 가진 항목 제거)
+      // 중복 제거
       allItems = allItems.filter((item, index, self) =>
         index === self.findIndex((t) => (
           t.LARGE + t.MID + t.SMALL === item.LARGE + item.MID + item.SMALL
@@ -236,9 +253,10 @@ export const MarketPriceService = {
       console.log('로드된 품목:', allItems.map(item => ({
         name: item.GOODNAME,
         category: item.LARGENAME,
-        subCategory: item.MIDNAME
+        subCategory: item.MIDNAME,
+        code: item.LARGE + item.MID + item.SMALL
       })));
-      
+
       return allItems;
     } catch (error) {
       console.error('품목 코드 조회 오류:', error);
