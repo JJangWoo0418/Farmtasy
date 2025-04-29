@@ -18,16 +18,21 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cropSelector: {
+    flex: 0.1,
     flexDirection: 'row',
     paddingHorizontal: 15,
     paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    height: 45,
+    alignItems: 'center',
   },
   cropTab: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
     marginRight: 10,
   },
@@ -48,14 +53,15 @@ export const styles = StyleSheet.create({
   addCropButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 20,
+    height: 50,
   },
   addCropText: {
     color: '#666',
-    fontSize: 14,
+    fontSize: 16,
   },
   modalContainer: {
     flex: 1,
@@ -66,19 +72,21 @@ export const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#fff',
     padding: 20,
-    borderRadius: 10,
-    width: '80%',
+    borderRadius: 15,
+    width: '90%',
+    maxHeight: '90%',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
   modalSubTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
+    fontWeight: '500',
+    marginBottom: 10,
+    color: '#333',
   },
   categoryList: {
     maxHeight: 150,
@@ -101,19 +109,23 @@ export const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    fontSize: 16,
+    backgroundColor: '#fff',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 10,
   },
   modalButton: {
     flex: 1,
-    padding: 10,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 8,
     marginHorizontal: 5,
+    alignItems: 'center',
   },
   cancelButton: {
     backgroundColor: '#f0f0f0',
@@ -122,42 +134,81 @@ export const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   modalButtonText: {
-    color: '#fff',
-    textAlign: 'center',
     fontSize: 16,
+    fontWeight: '500',
   },
-  calendar: {
-    padding: 8,
+  calendarContainer: {
+    flex: 0.2,
+    paddingHorizontal: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
   },
-  dateButton: {
+  calendarHeader: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  monthSelector: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    marginRight: 16,
+    width: 80,
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  dropdownIcon: {
+    marginLeft: 4,
+  },
+  daysContainer: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  daysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  dayCell: {
+    width: 30,
+    alignItems: 'center',
+  },
+  dayText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  datesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 4,
+  },
+  dateCell: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectedDate: {
     backgroundColor: '#000',
-    borderRadius: 20,
-  },
-  dayText: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+    borderRadius: 8,
   },
   dateText: {
     fontSize: 16,
+    fontWeight: '400',
   },
   sundayText: {
-    color: 'red',
+    color: '#ff0000',
+  },
+  saturdayText: {
+    color: '#0000ff',
   },
   selectedDateText: {
     color: '#fff',
   },
   tabContainer: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flex: 0.7,
+    flexDirection: 'column',
   },
   tab: {
     flex: 1,
@@ -280,5 +331,110 @@ export const styles = StyleSheet.create({
   retryText: {
     color: '#fff',
     fontSize: 16,
+  },
+  directInputButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  directInputText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  popularCropsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 20,
+    marginBottom: 15,
+    color: '#333',
+  },
+  popularCropsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  cropItem: {
+    width: '30%',
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    marginBottom: 15,
+    padding: 10,
+  },
+  cropIcon: {
+    fontSize: 32,
+    marginBottom: 5,
+  },
+  cropName: {
+    fontSize: 14,
+    color: '#333',
+    textAlign: 'center',
+  },
+  calendarModalContent: {
+    padding: 15,
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+  },
+  calendarModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginBottom: 15,
+  },
+  calendarTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  calendarArrow: {
+    fontSize: 20,
+    color: '#333',
+    padding: 10,
+  },
+  calendarWeekHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  calendarWeekDay: {
+    width: 40,
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+  },
+  calendarDay: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  calendarDayText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  calendarDayOtherMonth: {
+    opacity: 0.3,
+  },
+  calendarDayOtherMonthText: {
+    color: '#999',
+  },
+  modalScrollView: {
+    width: '100%',
   },
 }); 

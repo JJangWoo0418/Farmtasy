@@ -25,6 +25,9 @@ export default function MarketPrice() {
   const [availableCategories, setAvailableCategories] = useState([]);
   const [availableSubCategories, setAvailableSubCategories] = useState([]);
   const [availableItems, setAvailableItems] = useState([]);
+  const [isCalendarVisible, setIsCalendarVisible] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
 
   // 저장된 작물 목록 로드
   useEffect(() => {
@@ -104,6 +107,22 @@ export default function MarketPrice() {
       console.error('품종 목록 로드 오류:', error);
     }
   };
+
+  // 인기 작물 목록 추가
+  const popularCrops = [
+    { name: '고추', icon: '🌶️' },
+    { name: '블루베리', icon: '🫐' },
+    { name: '감자', icon: '🥔' },
+    { name: '고구마', icon: '🍠' },
+    { name: '사과', icon: '🍎' },
+    { name: '딸기', icon: '🍓' },
+    { name: '마늘', icon: '🧄' },
+    { name: '상추', icon: '🥬' },
+    { name: '오이', icon: '🥒' },
+    { name: '토마토', icon: '🍅' },
+    { name: '포도', icon: '🍇' },
+    { name: '콩', icon: '🫘' },
+  ];
 
   // 작물 추가
   const handleAddCrop = async () => {
@@ -254,38 +273,68 @@ export default function MarketPrice() {
   }, [selectedItemCode, selectedTab]);
 
   // 달력에 표시할 날짜들 생성
-  const getDates = () => {
+  const getCalendarDates = () => {
+    const firstDay = new Date(selectedYear, selectedMonth, 1);
+    const lastDay = new Date(selectedYear, selectedMonth + 1, 0);
     const dates = [];
-    const today = new Date();
-    for (let i = -3; i <= 3; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
+
+    // 이전 달의 날짜들
+    for (let i = firstDay.getDay() - 1; i >= 0; i--) {
+      const date = new Date(selectedYear, selectedMonth, -i);
+      dates.push(date);
+    }
+
+    // 현재 달의 날짜들
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      dates.push(new Date(selectedYear, selectedMonth, i));
+    }
+
+    // 다음 달의 날짜들
+    const remainingDays = 42 - dates.length; // 6주 x 7일 = 42
+    for (let i = 1; i <= remainingDays; i++) {
+      dates.push(new Date(selectedYear, selectedMonth + 1, i));
+    }
+
+    return dates;
+  };
+
+  // 선택된 날짜의 주간 날짜들을 계산하는 함수
+  const getWeekDates = (selectedDate) => {
+    const dates = [];
+    const current = new Date(selectedDate);
+    const day = current.getDay(); // 0 = 일요일, 6 = 토요일
+    
+    // 선택된 날짜를 기준으로 해당 주의 일요일로 이동
+    current.setDate(current.getDate() - day);
+    
+    // 일요일부터 토요일까지의 날짜를 배열에 추가
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(current);
+      date.setDate(current.getDate() + i);
       dates.push(date);
     }
     return dates;
   };
 
-  // 카테고리 선택 시
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    setSelectedSubCategory('');
-    setNewCropName('');
-    loadSubCategories(category);
-  };
-
-  // 작물 선택 시
-  const handleSubCategorySelect = (subCategory) => {
-    setSelectedSubCategory(subCategory);
-    setNewCropName('');
-    loadItems(selectedCategory, subCategory);
-  };
-
-  // 모달 열릴 때 카테고리 로드
-  useEffect(() => {
-    if (isAddCropModalVisible) {
-      loadCategories();
+  // 이전 달로 이동
+  const handlePrevMonth = () => {
+    if (selectedMonth === 0) {
+      setSelectedYear(prev => prev - 1);
+      setSelectedMonth(11);
+    } else {
+      setSelectedMonth(prev => prev - 1);
     }
-  }, [isAddCropModalVisible]);
+  };
+
+  // 다음 달로 이동
+  const handleNextMonth = () => {
+    if (selectedMonth === 11) {
+      setSelectedYear(prev => prev + 1);
+      setSelectedMonth(0);
+    } else {
+      setSelectedMonth(prev => prev + 1);
+    }
+  };
 
   // 작물 추가 모달
   const renderAddCropModal = () => (
@@ -296,93 +345,146 @@ export default function MarketPrice() {
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>작물 추가</Text>
-          
-          {/* 대분류 선택 */}
-          <Text style={styles.modalSubTitle}>대분류 선택</Text>
-          <ScrollView style={styles.categoryList}>
-            {availableCategories.map((category, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.categoryItem,
-                  selectedCategory === category && styles.selectedCategoryItem
-                ]}
-                onPress={() => handleCategorySelect(category)}
-              >
-                <Text style={styles.categoryText}>{category}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* 작물 선택 */}
-          {selectedCategory && (
-            <>
-              <Text style={styles.modalSubTitle}>작물 선택</Text>
-              <ScrollView style={styles.categoryList}>
-                {availableSubCategories.map((subCategory, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.categoryItem,
-                      selectedSubCategory === subCategory && styles.selectedCategoryItem
-                    ]}
-                    onPress={() => handleSubCategorySelect(subCategory)}
-                  >
-                    <Text style={styles.categoryText}>{subCategory}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </>
-          )}
-
-          {/* 품종 선택 */}
-          {selectedSubCategory && (
-            <>
-              <Text style={styles.modalSubTitle}>품종 선택</Text>
-              <ScrollView style={styles.categoryList}>
-                {availableItems.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.categoryItem,
-                      newCropName === item.GOODNAME && styles.selectedCategoryItem
-                    ]}
-                    onPress={() => setNewCropName(item.GOODNAME)}
-                  >
-                    <Text style={styles.categoryText}>{item.GOODNAME}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </>
-          )}
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, styles.cancelButton]}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <TouchableOpacity 
               onPress={() => {
-                setSelectedCategory('');
-                setSelectedSubCategory('');
                 setNewCropName('');
                 setIsAddCropModalVisible(false);
               }}
+              style={{ padding: 5 }}
             >
-              <Text style={styles.modalButtonText}>취소</Text>
+              <Text style={{ fontSize: 24, color: '#666' }}>←</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.modalButton,
-                styles.confirmButton,
-                !newCropName && styles.disabledButton
-              ]}
-              onPress={handleAddCrop}
-              disabled={!newCropName}
-            >
-              <Text style={styles.modalButtonText}>추가</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>작물 추가</Text>
+            <View style={{ width: 30 }} />
           </View>
+
+          <ScrollView style={styles.modalScrollView}>
+            {/* 직접 추가하기 버튼 */}
+            <TouchableOpacity 
+              style={styles.directInputButton}
+              onPress={() => {
+                if (newCropName.trim()) {
+                  handleAddCrop();
+                  setIsAddCropModalVisible(false);
+                }
+              }}
+            >
+              <Text style={styles.directInputText}>직접 추가하기</Text>
+            </TouchableOpacity>
+
+            {/* 작물 이름 입력 필드 */}
+            <TextInput
+              style={styles.input}
+              value={newCropName}
+              onChangeText={setNewCropName}
+              placeholder="작물 이름을 입력하세요"
+              placeholderTextColor="#999"
+            />
+
+            {/* 인기작물 TOP 12 */}
+            <Text style={styles.popularCropsTitle}>인기작물 TOP 12</Text>
+            <View style={styles.popularCropsGrid}>
+              {popularCrops.map((crop, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.cropItem}
+                  onPress={() => {
+                    setNewCropName(crop.name);
+                    handleAddCrop();
+                    setIsAddCropModalVisible(false);
+                  }}
+                >
+                  <Text style={styles.cropIcon}>{crop.icon}</Text>
+                  <Text style={styles.cropName}>{crop.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
         </View>
       </View>
+    </Modal>
+  );
+
+  // 달력 모달 렌더링
+  const renderCalendarModal = () => (
+    <Modal
+      visible={isCalendarVisible}
+      transparent={true}
+      animationType="fade"
+    >
+      <TouchableOpacity 
+        style={styles.modalContainer} 
+        activeOpacity={1} 
+        onPress={() => setIsCalendarVisible(false)}
+      >
+        <TouchableOpacity 
+          activeOpacity={1} 
+          style={[styles.modalContent, styles.calendarModalContent]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          {/* 달력 헤더 */}
+          <View style={styles.calendarModalHeader}>
+            <TouchableOpacity onPress={handlePrevMonth}>
+              <Text style={styles.calendarArrow}>◀</Text>
+            </TouchableOpacity>
+            <Text style={styles.calendarTitle}>{selectedYear}년 {selectedMonth + 1}월</Text>
+            <TouchableOpacity onPress={handleNextMonth}>
+              <Text style={styles.calendarArrow}>▶</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 요일 헤더 */}
+          <View style={styles.calendarWeekHeader}>
+            {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
+              <Text key={index} style={[
+                styles.calendarWeekDay,
+                index === 0 && styles.sundayText,
+                index === 6 && styles.saturdayText,
+              ]}>
+                {day}
+              </Text>
+            ))}
+          </View>
+
+          {/* 날짜 그리드 */}
+          <View style={styles.calendarGrid}>
+            {getCalendarDates().map((date, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.calendarDay,
+                  date.getMonth() !== selectedMonth && styles.calendarDayOtherMonth,
+                  date.toDateString() === selectedDate.toDateString() && styles.selectedDate
+                ]}
+                onPress={() => {
+                  setSelectedDate(date);
+                  setIsCalendarVisible(false);
+                  loadPriceData();
+                }}
+              >
+                <Text style={[
+                  styles.calendarDayText,
+                  date.getDay() === 0 && styles.sundayText,
+                  date.getDay() === 6 && styles.saturdayText,
+                  date.toDateString() === selectedDate.toDateString() && styles.selectedDateText,
+                  date.getMonth() !== selectedMonth && styles.calendarDayOtherMonthText
+                ]}>
+                  {date.getDate()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* 닫기 버튼 */}
+          <TouchableOpacity
+            style={[styles.modalButton, styles.cancelButton, { marginTop: 10 }]}
+            onPress={() => setIsCalendarVisible(false)}
+          >
+            <Text style={[styles.modalButtonText, { color: '#000' }]}>닫기</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 
@@ -407,154 +509,189 @@ export default function MarketPrice() {
 
   return (
     <View style={styles.container}>
-      {/* 상단 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>시세</Text>
-        <TouchableOpacity>
-          <Ionicons name="notifications-outline" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
-
-      {/* 작물 선택 탭 */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cropSelector}>
-        {crops.map((crop, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.cropTab,
-              selectedCrop === crop && styles.selectedCropTab
-            ]}
-            onPress={() => handleSelectCrop(crop)}
-          >
-            <Text style={[
-              styles.cropText,
-              selectedCrop === crop && styles.selectedCropText
-            ]}>
-              {crop}
-            </Text>
+      {/* 작물 선택 탭 (1/10) */}
+      <View style={styles.cropSelector}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {crops.map((crop, index) => (
             <TouchableOpacity
-              style={styles.removeCropButton}
-              onPress={() => handleRemoveCrop(crop)}
+              key={index}
+              style={[
+                styles.cropTab,
+                selectedCrop === crop && styles.selectedCropTab
+              ]}
+              onPress={() => handleSelectCrop(crop)}
             >
-              <Ionicons name="close-circle" size={16} color="#666" />
+              <Text style={[
+                styles.cropText,
+                selectedCrop === crop && styles.selectedCropText
+              ]}>
+                {crop}
+              </Text>
+              <TouchableOpacity
+                style={styles.removeCropButton}
+                onPress={() => handleRemoveCrop(crop)}
+              >
+                <Ionicons name="close-circle" size={16} color="#666" />
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity
-          style={styles.addCropButton}
-          onPress={() => setIsAddCropModalVisible(true)}
-        >
-          <Text style={styles.addCropText}>+ 작물 추가</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* 작물 추가 모달 */}
-      {renderAddCropModal()}
-
-      {/* 달력 */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calendar}>
-        {getDates().map((date, index) => (
-          <TouchableOpacity 
-            key={index}
-            style={[
-              styles.dateButton,
-              date.toDateString() === selectedDate.toDateString() && styles.selectedDate
-            ]}
-            onPress={() => setSelectedDate(date)}
+          ))}
+          <TouchableOpacity
+            style={styles.addCropButton}
+            onPress={() => setIsAddCropModalVisible(true)}
           >
-            <Text style={styles.dayText}>
-              {['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}
-            </Text>
-            <Text style={[
-              styles.dateText,
-              date.getDay() === 0 && styles.sundayText,
-              date.toDateString() === selectedDate.toDateString() && styles.selectedDateText
-            ]}>
-              {date.getDate()}
-            </Text>
+            <Text style={styles.addCropText}>+ 작물 추가</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* 탭 선택 */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, selectedTab === '경매내역' && styles.selectedTab]}
-          onPress={() => setSelectedTab('경매내역')}
-        >
-          <Text style={[styles.tabText, selectedTab === '경매내역' && styles.selectedTabText]}>
-            경매내역
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, selectedTab === '전국시세' && styles.selectedTab]}
-          onPress={() => setSelectedTab('전국시세')}
-        >
-          <Text style={[styles.tabText, selectedTab === '전국시세' && styles.selectedTabText]}>
-            전국시세
-          </Text>
-        </TouchableOpacity>
+        </ScrollView>
       </View>
 
-      {/* 시세 정보 */}
-      {selectedTab === '경매내역' ? (
-        <View style={styles.priceContainer}>
-          <View style={styles.priceHeader}>
-            <Text style={styles.columnTitle}>품목명</Text>
-            <Text style={styles.columnTitle}>대분류</Text>
-            <Text style={styles.columnTitle}>중분류</Text>
-            <Text style={styles.columnTitle}>소분류</Text>
-          </View>
-          <ScrollView>
-            {itemCodes.map((item, index) => (
-              <View key={index} style={styles.priceRow}>
-                <Text style={styles.priceText}>{item.GOODNAME}</Text>
-                <Text style={styles.priceText}>{item.LARGENAME}</Text>
-                <Text style={styles.priceText}>{item.MIDNAME}</Text>
-                <Text style={styles.priceText}>{item.SMALL}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      ) : (
-        <View style={styles.nationalPriceContainer}>
-          <ScrollView>
-            {marketPrices.map((market, index) => (
-              <View key={index} style={styles.marketSection}>
-                <View style={styles.marketHeader}>
-                  <Text style={styles.marketName}>{market.marketName}</Text>
-                  {market.data && market.data[0] && (
-                    <>
-                      <Text style={styles.totalVolume}>
-                        총 {market.data[0].VOLUME || '0'}kg
-                      </Text>
-                      <View style={styles.priceChange}>
-                        <Text style={styles.changeLabel}>전일대비</Text>
-                        <Text style={market.data[0].DIFF_PRICE > 0 ? styles.increaseText : styles.decreaseText}>
-                          {market.data[0].DIFF_PRICE || '0'}원
-                          ({market.data[0].DIFF_RATE || '0'}%)
-                        </Text>
-                      </View>
-                    </>
-                  )}
+      {/* 달력 섹션 (2/10) */}
+      <View style={styles.calendarContainer}>
+        <View style={styles.calendarHeader}>
+          {/* 월 선택기 */}
+          <TouchableOpacity 
+            style={styles.monthSelector}
+            onPress={() => {
+              setIsCalendarVisible(true);
+            }}
+          >
+            <Text style={styles.monthText}>{selectedDate.getMonth() + 1}월</Text>
+            <Text style={styles.dropdownIcon}>▼</Text>
+          </TouchableOpacity>
+
+          {/* 요일과 날짜 컨테이너 */}
+          <View style={styles.daysContainer}>
+            {/* 요일 행 */}
+            <View style={styles.daysRow}>
+              {['일', '월', '화', '수', '목', '금', '토'].map((day, index) => (
+                <View key={index} style={styles.dayCell}>
+                  <Text style={[
+                    styles.dayText,
+                    index === 0 && styles.sundayText,
+                    index === 6 && styles.saturdayText
+                  ]}>
+                    {day}
+                  </Text>
                 </View>
-                {market.data && market.data[0] && (
-                  <View style={styles.priceDetails}>
-                    <Text>{market.data[0].GRADE || '등급없음'} / {market.data[0].UNIT || '단위없음'}</Text>
-                    <Text>{market.data[0].VOLUME || '0'}kg</Text>
-                    <Text>{market.data[0].ITEM_NAME || '품목없음'}</Text>
-                    <View style={styles.priceRange}>
-                      <Text>{market.data[0].AVG_PRICE || '0'}원/kg</Text>
-                      <Text style={styles.highPrice}>최고 {market.data[0].MAX_PRICE || '0'}원</Text>
-                      <Text style={styles.lowPrice}>최저 {market.data[0].MIN_PRICE || '0'}원</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </View>
+
+            {/* 날짜 행 */}
+            <View style={styles.datesRow}>
+              {getWeekDates(selectedDate).map((date, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.dateCell,
+                    date.toDateString() === selectedDate.toDateString() && styles.selectedDate
+                  ]}
+                  onPress={() => {
+                    setSelectedDate(date);
+                    loadPriceData();
+                  }}
+                >
+                  <Text style={[
+                    styles.dateText,
+                    index === 0 && styles.sundayText,
+                    index === 6 && styles.saturdayText,
+                    date.toDateString() === selectedDate.toDateString() && styles.selectedDateText
+                  ]}>
+                    {date.getDate()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         </View>
-      )}
+      </View>
+
+      {/* 모달 렌더링 */}
+      {renderAddCropModal()}
+      {renderCalendarModal()}
+
+      {/* 경매내역/전국시세 섹션 (7/10) */}
+      <View style={styles.tabContainer}>
+        {/* 탭 버튼 */}
+        <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+          <TouchableOpacity 
+            style={[styles.tab, selectedTab === '경매내역' && styles.selectedTab]}
+            onPress={() => setSelectedTab('경매내역')}
+          >
+            <Text style={[styles.tabText, selectedTab === '경매내역' && styles.selectedTabText]}>
+              경매내역
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, selectedTab === '전국시세' && styles.selectedTab]}
+            onPress={() => setSelectedTab('전국시세')}
+          >
+            <Text style={[styles.tabText, selectedTab === '전국시세' && styles.selectedTabText]}>
+              전국시세
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 탭 컨텐츠 */}
+        <View style={{ flex: 1 }}>
+          {selectedTab === '경매내역' ? (
+            <View style={styles.priceContainer}>
+              <View style={styles.priceHeader}>
+                <Text style={styles.columnTitle}>품목명</Text>
+                <Text style={styles.columnTitle}>대분류</Text>
+                <Text style={styles.columnTitle}>중분류</Text>
+                <Text style={styles.columnTitle}>소분류</Text>
+              </View>
+              <ScrollView>
+                {itemCodes.map((item, index) => (
+                  <View key={index} style={styles.priceRow}>
+                    <Text style={styles.priceText}>{item.GOODNAME}</Text>
+                    <Text style={styles.priceText}>{item.LARGENAME}</Text>
+                    <Text style={styles.priceText}>{item.MIDNAME}</Text>
+                    <Text style={styles.priceText}>{item.SMALL}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          ) : (
+            <View style={styles.nationalPriceContainer}>
+              <ScrollView>
+                {marketPrices.map((market, index) => (
+                  <View key={index} style={styles.marketSection}>
+                    <View style={styles.marketHeader}>
+                      <Text style={styles.marketName}>{market.marketName}</Text>
+                      {market.data && market.data[0] && (
+                        <>
+                          <Text style={styles.totalVolume}>
+                            총 {market.data[0].VOLUME || '0'}kg
+                          </Text>
+                          <View style={styles.priceChange}>
+                            <Text style={styles.changeLabel}>전일대비</Text>
+                            <Text style={market.data[0].DIFF_PRICE > 0 ? styles.increaseText : styles.decreaseText}>
+                              {market.data[0].DIFF_PRICE || '0'}원
+                              ({market.data[0].DIFF_RATE || '0'}%)
+                            </Text>
+                          </View>
+                        </>
+                      )}
+                    </View>
+                    {market.data && market.data[0] && (
+                      <View style={styles.priceDetails}>
+                        <Text>{market.data[0].GRADE || '등급없음'} / {market.data[0].UNIT || '단위없음'}</Text>
+                        <Text>{market.data[0].VOLUME || '0'}kg</Text>
+                        <Text>{market.data[0].ITEM_NAME || '품목없음'}</Text>
+                        <View style={styles.priceRange}>
+                          <Text>{market.data[0].AVG_PRICE || '0'}원/kg</Text>
+                          <Text style={styles.highPrice}>최고 {market.data[0].MAX_PRICE || '0'}원</Text>
+                          <Text style={styles.lowPrice}>최저 {market.data[0].MIN_PRICE || '0'}원</Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      </View>
     </View>
   );
 } 

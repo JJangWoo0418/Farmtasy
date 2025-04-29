@@ -18,6 +18,13 @@ export default function Layout() {
                     headerBackTitle: '뒤로'
                 }}
             />
+            <Stack.Screen 
+                name="FarmInfo/MarketPrice" 
+                options={{
+                    title: '작물시세',
+                    headerBackTitle: '뒤로'
+                }}
+            />
         </Stack>
     </WeatherProvider>
     );
