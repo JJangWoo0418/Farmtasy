@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -7,30 +7,137 @@ import userIcon from '../../assets/usericon.png'; // 실제 경로에 맞게 수
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+// PostItem 컴포넌트 분리 및 memo 적용
+const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnimation, isBookmarked, navigateToDetail, formatDate }) => (
+    <View style={styles.postBox}>
+        <TouchableOpacity onPress={navigateToDetail}>
+            <View style={styles.postHeader}>
+                <Image
+                    source={item.profile ? { uri: item.profile } : userIcon}
+                    style={styles.profileImg}
+                />
+                <View style={styles.userInfoContainer}>
+                    <Text style={styles.username}>{item.user}</Text>
+                    <Text style={styles.time}>{formatDate(item.time)}</Text>
+                </View>
+                <TouchableOpacity style={styles.moreBtn}>
+                    <Image source={require('../../assets/moreicon.png')} />
+                </TouchableOpacity>
+            </View>
+            <View activeOpacity={0.8}>
+                <Text style={styles.postText}>{item.text}</Text>
+                {item.image_urls && item.image_urls.flat().length > 0 && (
+                    <View style={styles.postImages}>
+                        {item.image_urls.flat().map((url, idx) => (
+                            <RenderImageWithLoading key={url + idx} url={url} />
+                        ))}
+                    </View>
+                )}
+            </View>
+        </TouchableOpacity>
+        <View style={styles.iconRow}>
+            <View style={[styles.iconGroup, styles.likeIconGroup]}>
+                <TouchableOpacity onPress={() => onLike(item.id, item.isLiked)}>
+                    <Animated.Image
+                        source={item.isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
+                        style={[
+                            styles.icon,
+                            { transform: [{ scale: heartAnimation }] }
+                        ]}
+                    />
+                </TouchableOpacity>
+                <Text style={styles.iconText}>{item.likes}</Text>
+            </View>
+            <View style={styles.iconGroup}>
+                <Image source={require('../../assets/commenticon.png')} style={styles.icon2} />
+                <Text style={styles.iconText}>{item.comments}</Text>
+            </View>
+            <View style={styles.iconGroup}>
+                <TouchableOpacity onPress={() => onBookmark(item.id)}>
+                    <Animated.Image
+                        source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
+                        style={[
+                            styles.icon3,
+                            { transform: [{ scale: bookmarkAnimation }] }
+                        ]}
+                    />
+                </TouchableOpacity>
+                <Text style={styles.iconText}>{isBookmarked ? item.bookmarks + 1 : item.bookmarks}</Text>
+            </View>
+        </View>
+    </View>
+));
+
+// 이미지 로딩 애니메이션 추가
+const RenderImageWithLoading = ({ url }) => {
+    const [loading, setLoading] = useState(true);
+
+    return (
+        <View
+            style={{
+                width: 375,
+                height: 375,
+                marginRight: 10,
+                marginBottom: 8,
+                marginLeft: -8,
+                backgroundColor: '#eee',
+                borderRadius: 0,
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'hidden',
+            }}
+        >
+            {loading && (
+                <ActivityIndicator
+                    size="large"
+                    color="#22CC6B"
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                />
+            )}
+            <Image
+                source={{ uri: url }}
+                style={{
+                    width: 375,
+                    height: 375,
+                    resizeMode: 'cover',
+                }}
+                onLoadEnd={() => setLoading(false)}
+            />
+        </View>
+    );
+};
+
 const PostPage = () => {
     const navigation = useNavigation();
     const [selectedFilter, setSelectedFilter] = useState('전체');
     const underlineAnim = useRef(new Animated.Value(0)).current;
-    const [heartAnimations, setHeartAnimations] = useState({});
     const [likedPosts, setLikedPosts] = useState({});
-    const [bookmarkAnimations, setBookmarkAnimations] = useState({});
     const [bookmarkedPosts, setBookmarkedPosts] = useState({});
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const scaleAnim = useRef(new Animated.Value(1)).current;
-
-    // ✅ 글쓰기 버튼 애니메이션 관련 상태
     const writeButtonAnim = useRef(new Animated.Value(1)).current;
     const [showText, setShowText] = useState(true);
     const route = useRoute();
+
+    // 애니메이션 객체 useRef로 관리
+    const heartAnimationsRef = useRef({});
+    const bookmarkAnimationsRef = useRef({});
+
     const {
         category = '카테고리 없음',
         categoryTitle = '카테고리 없음',
         categoryDesc = '',
         categoryIcon = require('../../assets/Xicon.png'),
     } = route.params || {};
-
 
     // 날짜 포맷 함수
     const formatDate = (isoString) => {
@@ -43,52 +150,6 @@ const PostPage = () => {
         return `${month}월 ${day}일 ${hour}:${min}`;
     };
 
-    // 이미지 로딩 애니메이션 추가
-    const RenderImageWithLoading = ({ url }) => {
-        const [loading, setLoading] = useState(true);
-
-        return (
-            <View
-                style={{
-                    width: 375,
-                    height: 375,
-                    marginRight: 10,
-                    marginBottom: 8,
-                    marginLeft: -8,
-                    backgroundColor: '#eee',
-                    borderRadius: 0,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    overflow: 'hidden',
-                }}
-            >
-                {loading && (
-                    <ActivityIndicator
-                        size="large"
-                        color="#22CC6B"
-                        style={{
-                            position: 'absolute',
-                            left: 0,
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}
-                    />
-                )}
-                <Image
-                    source={{ uri: url }}
-                    style={{
-                        width: 375,
-                        height: 375,
-                        resizeMode: 'cover',
-                    }}
-                    onLoadEnd={() => setLoading(false)}
-                />
-            </View>
-        );
-    };
 
     // 게시글 데이터 fetch
     useEffect(() => {
@@ -115,6 +176,7 @@ const PostPage = () => {
         fetchPosts();
     }, [category]);
 
+    // ✅ 글쓰기 버튼 애니메이션 관련 함수
     const animateWriteButton = (visible) => {
         Animated.timing(writeButtonAnim, {
             toValue: visible ? 1 : 0,
@@ -143,70 +205,26 @@ const PostPage = () => {
         }).start();
     };
 
-    // const triggerHeartAnimation = (postId) => {
-    //     // 애니메이션 값이 없으면 새로 생성
-    //     if (!heartAnimations[postId]) {
-    //         const newAnimation = new Animated.Value(1);
-    //         setHeartAnimations(prev => ({
-    //             ...prev,
-    //             [postId]: newAnimation
-    //         }));
-    //         // 새로 생성된 애니메이션으로 바로 실행
-    //         newAnimation.setValue(0.8);
-    //         Animated.spring(newAnimation, {
-    //             toValue: 1,
-    //             friction: 3,
-    //             useNativeDriver: true,
-    //         }).start();
-    //     } else {
-    //         // 기존 애니메이션 실행
-    //         const currentAnimation = heartAnimations[postId];
-    //         currentAnimation.setValue(0.8);
-    //         Animated.spring(currentAnimation, {
-    //             toValue: 1,
-    //             friction: 3,
-    //             useNativeDriver: true,
-    //         }).start();
-    //     }
-
-    //     // 좋아요 상태 토글
-    //     setLikedPosts(prev => ({
-    //         ...prev,
-    //         [postId]: !prev[postId]
-    //     }));
-    // };
-
-    // 북마크 애니메이션 트리거 함수 추가
-    const triggerBookmarkAnimation = (postId) => {
-        // 애니메이션 값 관리 (좋아요와 동일 로직)
-        let currentAnimation = bookmarkAnimations[postId];
-        if (!currentAnimation) {
-            currentAnimation = new Animated.Value(1);
-            setBookmarkAnimations(prev => ({
-                ...prev,
-                [postId]: currentAnimation
-            }));
+    // 북마크 애니메이션 및 상태 토글 useCallback
+    const triggerBookmarkAnimation = useCallback((postId) => {
+        if (!bookmarkAnimationsRef.current[postId]) {
+            bookmarkAnimationsRef.current[postId] = new Animated.Value(1);
         }
-
-        // 애니메이션 실행
-        currentAnimation.setValue(0.8); // 작게 시작
+        const currentAnimation = bookmarkAnimationsRef.current[postId];
+        currentAnimation.setValue(0.8);
         Animated.spring(currentAnimation, {
             toValue: 1,
-            friction: 3, // 탄성 효과 조절
+            friction: 3,
             useNativeDriver: true,
         }).start();
-
-        // 북마크 상태 토글
         setBookmarkedPosts(prev => ({
             ...prev,
             [postId]: !prev[postId]
         }));
-    };
+    }, []);
 
-    const handleLike = async (postId, currentLike) => {
-        // 1. 좋아요 애니메이션 실행 (생략, 기존 코드 유지)
-    
-        // 2. UI likes 상태는 setPosts에서 currentLike만 신뢰!
+    // 좋아요 핸들러 useCallback
+    const handleLike = useCallback(async (postId, currentLike) => {
         setPosts(prevPosts =>
             prevPosts.map(post =>
                 post.id === postId
@@ -218,27 +236,21 @@ const PostPage = () => {
                     : post
             )
         );
-    
-        // 3. setLikedPosts는 애니메이션용 (likes 조작 X)
         setLikedPosts(prev => ({
             ...prev,
             [postId]: !currentLike
         }));
-    
-        // 4. 서버에 좋아요 상태 저장 요청
         try {
             await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     postId,
-                    like: !currentLike ? 1 : 0, // 1: 좋아요, 0: 취소
+                    like: !currentLike ? 1 : 0,
                 }),
             });
-        } catch (e) {
-            // 실패 시 롤백 등 처리 가능
-        }
-    };
+        } catch (e) {}
+    }, []);
 
     const handleBookmark = (postId) => {
         setPosts(prevPosts =>
@@ -250,86 +262,37 @@ const PostPage = () => {
         );
     };
 
-    const renderPost = ({ item }) => {
-        console.log('item.image_urls:', item.image_urls); // 추가
-        const isLiked = item.isLiked; // posts의 isLiked만 신뢰
-        const isBookmarked = bookmarkedPosts[item.id] || false;
-        const heartAnimation = heartAnimations[item.id] || new Animated.Value(1);
-        const bookmarkAnimation = bookmarkAnimations[item.id] || new Animated.Value(1);
+    // renderPost useCallback으로 고정
+    const renderPost = useCallback(
+        ({ item }) => {
+            if (!heartAnimationsRef.current[item.id]) {
+                heartAnimationsRef.current[item.id] = new Animated.Value(1);
+            }
+            if (!bookmarkAnimationsRef.current[item.id]) {
+                bookmarkAnimationsRef.current[item.id] = new Animated.Value(1);
+            }
+            const isBookmarked = bookmarkedPosts[item.id] || false;
+            return (
+                <PostItem
+                    item={item}
+                    onLike={handleLike}
+                    onBookmark={triggerBookmarkAnimation}
+                    heartAnimation={heartAnimationsRef.current[item.id]}
+                    bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
+                    isBookmarked={isBookmarked}
+                    navigateToDetail={() => navigation.navigate('Homepage/postdetailpage', { post: item })}
+                    formatDate={formatDate}
+                />
+            );
+        },
+        [bookmarkedPosts, handleLike, triggerBookmarkAnimation, navigation]
+    );
 
-        const navigateToDetail = () => {
-            navigation.navigate('Homepage/postdetailpage', { post: item });
-        };
-
-        return (
-            <View style={styles.postBox}>
-                <TouchableOpacity onPress={navigateToDetail}>
-                    <View style={styles.postHeader}>
-                        <Image
-                            source={
-                                item.profile
-                                    ? { uri: item.profile }
-                                    : userIcon
-                            }
-                            style={styles.profileImg}
-                        />
-                        <View style={styles.userInfoContainer}>
-                            <Text style={styles.username}>{item.user}</Text>
-                            <Text style={styles.time}>{formatDate(item.time)}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.moreBtn}>
-                            <Image source={require('../../assets/moreicon.png')} />
-                        </TouchableOpacity>
-                    </View>
-                    <View activeOpacity={0.8}>
-                        <Text style={styles.postText}>{item.text}</Text>
-                        {item.image_urls && item.image_urls.flat().length > 0 && (
-                            <View style={styles.postImages}>
-                                {item.image_urls.flat().map((url, idx) => (
-                                    <RenderImageWithLoading key={url + idx} url={url} />
-                                ))}
-                            </View>
-                        )}
-                    </View>
-                </TouchableOpacity>
-                <View style={styles.iconRow}>
-                    <View style={[styles.iconGroup, styles.likeIconGroup]}>
-                        <TouchableOpacity onPress={() => handleLike(item.id, item.isLiked)}>
-                            <Animated.Image
-                                source={isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
-                                style={[
-                                    styles.icon,
-                                    { transform: [{ scale: heartAnimations[item.id] || new Animated.Value(1) }] }
-                                ]}
-                            />
-                        </TouchableOpacity>
-                        <Text style={styles.iconText}>{item.likes}</Text>
-                    </View>
-                    <View style={styles.iconGroup}>
-                        <Image source={require('../../assets/commenticon.png')} style={styles.icon2} />
-                        <Text style={styles.iconText}>{item.comments}</Text>
-                    </View>
-                    <View style={styles.iconGroup}>
-                        <TouchableOpacity onPress={() => triggerBookmarkAnimation(item.id)}>
-                            <Animated.Image
-                                source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
-                                style={[
-                                    styles.icon3,
-                                    { transform: [{ scale: bookmarkAnimation }] }
-                                ]}
-                            />
-                        </TouchableOpacity>
-                        <Text style={styles.iconText}>{isBookmarked ? item.bookmarks + 1 : item.bookmarks}</Text>
-                    </View>
-                </View>
-            </View>
-        );
-    };
+    // keyExtractor useCallback
+    const keyExtractor = useCallback((item, index) => item.id ? item.id.toString() : index.toString(), []);
 
     return (
         <View style={styles.container}>
-            {/* FlatList 스크롤 감지 */}
-            {/* 로딩/에러 처리 */}
             {loading && (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text>로딩 중...</Text>
@@ -344,7 +307,8 @@ const PostPage = () => {
                 <FlatList
                     data={posts}
                     renderItem={renderPost}
-                    keyExtractor={(item, index) => item.id ? item.id.toString() : index.toString()}
+                    keyExtractor={keyExtractor}
+                    extraData={bookmarkedPosts}
                     contentContainerStyle={{ paddingBottom: 100 }}
                     onScroll={handleScroll}
                     scrollEventThrottle={16}
@@ -356,7 +320,6 @@ const PostPage = () => {
                                 </TouchableOpacity>
                                 <Text style={styles.title}>게시글</Text>
                             </View>
-                            {/* 카테고리 설명 부분 */}
                             <View style={styles.topicBox}>
                                 <Image source={categoryIcon} style={styles.topicIcon} />
                                 <View>
@@ -395,8 +358,6 @@ const PostPage = () => {
                     }
                 />
             )}
-
-            {/* 글쓰기 버튼 */}
             <Animated.View
                 style={[
                     styles.writeButton,
@@ -425,7 +386,8 @@ const PostPage = () => {
                                 opacity: writeButtonAnim,
                             }]}
                         >
-                            글쓰기  </Animated.Text>
+                            글쓰기
+                        </Animated.Text>
                     )}
                     <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
                 </TouchableOpacity>
