@@ -1,34 +1,209 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MarketPriceService } from './MarketPriceService';
-
-const API_KEY = 'ce6bfb5a5e29d7ae2f0255c456bbd9caf2a617877fff580bc94c789df5e02efa';
+import { MARKET_API_KEY } from '../Components/API/apikey';
+import { styles } from '../Components/Css/FarmInfo/MarketPriceStyle';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MarketPrice() {
   const [selectedTab, setSelectedTab] = useState('경매내역');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedCrop, setSelectedCrop] = useState('그레이트');
+  const [selectedCrop, setSelectedCrop] = useState('');
+  const [crops, setCrops] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dailyPrices, setDailyPrices] = useState([]);
   const [marketPrices, setMarketPrices] = useState([]);
   const [error, setError] = useState(null);
   const [itemCodes, setItemCodes] = useState([]);
+  const [marketCodes, setMarketCodes] = useState([]);
+  const [isAddCropModalVisible, setIsAddCropModalVisible] = useState(false);
+  const [newCropName, setNewCropName] = useState('');
+  const [selectedItemCode, setSelectedItemCode] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('');
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableSubCategories, setAvailableSubCategories] = useState([]);
+  const [availableItems, setAvailableItems] = useState([]);
+
+  // 저장된 작물 목록 로드
+  useEffect(() => {
+    loadSavedCrops();
+  }, []);
+
+  // 작물 목록 저장
+  const saveCrops = async (updatedCrops) => {
+    try {
+      await AsyncStorage.setItem('savedCrops', JSON.stringify(updatedCrops));
+    } catch (error) {
+      console.error('작물 목록 저장 오류:', error);
+    }
+  };
+
+  // 저장된 작물 목록 로드
+  const loadSavedCrops = async () => {
+    try {
+      const savedCrops = await AsyncStorage.getItem('savedCrops');
+      if (savedCrops) {
+        const parsedCrops = JSON.parse(savedCrops);
+        setCrops(parsedCrops);
+        if (parsedCrops.length > 0) {
+          setSelectedCrop(parsedCrops[0]);
+          findAndSetItemCode(parsedCrops[0]);
+        }
+      }
+    } catch (error) {
+      console.error('저장된 작물 목록 로드 오류:', error);
+    }
+  };
+
+  // 카테고리 데이터 로드
+  const loadCategories = async () => {
+    try {
+      const response = await MarketPriceService.getItemCodes();
+      if (response && response.length > 0) {
+        // 중복 제거된 대분류 목록 생성
+        const categories = [...new Set(response.map(item => item.LARGENAME))];
+        setAvailableCategories(categories.filter(category => category));
+      }
+    } catch (error) {
+      console.error('카테고리 로드 오류:', error);
+    }
+  };
+
+  // 선택된 카테고리에 따른 작물 목록 로드
+  const loadSubCategories = async (category) => {
+    try {
+      const response = await MarketPriceService.getItemCodes();
+      if (response && response.length > 0) {
+        // 선택된 대분류에 해당하는 작물 목록 필터링
+        const subCategories = [...new Set(
+          response
+            .filter(item => item.LARGENAME === category)
+            .map(item => item.MIDNAME)
+        )];
+        setAvailableSubCategories(subCategories.filter(subCategory => subCategory));
+      }
+    } catch (error) {
+      console.error('작물 목록 로드 오류:', error);
+    }
+  };
+
+  // 선택된 작물에 따른 품종 목록 로드
+  const loadItems = async (category, subCategory) => {
+    try {
+      const response = await MarketPriceService.getItemCodes();
+      if (response && response.length > 0) {
+        // 선택된 작물의 품종 목록 필터링
+        const items = response.filter(
+          item => item.LARGENAME === category && item.MIDNAME === subCategory
+        );
+        setAvailableItems(items);
+      }
+    } catch (error) {
+      console.error('품종 목록 로드 오류:', error);
+    }
+  };
+
+  // 작물 추가
+  const handleAddCrop = async () => {
+    if (newCropName.trim()) {
+      try {
+        // 먼저 해당 작물의 품목 코드를 검색
+        const searchResults = await MarketPriceService.getItemCodes(newCropName.trim());
+        
+        if (searchResults && searchResults.length > 0) {
+          const updatedCrops = [...crops, newCropName.trim()];
+          setCrops(updatedCrops);
+          saveCrops(updatedCrops);
+          setNewCropName('');
+          setIsAddCropModalVisible(false);
+          
+          if (updatedCrops.length === 1) {
+            setSelectedCrop(newCropName.trim());
+            // 검색된 첫 번째 결과의 코드를 사용
+            const foundItem = searchResults[0];
+            setSelectedItemCode(foundItem.LARGE + foundItem.MID + foundItem.SMALL);
+            console.log('선택된 품목 코드:', foundItem.LARGE + foundItem.MID + foundItem.SMALL);
+          }
+        } else {
+          alert('해당 작물의 품목 코드를 찾을 수 없습니다. 다른 이름으로 시도해주세요.');
+        }
+      } catch (error) {
+        console.error('작물 추가 중 오류:', error);
+        alert('작물 추가 중 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  // 작물명으로 품목 코드 찾기
+  const findAndSetItemCode = async (cropName) => {
+    try {
+      const searchResults = await MarketPriceService.getItemCodes(cropName);
+      
+      if (searchResults && searchResults.length > 0) {
+        const foundItem = searchResults[0];
+        setSelectedItemCode(foundItem.LARGE + foundItem.MID + foundItem.SMALL);
+        console.log('선택된 품목 코드:', foundItem.LARGE + foundItem.MID + foundItem.SMALL);
+      } else {
+        console.log('해당 작물의 품목 코드를 찾을 수 없습니다:', cropName);
+        setSelectedItemCode('');
+      }
+    } catch (error) {
+      console.error('품목 코드 검색 중 오류:', error);
+      setSelectedItemCode('');
+    }
+  };
+
+  // 작물 삭제
+  const handleRemoveCrop = (cropToRemove) => {
+    const updatedCrops = crops.filter(crop => crop !== cropToRemove);
+    setCrops(updatedCrops);
+    saveCrops(updatedCrops);
+    if (selectedCrop === cropToRemove) {
+      setSelectedCrop(updatedCrops[0] || '');
+    }
+  };
+
+  // 작물 선택
+  const handleSelectCrop = (crop) => {
+    setSelectedCrop(crop);
+    findAndSetItemCode(crop);
+  };
 
   // 품목 코드 로드
   useEffect(() => {
     const loadItemCodes = async () => {
       try {
         const response = await MarketPriceService.getItemCodes();
-        if (response.response.body.items) {
-          setItemCodes(response.response.body.items);
-          console.log('품목 코드 로드 성공:', response.response.body.items);
+        console.log('API 응답:', response);
+        if (response && response.row) {
+          setItemCodes(response.row);
+          console.log('품목 코드 로드 성공:', response.row);
         }
       } catch (err) {
         console.error('품목 코드 로드 오류:', err);
+        setError('품목 코드를 불러오는 중 오류가 발생했습니다.');
       }
     };
     loadItemCodes();
+  }, []);
+
+  // 도매시장 코드 로드
+  useEffect(() => {
+    const loadMarketCodes = async () => {
+      try {
+        const response = await MarketPriceService.getMarketCodes();
+        if (response && response.row) {
+          setMarketCodes(response.row);
+          console.log('도매시장 코드 로드 성공:', response.row);
+        }
+      } catch (err) {
+        console.error('도매시장 코드 로드 오류:', err);
+        setError('도매시장 코드를 불러오는 중 오류가 발생했습니다.');
+      }
+    };
+    loadMarketCodes();
   }, []);
 
   // 데이터 로드 함수
@@ -37,24 +212,31 @@ export default function MarketPrice() {
       setLoading(true);
       setError(null);
 
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      const dateStr = `${year}${month}${day}`;
+      if (!selectedItemCode) {
+        console.log('품목 코드가 선택되지 않았습니다.');
+        return;
+      }
 
       if (selectedTab === '경매내역') {
-        const data = await MarketPriceService.getDailyPrice('PA0000');
-        if (data.response.body.items) {
-          setDailyPrices(data.response.body.items);
-          console.log('일일 시세 데이터:', data.response.body.items);
+        const data = await MarketPriceService.getDailyPrice(selectedItemCode);
+        if (data && data.row) {
+          setDailyPrices(data.row);
+          console.log('일일 시세 데이터:', data.row);
         }
       } else {
-        const data = await MarketPriceService.getRegionalPrices('PA0000', '1101');
-        if (data.response.body.items) {
-          setMarketPrices(data.response.body.items);
-          console.log('지역별 시세 데이터:', data.response.body.items);
+        const marketPricesData = [];
+        for (const market of marketCodes) {
+          const data = await MarketPriceService.getRegionalPrices(selectedItemCode, market.CODEID);
+          if (data && data.row) {
+            marketPricesData.push({
+              marketCode: market.CODEID,
+              marketName: market.CODENAME,
+              data: data.row
+            });
+          }
         }
+        setMarketPrices(marketPricesData);
+        console.log('지역별 시세 데이터:', marketPricesData);
       }
     } catch (err) {
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
@@ -64,10 +246,12 @@ export default function MarketPrice() {
     }
   };
 
-  // 탭이나 날짜가 변경될 때 데이터 로드
+  // 작물이나 탭이 변경될 때 데이터 다시 로드
   useEffect(() => {
-    loadPriceData();
-  }, [selectedTab, selectedDate]);
+    if (selectedItemCode) {
+      loadPriceData();
+    }
+  }, [selectedItemCode, selectedTab]);
 
   // 달력에 표시할 날짜들 생성
   const getDates = () => {
@@ -80,6 +264,127 @@ export default function MarketPrice() {
     }
     return dates;
   };
+
+  // 카테고리 선택 시
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    setSelectedSubCategory('');
+    setNewCropName('');
+    loadSubCategories(category);
+  };
+
+  // 작물 선택 시
+  const handleSubCategorySelect = (subCategory) => {
+    setSelectedSubCategory(subCategory);
+    setNewCropName('');
+    loadItems(selectedCategory, subCategory);
+  };
+
+  // 모달 열릴 때 카테고리 로드
+  useEffect(() => {
+    if (isAddCropModalVisible) {
+      loadCategories();
+    }
+  }, [isAddCropModalVisible]);
+
+  // 작물 추가 모달
+  const renderAddCropModal = () => (
+    <Modal
+      visible={isAddCropModalVisible}
+      transparent={true}
+      animationType="slide"
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>작물 추가</Text>
+          
+          {/* 대분류 선택 */}
+          <Text style={styles.modalSubTitle}>대분류 선택</Text>
+          <ScrollView style={styles.categoryList}>
+            {availableCategories.map((category, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.categoryItem,
+                  selectedCategory === category && styles.selectedCategoryItem
+                ]}
+                onPress={() => handleCategorySelect(category)}
+              >
+                <Text style={styles.categoryText}>{category}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* 작물 선택 */}
+          {selectedCategory && (
+            <>
+              <Text style={styles.modalSubTitle}>작물 선택</Text>
+              <ScrollView style={styles.categoryList}>
+                {availableSubCategories.map((subCategory, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.categoryItem,
+                      selectedSubCategory === subCategory && styles.selectedCategoryItem
+                    ]}
+                    onPress={() => handleSubCategorySelect(subCategory)}
+                  >
+                    <Text style={styles.categoryText}>{subCategory}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          )}
+
+          {/* 품종 선택 */}
+          {selectedSubCategory && (
+            <>
+              <Text style={styles.modalSubTitle}>품종 선택</Text>
+              <ScrollView style={styles.categoryList}>
+                {availableItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.categoryItem,
+                      newCropName === item.GOODNAME && styles.selectedCategoryItem
+                    ]}
+                    onPress={() => setNewCropName(item.GOODNAME)}
+                  >
+                    <Text style={styles.categoryText}>{item.GOODNAME}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          )}
+
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => {
+                setSelectedCategory('');
+                setSelectedSubCategory('');
+                setNewCropName('');
+                setIsAddCropModalVisible(false);
+              }}
+            >
+              <Text style={styles.modalButtonText}>취소</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modalButton,
+                styles.confirmButton,
+                !newCropName && styles.disabledButton
+              ]}
+              onPress={handleAddCrop}
+              disabled={!newCropName}
+            >
+              <Text style={styles.modalButtonText}>추가</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   if (loading) {
     return (
@@ -111,20 +416,40 @@ export default function MarketPrice() {
       </View>
 
       {/* 작물 선택 탭 */}
-      <View style={styles.cropSelector}>
-        <TouchableOpacity style={styles.selectedCropTab}>
-          <Text style={styles.selectedCropText}>그레이트</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cropTab}>
-          <Text style={styles.cropText}>복숭아</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.cropTab}>
-          <Text style={styles.cropText}>전체</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.addCropButton}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cropSelector}>
+        {crops.map((crop, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.cropTab,
+              selectedCrop === crop && styles.selectedCropTab
+            ]}
+            onPress={() => handleSelectCrop(crop)}
+          >
+            <Text style={[
+              styles.cropText,
+              selectedCrop === crop && styles.selectedCropText
+            ]}>
+              {crop}
+            </Text>
+            <TouchableOpacity
+              style={styles.removeCropButton}
+              onPress={() => handleRemoveCrop(crop)}
+            >
+              <Ionicons name="close-circle" size={16} color="#666" />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={styles.addCropButton}
+          onPress={() => setIsAddCropModalVisible(true)}
+        >
           <Text style={styles.addCropText}>+ 작물 추가</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+
+      {/* 작물 추가 모달 */}
+      {renderAddCropModal()}
 
       {/* 달력 */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calendar}>
@@ -175,18 +500,18 @@ export default function MarketPrice() {
       {selectedTab === '경매내역' ? (
         <View style={styles.priceContainer}>
           <View style={styles.priceHeader}>
-            <Text style={styles.columnTitle}>품종</Text>
-            <Text style={styles.columnTitle}>규격/등급</Text>
-            <Text style={styles.columnTitle}>물량</Text>
-            <Text style={styles.columnTitle}>경락가</Text>
+            <Text style={styles.columnTitle}>품목명</Text>
+            <Text style={styles.columnTitle}>대분류</Text>
+            <Text style={styles.columnTitle}>중분류</Text>
+            <Text style={styles.columnTitle}>소분류</Text>
           </View>
           <ScrollView>
-            {dailyPrices.map((item, index) => (
+            {itemCodes.map((item, index) => (
               <View key={index} style={styles.priceRow}>
-                <Text style={styles.priceText}>{item.variety}</Text>
-                <Text style={styles.priceText}>{item.spec}</Text>
-                <Text style={styles.priceText}>{item.quantity}</Text>
-                <Text style={[styles.priceText, styles.priceValue]}>{item.price}</Text>
+                <Text style={styles.priceText}>{item.GOODNAME}</Text>
+                <Text style={styles.priceText}>{item.LARGENAME}</Text>
+                <Text style={styles.priceText}>{item.MIDNAME}</Text>
+                <Text style={styles.priceText}>{item.SMALL}</Text>
               </View>
             ))}
           </ScrollView>
@@ -194,239 +519,42 @@ export default function MarketPrice() {
       ) : (
         <View style={styles.nationalPriceContainer}>
           <ScrollView>
-            <View style={styles.marketSection}>
-              <View style={styles.marketHeader}>
-                <Text style={styles.marketName}>서울가락도매</Text>
-                <Text style={styles.totalVolume}>총 19,348kg</Text>
-                <View style={styles.priceChange}>
-                  <Text style={styles.changeLabel}>전일대비</Text>
-                  <Text style={styles.decreaseText}>-350원(-12%)</Text>
+            {marketPrices.map((market, index) => (
+              <View key={index} style={styles.marketSection}>
+                <View style={styles.marketHeader}>
+                  <Text style={styles.marketName}>{market.marketName}</Text>
+                  {market.data && market.data[0] && (
+                    <>
+                      <Text style={styles.totalVolume}>
+                        총 {market.data[0].VOLUME || '0'}kg
+                      </Text>
+                      <View style={styles.priceChange}>
+                        <Text style={styles.changeLabel}>전일대비</Text>
+                        <Text style={market.data[0].DIFF_PRICE > 0 ? styles.increaseText : styles.decreaseText}>
+                          {market.data[0].DIFF_PRICE || '0'}원
+                          ({market.data[0].DIFF_RATE || '0'}%)
+                        </Text>
+                      </View>
+                    </>
+                  )}
                 </View>
+                {market.data && market.data[0] && (
+                  <View style={styles.priceDetails}>
+                    <Text>{market.data[0].GRADE || '등급없음'} / {market.data[0].UNIT || '단위없음'}</Text>
+                    <Text>{market.data[0].VOLUME || '0'}kg</Text>
+                    <Text>{market.data[0].ITEM_NAME || '품목없음'}</Text>
+                    <View style={styles.priceRange}>
+                      <Text>{market.data[0].AVG_PRICE || '0'}원/kg</Text>
+                      <Text style={styles.highPrice}>최고 {market.data[0].MAX_PRICE || '0'}원</Text>
+                      <Text style={styles.lowPrice}>최저 {market.data[0].MIN_PRICE || '0'}원</Text>
+                    </View>
+                  </View>
+                )}
               </View>
-              <View style={styles.priceDetails}>
-                <Text>특 / 4kg 상자</Text>
-                <Text>19,348kg</Text>
-                <Text>그레이트</Text>
-                <View style={styles.priceRange}>
-                  <Text>9,820원/kg</Text>
-                  <Text style={styles.highPrice}>최고 22,000원</Text>
-                  <Text style={styles.lowPrice}>최저 4,000원</Text>
-                </View>
-              </View>
-            </View>
+            ))}
           </ScrollView>
         </View>
       )}
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  cropSelector: {
-    flexDirection: 'row',
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  selectedCropTab: {
-    backgroundColor: '#000',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  cropTab: {
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  selectedCropText: {
-    color: '#fff',
-  },
-  cropText: {
-    color: '#000',
-  },
-  addCropButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  addCropText: {
-    color: '#666',
-  },
-  calendar: {
-    padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  dateButton: {
-    alignItems: 'center',
-    padding: 8,
-    marginRight: 16,
-  },
-  selectedDate: {
-    backgroundColor: '#000',
-    borderRadius: 20,
-  },
-  dayText: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 16,
-  },
-  sundayText: {
-    color: 'red',
-  },
-  selectedDateText: {
-    color: '#fff',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  selectedTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#000',
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  selectedTabText: {
-    color: '#000',
-    fontWeight: 'bold',
-  },
-  priceContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  priceHeader: {
-    flexDirection: 'row',
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  columnTitle: {
-    flex: 1,
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  priceRow: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  priceText: {
-    flex: 1,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  priceValue: {
-    color: '#ff0000',
-  },
-  nationalPriceContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  marketSection: {
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-  },
-  marketHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  marketName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalVolume: {
-    fontSize: 14,
-    color: '#666',
-  },
-  priceChange: {
-    flexDirection: 'row',
-  },
-  changeLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 4,
-  },
-  decreaseText: {
-    fontSize: 14,
-    color: '#0000ff',
-  },
-  priceDetails: {
-    marginTop: 8,
-  },
-  priceRange: {
-    marginTop: 8,
-  },
-  highPrice: {
-    color: '#ff0000',
-  },
-  lowPrice: {
-    color: '#0000ff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#000',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
-  },
-  retryText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-}); 
+} 
