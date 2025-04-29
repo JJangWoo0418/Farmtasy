@@ -240,6 +240,8 @@ const PostPage = () => {
 
     // 좋아요 핸들러 useCallback
     const handleLike = useCallback(async (postId, currentLike) => {
+        console.log('handleLike 호출:', { postId, currentLike, phone });
+        
         setPosts(prevPosts =>
             prevPosts.map(post =>
                 post.id === postId
@@ -256,7 +258,13 @@ const PostPage = () => {
             [postId]: !currentLike
         }));
         try {
-            await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
+            console.log('좋아요 요청 데이터:', {
+                postId,
+                like: !currentLike ? 1 : 0,
+                phone
+            });
+            
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -265,8 +273,31 @@ const PostPage = () => {
                     phone
                 }),
             });
+
+            const result = await response.json();
+            console.log('좋아요 응답:', result);
+
+            if (!result.success) {
+                throw new Error(result.message || '좋아요 처리 실패');
+            }
         } catch (e) {
             console.error('좋아요 처리 중 오류:', e);
+            // 에러 발생 시 UI 상태 롤백
+            setPosts(prevPosts =>
+                prevPosts.map(post =>
+                    post.id === postId
+                        ? {
+                            ...post,
+                            isLiked: currentLike,
+                            likes: currentLike ? post.likes - 1 : post.likes + 1
+                        }
+                        : post
+                )
+            );
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: currentLike
+            }));
         }
     }, [phone]);
 

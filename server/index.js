@@ -100,30 +100,45 @@ app.post('/api/register', async (req, res) => {
 // 좋아요 저장 API
 app.post('/api/post/post_like', async (req, res) => {
     const { postId, like, phone } = req.body;
+    console.log('좋아요 요청 받음:', { postId, like, phone });
+    
     try {
-        if (like) {
-            // 좋아요 추가
-            await pool.query(
-                'INSERT INTO post_liked_users (post_id, user_phone) VALUES (?, ?)',
-                [postId, phone]
-            );
-        } else {
-            // 좋아요 취소
-            await pool.query(
-                'DELETE FROM post_liked_users WHERE post_id = ? AND user_phone = ?',
-                [postId, phone]
-            );
-        }
-        
-        // post 테이블의 좋아요 수 업데이트
-        await pool.query(
-            'UPDATE post SET post_like = (SELECT COUNT(*) FROM post_liked_users WHERE post_id = ?) WHERE post_id = ?',
-            [postId, postId]
+        // 게시글 정보 조회
+        const [postCheck] = await pool.query(
+            'SELECT post_id, post_liked_users FROM post WHERE post_id = ?',
+            [postId]
         );
         
+        if (postCheck.length === 0) {
+            return res.status(404).json({ success: false, message: '존재하지 않는 게시글입니다.' });
+        }
+
+        // 기존 좋아요 유저 목록 파싱
+        let likedUsers = [];
+        if (postCheck[0].post_liked_users) {
+            try {
+                likedUsers = JSON.parse(postCheck[0].post_liked_users);
+            } catch (e) {
+                likedUsers = [];
+            }
+        }
+
+        if (like) {
+            // 좋아요 추가
+            if (!likedUsers.includes(phone)) likedUsers.push(phone);
+        } else {
+            // 좋아요 취소
+            likedUsers = likedUsers.filter(userPhone => userPhone !== phone);
+        }
+
+        // DB 업데이트
+        const [updateResult] = await pool.query(
+            'UPDATE post SET post_like = ?, post_liked_users = ? WHERE post_id = ?',
+            [likedUsers.length, JSON.stringify(likedUsers), postId]
+        );
+
         res.json({ success: true });
     } catch (error) {
-        console.error('좋아요 처리 중 오류:', error);
         res.status(500).json({ success: false, message: '좋아요 저장 실패' });
     }
 });
