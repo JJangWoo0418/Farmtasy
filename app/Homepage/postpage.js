@@ -499,7 +499,19 @@ const PostPage = () => {
                     },
                 ]}
             >
-                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                    onPress={() => {
+                        navigation.push('Homepage/writingpage', {
+                            category: category,
+                            icon: categoryIcon,
+                            userData,
+                            name,
+                            phone,
+                            region,
+                        });
+                    }}
+                >
                     {showText && (
                         <Animated.Text
                             style={[styles.writeButtonText, {
