@@ -158,8 +158,8 @@ app.get('/api/post', async (req, res) => {
 
         // 1. DB에서 rows 받아오기
         const [rows] = await pool.query(`
-            SELECT p.*, u.introduction, u.region 
-            FROM post p 
+            SELECT p.post_id, p.name, p.phone, p.post_content, p.post_category, p.post_created_at, p.post_like, p.image_urls, u.introduction, u.region
+            FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             ${category ? 'WHERE p.post_category = ?' : ''}
         `, params);
@@ -185,6 +185,7 @@ app.get('/api/post', async (req, res) => {
             return {
                 id: row.post_id,
                 user: row.name,
+                phone: row.phone,
                 time: row.post_created_at,
                 text: row.post_content,
                 image_urls,
@@ -272,7 +273,7 @@ app.get('/api/comment', async (req, res) => {
 
     try {
         const [rows] = await pool.query(`
-            SELECT c.comment_id, c.comment_content, c.comment_created_at, c.comment_parent_id, u.name, u.profile, u.region, u.introduction
+            SELECT c.comment_id, c.comment_content, c.comment_created_at, c.comment_parent_id, c.phone, u.name, u.profile, u.region, u.introduction
             FROM Comment c
             LEFT JOIN user u ON c.phone = u.phone
             WHERE c.post_id = ?
@@ -287,9 +288,10 @@ app.get('/api/comment', async (req, res) => {
             text: row.comment_content,
             likes: row.comment_like || 0,
             introduction: row.introduction,
-            comment_parent_id: row.comment_parent_id, // 대댓글 정보 포함
-            isAuthor: false, // 프론트에서 현재 유저와 비교해 처리
-            isLiked: false   // 추후 구현
+            comment_parent_id: row.comment_parent_id,
+            phone: row.phone,
+            isAuthor: false,
+            isLiked: false
         }));
 
         res.json(comments);

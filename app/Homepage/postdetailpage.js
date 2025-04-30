@@ -27,6 +27,10 @@ const PostDetailPage = () => {
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
 
+    // 게시글 작성자 phone 콘솔 출력
+    console.log('게시글 작성자 phone:', post?.phone);
+    console.log('post 객체:', post);
+
     // 날짜 포맷 함수 추가
     const formatDate = (isoString) => {
         if (!isoString) return '';
@@ -219,8 +223,6 @@ const PostDetailPage = () => {
         }
     };
 
-    console.log('comments:', comments);
-
     // 댓글 트리 구조로 변환 함수
     function buildCommentTree(comments) {
         const map = {};
@@ -253,7 +255,7 @@ const PostDetailPage = () => {
                         <View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={styles.commentUsername}>{comment.user}</Text>
-                                {comment.phone === post.phone && (
+                                {String(comment.phone) === String(post.phone) && (
                                     <View style={styles.authorBadge}>
                                         <Text style={styles.authorBadgeText}>작성자</Text>
                                     </View>
@@ -285,13 +287,6 @@ const PostDetailPage = () => {
                             </Animated.View>
                             <Text style={styles.commentLikeText}>{comment.likes}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.commentLikeButton} onPress={() => {
-                            setIsReplyInputVisible(true);
-                            setReplyToCommentId(comment.id);
-                        }}>
-                            <Image source={require('../../assets/commenticon.png')} style={styles.commentAnswerIcon} />
-                            <Text style={styles.replyText}>답글쓰기</Text>
-                        </TouchableOpacity>
                     </View>
                     {/* 자식 대댓글 재귀 렌더링 */}
                     {children}
@@ -302,8 +297,11 @@ const PostDetailPage = () => {
 
     // 댓글 렌더링 함수를 useCallback으로 최적화
     const renderComments = useCallback((comments, depth = 0) => {
-        return comments.map(comment =>
-            depth > 0 ? (
+        return comments.map(comment => {
+            // 댓글 phone 콘솔 출력
+            console.log('게시글 작성자 phone:', post?.phone, typeof post?.phone);
+            console.log('댓글 phone:', comment.phone, typeof comment.phone, '댓글 id:', comment.id);
+            return depth > 0 ? (
                 <ReplyCommentComponent
                     key={comment.id}
                     comment={comment}
@@ -324,7 +322,7 @@ const PostDetailPage = () => {
                         <View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={styles.commentUsername}>{comment.user}</Text>
-                                {comment.phone === post.phone && (
+                                {String(comment.phone) === String(post.phone) && (
                                     <View style={styles.authorBadge}>
                                         <Text style={styles.authorBadgeText}>작성자</Text>
                                     </View>
@@ -368,7 +366,7 @@ const PostDetailPage = () => {
                     {comment.children && comment.children.length > 0 && renderComments(comment.children, depth + 1)}
                 </View>
             )
-        );
+        });
     }, [post, handleCommentLike, setIsReplyInputVisible, setReplyToCommentId, commentAnimations]);
 
     // 총 댓글 수 계산 함수
@@ -476,7 +474,7 @@ const PostDetailPage = () => {
                         <View style={styles.statsRow}>
                             <View style={styles.statsItem}>
                                 <Image 
-                                    source={isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')} 
+                                    source={require('../../assets/heartgreenicon.png')} 
                                     style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]} 
                                 />
                                 <Text style={styles.statsText}>{post.likes}</Text>
@@ -566,54 +564,6 @@ const PostDetailPage = () => {
                     </Animated.View>
                 )}
             </View>
-
-            <Modal
-                transparent={true}
-                visible={isModalVisible}
-                animationType="none"
-                onRequestClose={toggleModal}
-            >
-                <TouchableOpacity 
-                    style={styles.modalOverlay} 
-                    activeOpacity={1} 
-                    onPress={toggleModal}
-                >
-                    <Animated.View 
-                        style={[
-                            styles.modalContainer, 
-                            { 
-                                transform: [{ 
-                                    translateY: modalAnim.interpolate({ 
-                                        inputRange: [0, 1], 
-                                        outputRange: [300, 0] 
-                                    }) 
-                                }] 
-                            }
-                        ]}
-                    > 
-                        <View style={styles.modalContent}>
-                            <View style={styles.modalHeader}>
-                                <Text style={styles.modalTitle}>사진 올리기 선택</Text>
-                                <TouchableOpacity style={styles.modalCloseButton} onPress={toggleModal}>
-                                    <Text style={styles.modalCloseText}>✕</Text>
-                                </TouchableOpacity>
-                            </View> 
-                            <ScrollView>
-                                <View style={styles.modalButtons}>
-                                    <TouchableOpacity style={styles.modalButton} onPress={() => console.log('사진 촬영')}>
-                                        <Image source={require('../../assets/cameraicon2.png')} style={styles.modalIcon} />
-                                        <Text style={styles.modalButtonText}>사진 촬영</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.modalButton} onPress={() => console.log('앨범 선택')}>
-                                        <Image source={require('../../assets/galleryicon.png')} style={styles.modalIcon} />
-                                        <Text style={styles.modalButtonText}>앨범 선택</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </ScrollView>
-                        </View>
-                    </Animated.View>
-                </TouchableOpacity>
-            </Modal>
         </KeyboardAvoidingView>
     );
 };

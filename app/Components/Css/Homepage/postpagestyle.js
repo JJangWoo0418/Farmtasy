@@ -81,7 +81,7 @@ export default StyleSheet.create({
     postBox: {
         padding: 16,
         paddingTop: 15,
-        borderBottomWidth: 1,
+        borderBottomWidth: 10,
         borderColor: '#f0f0f0',
         backgroundColor: '#fff',
     },
@@ -251,4 +251,9 @@ export default StyleSheet.create({
         backgroundColor: '#000',
         borderRadius: 2,
     },
+
+    iconContainer:{
+        flexDirection: 'row',
+        alignItems: 'center',
+    }
 });

@@ -79,11 +79,14 @@ export default StyleSheet.create({
         flexWrap: 'wrap',
         marginTop: 8,
         marginBottom: 8,
+        marginRight: 50,
     },
     postImage: {
-        width: 360,
-        height: 360,
+        width: 363,
+        height: 363,
         marginVertical: 2,
+        marginTop: 3,
+        marginBottom: 3,
     },
     statsRow: {
         flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -49,9 +49,9 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                 </TouchableOpacity>
                 <Text style={styles.iconText}>{item.likes}</Text>
             </View>
-            <View style={styles.iconGroup}>
-                <Image source={require('../../assets/commenticon.png')} style={styles.icon2} />
-                <Text style={styles.iconText}>{item.comments}</Text>
+            <View style={styles.iconContainer}>
+                <Image source={require('../../assets/commenticon.png')} style={styles.icon} />
+                <Text style={styles.iconText}>{item.commentCount || 0}</Text>
             </View>
             <View style={styles.iconGroup}>
                 <TouchableOpacity onPress={() => onBookmark(item.id)}>
@@ -118,6 +118,7 @@ const RenderImageWithLoading = ({ url }) => {
 const PostPage = () => {
     const navigation = useNavigation();
     const [selectedFilter, setSelectedFilter] = useState('전체');
+    const [sortOption, setSortOption] = useState('최신순');
     const underlineAnim = useRef(new Animated.Value(0)).current;
     const [likedPosts, setLikedPosts] = useState({});
     const [bookmarkedPosts, setBookmarkedPosts] = useState({});
@@ -183,7 +184,19 @@ const PostPage = () => {
                 if (!response.ok) throw new Error('서버 응답 오류');
                 const data = await response.json();
 
-                setPosts(data);
+                // 각 게시글의 댓글 수를 가져오기
+                const postsWithCommentCount = await Promise.all(
+                    data.map(async (post) => {
+                        const commentResponse = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
+                        const comments = await commentResponse.json();
+                        return {
+                            ...post,
+                            commentCount: Array.isArray(comments) ? comments.length : 0
+                        };
+                    })
+                );
+
+                setPosts(postsWithCommentCount);
             } catch (err) {
                 setError('게시글을 불러오지 못했습니다.');
             } finally {
@@ -222,6 +235,10 @@ const PostPage = () => {
         }).start();
     };
 
+    const handleSortPress = (option) => {
+        setSortOption(option);
+    };
+
     // 북마크 애니메이션 및 상태 토글 useCallback
     const triggerBookmarkAnimation = useCallback((postId) => {
         if (!bookmarkAnimationsRef.current[postId]) {
@@ -242,7 +259,6 @@ const PostPage = () => {
 
     // 좋아요 핸들러 useCallback
     const handleLike = useCallback(async (postId, currentLike) => {
-        console.log('handleLike 호출:', { postId, currentLike, phone });
         // 하트 애니메이션 동작
         if (!heartAnimationsRef.current[postId]) {
             heartAnimationsRef.current[postId] = new Animated.Value(1);
@@ -311,6 +327,49 @@ const PostPage = () => {
         }
     }, [phone]);
 
+    // 총 댓글 수 계산 함수
+    const calculateTotalComments = (comments) => {
+        if (!comments) return 0;
+        
+        let total = 0;
+        const countComments = (commentList) => {
+            if (!Array.isArray(commentList)) return;
+            
+            commentList.forEach(comment => {
+                total++;
+                if (comment.replies && comment.replies.length > 0) {
+                    countComments(comment.replies);
+                }
+            });
+        };
+        countComments(comments);
+        return total;
+    };
+
+    // 정렬된 게시글 목록 계산
+    const sortedPosts = useMemo(() => {
+        if (!posts) return [];
+        
+        let sorted = [...posts];
+        
+        switch (sortOption) {
+            case '인기순':
+                sorted.sort((a, b) => b.likes - a.likes);
+                break;
+            case '최신순':
+                sorted.sort((a, b) => new Date(b.time) - new Date(a.time));
+                break;
+            case '오래된 순':
+                sorted.sort((a, b) => new Date(a.time) - new Date(b.time));
+                break;
+            default:
+                // 기본값은 최신순
+                sorted.sort((a, b) => new Date(b.time) - new Date(a.time));
+        }
+        
+        return sorted;
+    }, [posts, sortOption]);
+
     // renderPost useCallback으로 고정
     const renderPost = useCallback(
         ({ item }) => {
@@ -330,17 +389,9 @@ const PostPage = () => {
                     bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                     isBookmarked={isBookmarked}
                     navigateToDetail={() => {
-                        console.log('push params:', {
-                            post: item,
-                            introduction: item.introduction || '소개 미설정',
-                            phone,
-                            name,
-                            region,
-                            profile,
-                            introduction
-                        });
+                        console.log('상세 이동 post:', item);
                         navigation.push('Homepage/postdetailpage', {
-                            post: item,
+                            post: { ...item, phone: item.phone },
                             introduction: item.introduction || '소개 미설정',
                             phone,
                             name,
@@ -373,7 +424,7 @@ const PostPage = () => {
             )}
             {!loading && !error && (
                 <FlatList
-                    data={posts}
+                    data={sortedPosts}
                     renderItem={renderPost}
                     keyExtractor={keyExtractor}
                     extraData={bookmarkedPosts}
@@ -408,9 +459,15 @@ const PostPage = () => {
                                     <TouchableOpacity
                                         key={item}
                                         style={styles.tabItem}
-                                        onPress={() => handleTabPress(item, index)}
+                                        onPress={() => {
+                                            if (item === '전체') {
+                                                handleTabPress(item, index);
+                                            } else {
+                                                handleSortPress(item);
+                                            }
+                                        }}
                                     >
-                                        <Text style={[styles.tabText, selectedFilter === item && styles.activeTabText]}>
+                                        <Text style={[styles.tabText, (selectedFilter === item || sortOption === item) && styles.activeTabText]}>
                                             {item}
                                         </Text>
                                     </TouchableOpacity>

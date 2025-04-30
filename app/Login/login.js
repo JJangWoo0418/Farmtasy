@@ -76,7 +76,15 @@ const Login = () => {
                 />
 
                 <TouchableOpacity 
-                    onPress={handleKakaoLogin}
+                    onPress={() => {
+                        Alert.alert(
+                            "서비스 준비중",
+                            "현재 서비스 준비중입니다. 조금만 기다려주세요.",
+                            [
+                                { text: "확인", style: "default" }
+                            ]
+                        );
+                    }}
                     disabled={isLoading}
                 >
                     <Image 
