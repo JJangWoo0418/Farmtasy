@@ -161,10 +161,13 @@ const PostDetailPage = () => {
                     {/* 게시글 내용 */}
                     <View style={styles.postContainer}>
                         <View style={styles.postHeader}>
-                            <Image source={post.profile} style={styles.profileImg} />
+                            <Image 
+                                source={post.profile ? { uri: post.profile } : require('../../assets/usericon.png')} 
+                                style={styles.profileImg} 
+                            />
                             <View style={styles.userInfoContainer}>
                                 <Text style={styles.username}>{post.user}</Text>
-                                <Text style={styles.userInfo}>고양이가 제일 좋아요 · {post.time}</Text>
+                                <Text style={styles.userInfo}>{post.region} · {post.time}</Text>
                             </View>
                             <TouchableOpacity style={styles.moreBtn} onPress={() => {
                                 Alert.alert(
@@ -182,14 +185,25 @@ const PostDetailPage = () => {
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.postText}>{post.text}</Text>
-                        {post.image && <Image source={post.image} style={styles.postImage} resizeMode="cover" />}
+                        {post.image_urls && post.image_urls.flat().length > 0 && (
+                            <View style={styles.postImages}>
+                                {post.image_urls.flat().map((url, idx) => (
+                                    <Image 
+                                        key={url + idx} 
+                                        source={{ uri: url }} 
+                                        style={styles.postImage} 
+                                        resizeMode="cover" 
+                                    />
+                                ))}
+                            </View>
+                        )}
                     </View>
 
                     {/* 좋아요 / 댓글 수 */}
                     <View style={styles.statsRow}>
                         <View style={styles.statsItem}>
                             <Image 
-                                source={require('../../assets/heartgreenicon.png')} 
+                                source={isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')} 
                                 style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]} 
                             />
                             <Text style={styles.statsText}>{post.likes}</Text>
