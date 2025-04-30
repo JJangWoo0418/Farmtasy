@@ -272,7 +272,7 @@ app.get('/api/comment', async (req, res) => {
 
     try {
         const [rows] = await pool.query(`
-            SELECT c.*, u.name, u.profile, u.region, u.introduction
+            SELECT c.comment_id, c.comment_content, c.comment_created_at, c.comment_parent_id, u.name, u.profile, u.region, u.introduction
             FROM Comment c
             LEFT JOIN user u ON c.phone = u.phone
             WHERE c.post_id = ?
@@ -287,6 +287,7 @@ app.get('/api/comment', async (req, res) => {
             text: row.comment_content,
             likes: row.comment_like || 0,
             introduction: row.introduction,
+            comment_parent_id: row.comment_parent_id, // 대댓글 정보 포함
             isAuthor: false, // 프론트에서 현재 유저와 비교해 처리
             isLiked: false   // 추후 구현
         }));
@@ -299,14 +300,14 @@ app.get('/api/comment', async (req, res) => {
 
 // 댓글 작성 API
 app.post('/api/comment', async (req, res) => {
-    const { comment_content, post_id, phone } = req.body;
+    const { comment_content, post_id, phone, comment_parent_id } = req.body;
     if (!comment_content || !post_id || !phone) {
         return res.status(400).json({ success: false, message: '필수값 누락' });
     }
     try {
         await pool.query(
-            `INSERT INTO Comment (comment_content, comment_created_at, post_id, phone) VALUES (?, NOW(), ?, ?)`,
-            [comment_content, post_id, phone]
+            `INSERT INTO Comment (comment_content, comment_created_at, post_id, phone, comment_parent_id) VALUES (?, NOW(), ?, ?, ?)`,
+            [comment_content, post_id, phone, comment_parent_id || null]
         );
         res.json({ success: true });
     } catch (e) {
