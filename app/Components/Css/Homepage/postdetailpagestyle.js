@@ -36,7 +36,7 @@ export default StyleSheet.create({
     scrollView: {
         flex: 1,
         marginTop: 60, // 헤더 높이에 맞게 조정
-        marginBottom: 60,
+        marginBottom: 0,
     },
     postContainer: {
         padding: 16,
@@ -48,10 +48,11 @@ export default StyleSheet.create({
         marginBottom: 12,
     },
     profileImg: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 30,
+        height: 30,
+        borderRadius: 19,
         marginRight: 10,
+        marginBottom: 2
     },
     username: {
         fontWeight: 'bold',
@@ -71,10 +72,15 @@ export default StyleSheet.create({
         marginBottom: 10,
         marginTop: 5,
     },
+    postImages: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 8,
+        marginBottom: 8,
+    },
     postImage: {
-        width: '100%',
-        height: 250, // Adjust height as needed
-        borderRadius: 10,
+        width: 360,
+        height: 360,
         marginVertical: 2,
     },
     statsRow: {
@@ -253,7 +259,7 @@ export default StyleSheet.create({
     },
     userInfoContainer: {
         flex: 1,
-        marginLeft: 10,
+        marginLeft: 3,
     },
     errorText: {
         fontSize: 16,

@@ -16,6 +16,7 @@ const PostDetailPage = () => {
     const commentInputAnim = useRef(new Animated.Value(0)).current;
     const [isModalVisible, setIsModalVisible] = useState(false);
     const modalAnim = useRef(new Animated.Value(0)).current;
+    const scrollViewRef = useRef(null);
 
     // 임시 댓글 데이터
     const [comments, setComments] = useState([
@@ -129,7 +130,12 @@ const PostDetailPage = () => {
             toValue: isCommentInputVisible ? 0 : 1,
             duration: 300,
             useNativeDriver: true,
-        }).start();
+        }).start(() => {
+            if (!isCommentInputVisible && scrollViewRef.current) {
+                // 댓글 입력창이 열릴 때 스크롤을 아래로 밀기
+                scrollViewRef.current.scrollToEnd({ animated: true });
+            }
+        });
     };
 
     const toggleModal = () => {
@@ -168,7 +174,11 @@ const PostDetailPage = () => {
                 </View>
 
                 {/* 스크롤 가능한 내용 */}
-                <ScrollView style={styles.scrollView}>
+                <ScrollView 
+                    ref={scrollViewRef}
+                    style={styles.scrollView} 
+                    contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : 0 }}
+                >
                     {/* 게시글 내용 */}
                     <View style={styles.postContainer}>
                         <View style={styles.postHeader}>
