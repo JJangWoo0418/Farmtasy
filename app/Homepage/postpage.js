@@ -146,7 +146,7 @@ const PostPage = () => {
         categoryIcon = require('../../assets/Xicon.png'),
     } = route.params || {};
 
-    const TAB_LIST = ['전체', '인기순', '최신순', '오래된 순'];
+    const TAB_LIST = ['인기순', '최신순', '오래된 순'];
     const TAB_COUNT = TAB_LIST.length;
 
     const [selectedTabIndex, setSelectedTabIndex] = useState(0);
