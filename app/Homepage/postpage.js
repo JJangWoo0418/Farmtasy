@@ -146,6 +146,11 @@ const PostPage = () => {
         categoryIcon = require('../../assets/Xicon.png'),
     } = route.params || {};
 
+    const TAB_LIST = ['전체', '인기순', '최신순', '오래된 순'];
+    const TAB_COUNT = TAB_LIST.length;
+
+    const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+
     // 받은 사용자 정보 로깅
     useEffect(() => {
         console.log('PostPage에서 받은 route.params:', route.params);
@@ -227,9 +232,11 @@ const PostPage = () => {
     };
 
     const handleTabPress = (item, index) => {
+        setSelectedTabIndex(index);
         setSelectedFilter(item);
+        if (item !== '전체') setSortOption(item);
         Animated.timing(underlineAnim, {
-            toValue: index * (SCREEN_WIDTH / 4),
+            toValue: index * (SCREEN_WIDTH / TAB_COUNT),
             duration: 200,
             useNativeDriver: true,
         }).start();
@@ -455,19 +462,13 @@ const PostPage = () => {
                                 />
                             </View>
                             <View style={styles.tabContainer}>
-                                {['전체', '인기순', '최신순', '오래된 순'].map((item, index) => (
+                                {TAB_LIST.map((item, index) => (
                                     <TouchableOpacity
                                         key={item}
                                         style={styles.tabItem}
-                                        onPress={() => {
-                                            if (item === '전체') {
-                                                handleTabPress(item, index);
-                                            } else {
-                                                handleSortPress(item);
-                                            }
-                                        }}
+                                        onPress={() => handleTabPress(item, index)}
                                     >
-                                        <Text style={[styles.tabText, (selectedFilter === item || sortOption === item) && styles.activeTabText]}>
+                                        <Text style={[styles.tabText, selectedTabIndex === index && styles.activeTabText]}>
                                             {item}
                                         </Text>
                                     </TouchableOpacity>
@@ -475,7 +476,7 @@ const PostPage = () => {
                                 <Animated.View
                                     style={[
                                         styles.underline,
-                                        { transform: [{ translateX: underlineAnim }] },
+                                        { width: `${100 / TAB_COUNT}%`, transform: [{ translateX: underlineAnim }] },
                                     ]}
                                 />
                             </View>

@@ -27,10 +27,6 @@ const PostDetailPage = () => {
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
 
-    // 게시글 작성자 phone 콘솔 출력
-    console.log('게시글 작성자 phone:', post?.phone);
-    console.log('post 객체:', post);
-
     // 날짜 포맷 함수 추가
     const formatDate = (isoString) => {
         if (!isoString) return '';
