@@ -238,6 +238,13 @@ export default StyleSheet.create({
         marginRight: 4,
         resizeMode: 'contain'
     },
+    commentAnswerIcon: {
+        width: 16,
+        height: 16,
+        marginRight: 4,
+        resizeMode: 'contain',
+        marginBottom: 1
+    },
     commentLikedIcon: {
         resizeMode: 'contain'
     },
