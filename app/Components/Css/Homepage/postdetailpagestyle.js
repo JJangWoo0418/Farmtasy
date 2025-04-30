@@ -63,8 +63,10 @@ export default StyleSheet.create({
         color: '#666',
     },
     moreBtn: {
-        marginLeft: 'auto',
-        padding: 5, // Easier touch target
+        width: 23,
+        height: 23,
+        resizeMode: 'cover',
+        marginBottom: 5
     },
     postText: {
         fontSize: 15,
@@ -175,8 +177,6 @@ export default StyleSheet.create({
     commentContainer: {
         paddingHorizontal: 16,
         paddingVertical: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f5f5f5',
     },
     commentHeader: {
         flexDirection: 'row',
@@ -212,8 +212,18 @@ export default StyleSheet.create({
         fontWeight: 'bold',
     },
     commentMoreBtn: {
-        marginLeft: 'auto',
-        padding: 5,
+        width: 23,
+        height: 23,
+        marginLeft: 72,
+        marginBottom: 5,
+        resizeMode: 'cover'
+    },
+    commentMoreBtn2: {
+        width: 23,
+        height: 23,
+        marginLeft: 55,
+        marginBottom: 5,
+        resizeMode: 'cover'
     },
     commentText: {
         fontSize: 14,

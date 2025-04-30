@@ -245,16 +245,13 @@ const PostDetailPage = () => {
         return roots;
     }
 
-    // 댓글 트리 재귀 렌더링 함수
-    function renderComments(comments, depth = 0) {
-        return comments.map(comment => (
+    // 대댓글(답글) 컴포넌트 분리
+    function ReplyComment({ comment, depth, children, post, handleCommentLike, setIsReplyInputVisible, setReplyToCommentId, commentAnimations }) {
+        return (
             <View
-                key={comment.id}
                 style={[
                     styles.commentContainer,
-                    depth > 0
-                        ? { marginLeft: 40 * depth, borderLeftWidth: 2, borderLeftColor: '#e0e0e0', paddingLeft: 8 }
-                        : null
+                    { marginLeft: 25 * depth, marginTop: 10, paddingLeft: 8 }
                 ]}
             >
                 <View style={styles.commentHeader}>
@@ -270,7 +267,7 @@ const PostDetailPage = () => {
                         </View>
                         <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
                     </View>
-                    <TouchableOpacity style={styles.commentMoreBtn} onPress={() => {
+                    <TouchableOpacity style={styles.commentMoreBtn2} onPress={() => {
                         Alert.alert(
                             "신고하기",
                             "유저를 신고하시겠습니까?",
@@ -281,7 +278,7 @@ const PostDetailPage = () => {
                             { cancelable: true }
                         );
                     }}>
-                        <Image source={require('../../assets/moreicon.png')} />
+                        <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
                     </TouchableOpacity>
                 </View>
                 <Text style={styles.commentText}>{comment.text}</Text>
@@ -303,9 +300,80 @@ const PostDetailPage = () => {
                     </TouchableOpacity>
                 </View>
                 {/* 자식 대댓글 재귀 렌더링 */}
-                {comment.children && comment.children.length > 0 && renderComments(comment.children, depth + 1)}
+                {children}
             </View>
-        ));
+        );
+    }
+
+    // 댓글 트리 재귀 렌더링 함수
+    function renderComments(comments, depth = 0) {
+        return comments.map(comment =>
+            depth > 0 ? (
+                <ReplyComment
+                    key={comment.id}
+                    comment={comment}
+                    depth={depth}
+                    post={post}
+                    handleCommentLike={handleCommentLike}
+                    setIsReplyInputVisible={setIsReplyInputVisible}
+                    setReplyToCommentId={setReplyToCommentId}
+                    commentAnimations={commentAnimations}
+                >
+                    {comment.children && comment.children.length > 0 && renderComments(comment.children, depth + 1)}
+                </ReplyComment>
+            ) : (
+                <View key={comment.id} style={styles.commentContainer}>
+                    {/* 일반 댓글 UI */}
+                    <View style={styles.commentHeader}>
+                        <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
+                        <View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={styles.commentUsername}>{comment.user}</Text>
+                                {comment.phone === post.phone && (
+                                    <View style={styles.authorBadge}>
+                                        <Text style={styles.authorBadgeText}>작성자</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
+                        </View>
+                        <TouchableOpacity style={styles.commentMoreBtn} onPress={() => {
+                            Alert.alert(
+                                "신고하기",
+                                "유저를 신고하시겠습니까?",
+                                [
+                                    { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
+                                    { text: "취소", style: "cancel" }
+                                ],
+                                { cancelable: true }
+                            );
+                        }}>
+                            <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn} />
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.commentText}>{comment.text}</Text>
+                    <View style={styles.commentActions}>
+                        <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
+                            <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
+                                <Image
+                                    source={comment.isLiked ? require('../../assets/heartgrayicon.png') : require('../../assets/hearticon.png')}
+                                    style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
+                            </Animated.View>
+                            <Text style={styles.commentLikeText}>{comment.likes}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.commentLikeButton} onPress={() => {
+                            setIsReplyInputVisible(true);
+                            setReplyToCommentId(comment.id);
+                        }}>
+                            <Image source={require('../../assets/commenticon.png')} style={styles.commentAnswerIcon} />
+                            <Text style={styles.replyText}>답글쓰기</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {/* 자식 대댓글 재귀 렌더링 */}
+                    {comment.children && comment.children.length > 0 && renderComments(comment.children, depth + 1)}
+                </View>
+            )
+        );
     }
 
     // 댓글 트리 구조로 변환
@@ -345,7 +413,7 @@ const PostDetailPage = () => {
                                 />
                                 <View style={styles.userInfoContainer}>
                                     <Text style={styles.username}>[{post.region || '지역 미설정'}] {post.user}</Text>
-                                    <Text style={styles.userInfo}>{introduction || '소개 미설정'} · {formatDate(post.time)}</Text>
+                                    <Text style={styles.userInfo}>{post.introduction || '소개 미설정'} · {formatDate(post.time)}</Text>
                                 </View>
                                 <TouchableOpacity style={styles.moreBtn} onPress={() => {
                                     Alert.alert(
@@ -359,7 +427,7 @@ const PostDetailPage = () => {
                                         { cancelable: true }
                                     );
                                 }}>
-                                    <Image source={require('../../assets/moreicon.png')} />
+                                    <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn} />
                                 </TouchableOpacity>
                             </View>
                             <Text style={styles.postText}>{post.text}</Text>
