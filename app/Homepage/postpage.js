@@ -117,8 +117,12 @@ const RenderImageWithLoading = ({ url }) => {
 
 const PostPage = () => {
     const navigation = useNavigation();
-    const [selectedFilter, setSelectedFilter] = useState('전체');
-    const [sortOption, setSortOption] = useState('최신순');
+    const TAB_LIST = ['인기순', '최신순', '오래된 순'];
+    const TAB_COUNT = TAB_LIST.length;
+
+    const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+    const [selectedFilter, setSelectedFilter] = useState('인기순');
+    const [sortOption, setSortOption] = useState('인기순');
     const underlineAnim = useRef(new Animated.Value(0)).current;
     const [likedPosts, setLikedPosts] = useState({});
     const [bookmarkedPosts, setBookmarkedPosts] = useState({});
@@ -146,10 +150,8 @@ const PostPage = () => {
         categoryIcon = require('../../assets/Xicon.png'),
     } = route.params || {};
 
-    const TAB_LIST = ['인기순', '최신순', '오래된 순'];
-    const TAB_COUNT = TAB_LIST.length;
-
-    const [selectedTabIndex, setSelectedTabIndex] = useState(0);
+    const tabLabelOpacities = useRef(TAB_LIST.map(() => new Animated.Value(1))).current;
+    const underlineWidth = useRef(new Animated.Value(SCREEN_WIDTH / TAB_COUNT)).current;
 
     // 받은 사용자 정보 로깅
     useEffect(() => {
@@ -237,7 +239,8 @@ const PostPage = () => {
         if (item !== '전체') setSortOption(item);
         Animated.timing(underlineAnim, {
             toValue: index * (SCREEN_WIDTH / TAB_COUNT),
-            duration: 200,
+            duration: 400,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
         }).start();
     };
@@ -333,25 +336,6 @@ const PostPage = () => {
             }));
         }
     }, [phone]);
-
-    // 총 댓글 수 계산 함수
-    const calculateTotalComments = (comments) => {
-        if (!comments) return 0;
-        
-        let total = 0;
-        const countComments = (commentList) => {
-            if (!Array.isArray(commentList)) return;
-            
-            commentList.forEach(comment => {
-                total++;
-                if (comment.replies && comment.replies.length > 0) {
-                    countComments(comment.replies);
-                }
-            });
-        };
-        countComments(comments);
-        return total;
-    };
 
     // 정렬된 게시글 목록 계산
     const sortedPosts = useMemo(() => {
@@ -512,8 +496,8 @@ const PostPage = () => {
                                 opacity: writeButtonAnim,
                             }]}
                         >
-                            글쓰기   
-                        </Animated.Text>
+                            글쓰기      
+                        </Animated.Text>   
                     )}
                     <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
                 </TouchableOpacity>
