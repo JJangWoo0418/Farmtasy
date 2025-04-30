@@ -251,7 +251,7 @@ const PostDetailPage = () => {
             <View
                 style={[
                     styles.commentContainer,
-                    { marginLeft: 25 * depth, marginTop: 10, paddingLeft: 8 }
+                    { marginLeft: 25 * depth, marginTop: 10, paddingLeft: 8, marginBottom: -20 }
                 ]}
             >
                 <View style={styles.commentHeader}>
@@ -379,6 +379,21 @@ const PostDetailPage = () => {
     // 댓글 트리 구조로 변환
     const commentTree = buildCommentTree(comments);
 
+    // 총 댓글 수 계산 함수
+    const calculateTotalComments = (comments) => {
+        let total = 0;
+        const countComments = (commentList) => {
+            commentList.forEach(comment => {
+                total++;
+                if (comment.children && comment.children.length > 0) {
+                    countComments(comment.children);
+                }
+            });
+        };
+        countComments(comments);
+        return total;
+    };
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -455,11 +470,8 @@ const PostDetailPage = () => {
                                 <Text style={styles.statsText}>{post.likes}</Text>
                             </View>
                             <View style={styles.statsItem}>
-                                <Image 
-                                    source={require('../../assets/commenticon.png')} 
-                                    style={[styles.statsIconComment, { resizeMode: 'contain' }]} 
-                                />
-                                <Text style={styles.statsText}>{post.comments}</Text>
+                                <Text style={styles.statsText2}>댓글 </Text>
+                                <Text style={styles.statsText}>{calculateTotalComments(commentTree)}</Text>
                             </View>
                         </View>
 

@@ -96,7 +96,8 @@ export default StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginRight: 15,
-        marginLeft: 18
+        marginLeft: 18,
+        marginBottom: 2
 
     },
     statsIcon: {
@@ -105,14 +106,20 @@ export default StyleSheet.create({
         marginRight: 5,
     },
     statsIconComment: {
-        width: 18,
-        height: 18,
+        width: 21,
+        height: 21,
         marginRight: 5,
-        marginLeft: 248
+        marginLeft: 248,
+        marginBottom: 2
     },
     statsText: {
         fontSize: 14,
-        color: '#333',
+        color: 'gray',
+    },
+    statsText2: {
+        fontSize: 14,
+        color: 'gray',
+        marginLeft: 252,
     },
     actionRow: {
         flexDirection: 'row',
