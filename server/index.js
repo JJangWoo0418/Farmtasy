@@ -222,7 +222,7 @@ app.post('/api/s3/presign', (req, res) => {
     });
 });
 
-// 게시글 생성 API 추가
+// 게시글 생성 API 수정: post_title 관련 부분 제거
 app.post('/api/post', async (req, res) => {
     console.log('게시글 작성 요청 받음:', req.body);
 
@@ -241,12 +241,13 @@ app.post('/api/post', async (req, res) => {
             });
         }
 
-        const { post_title, name, post_content, post_category, phone, region, image_urls } = req.body;
+        // post_title 제거
+        const { name, post_content, post_category, phone, region, image_urls } = req.body;
 
         const [result] = await pool.query(
-            `INSERT INTO post (post_title, name, post_content, post_category, phone, region, image_urls) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [post_title, name, post_content, post_category, phone, region, JSON.stringify(image_urls)]
+            `INSERT INTO post (name, post_content, post_category, phone, region, image_urls) 
+    VALUES (?, ?, ?, ?, ?, ?)`,
+            [name, post_content, post_category, phone, region, JSON.stringify(image_urls)]
         );
 
         console.log('게시글 등록 성공:', result);

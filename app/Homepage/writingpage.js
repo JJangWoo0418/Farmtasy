@@ -20,7 +20,6 @@ const WritingPage = () => {
     const [selectedIcon, setSelectedIcon] = useState(icon);
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const uploadAnim = useRef(new Animated.Value(0)).current;
-    const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [selectedImages, setSelectedImages] = useState([]);
 
@@ -119,8 +118,8 @@ const WritingPage = () => {
     const uploadTranslateY = uploadAnim.interpolate({ inputRange: [0, 1], outputRange: [300, 0] });
 
     const handleSubmit = async () => {
-        if (!title.trim() || !content.trim()) {
-            Alert.alert('알림', '제목과 내용을 모두 입력해주세요.');
+        if (!content.trim()) {
+            Alert.alert('알림', '내용을 입력해주세요.');
             return;
         }
 
@@ -166,7 +165,6 @@ const WritingPage = () => {
     
             // 2. 게시글 데이터 전송
             const postData = {
-                post_title: title,
                 name: name,
                 region: region,
                 post_content: content,
@@ -275,15 +273,6 @@ const WritingPage = () => {
                             <Text style={styles.topicChangeText}>변경</Text>
                         </TouchableOpacity>
                     </View>
-
-                    {/* 제목 입력 */}
-                    <TextInput
-                        style={styles.titleInput}
-                        placeholder="제목을 입력해 주세요."
-                        placeholderTextColor="#999"
-                        value={title}
-                        onChangeText={setTitle}
-                    />
 
                     {/* 본문 입력 */}
                     <TextInput

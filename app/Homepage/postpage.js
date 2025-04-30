@@ -138,6 +138,7 @@ const PostPage = () => {
     const region = route.params?.region || '지역 미설정';
     const profile = userData?.profile;
     const introduction = userData?.introduction;
+    const [searchText, setSearchText] = useState('');
 
     // 애니메이션 객체 useRef로 관리
     const heartAnimationsRef = useRef({});
@@ -337,12 +338,21 @@ const PostPage = () => {
         }
     }, [phone]);
 
-    // 정렬된 게시글 목록 계산
+    // 검색 필터링
+    const filteredPosts = useMemo(() => {
+        if (!searchText.trim()) return posts;
+        const lower = searchText.trim().toLowerCase();
+        return posts.filter(
+            post =>
+                (post.user && post.user.toLowerCase().includes(lower)) ||
+                (post.text && post.text.toLowerCase().includes(lower))
+        );
+    }, [posts, searchText]);
+
+    // 정렬 적용
     const sortedPosts = useMemo(() => {
-        if (!posts) return [];
-        
-        let sorted = [...posts];
-        
+        if (!filteredPosts) return [];
+        let sorted = [...filteredPosts];
         switch (sortOption) {
             case '인기순':
                 sorted.sort((a, b) => b.likes - a.likes);
@@ -354,12 +364,10 @@ const PostPage = () => {
                 sorted.sort((a, b) => new Date(a.time) - new Date(b.time));
                 break;
             default:
-                // 기본값은 최신순
                 sorted.sort((a, b) => new Date(b.time) - new Date(a.time));
         }
-        
         return sorted;
-    }, [posts, sortOption]);
+    }, [filteredPosts, sortOption]);
 
     // renderPost useCallback으로 고정
     const renderPost = useCallback(
@@ -441,8 +449,10 @@ const PostPage = () => {
                                 <Image source={require('../../assets/searchicon.png')} style={styles.searchIcon} />
                                 <TextInput
                                     style={styles.searchInput}
-                                    placeholder="  제목이나 키워드로 게시글 검색"
+                                    placeholder="  농부(유저)나 내용으로 게시글 검색"
                                     placeholderTextColor="#aaa"
+                                    value={searchText}
+                                    onChangeText={setSearchText}
                                 />
                             </View>
                             <View style={styles.tabContainer}>
