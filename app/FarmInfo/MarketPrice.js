@@ -125,26 +125,55 @@ export default function MarketPrice() {
   ];
 
   // 작물 추가
-  const handleAddCrop = async () => {
-    if (newCropName.trim()) {
+  const handleAddCrop = async (cropName) => {
+    if (cropName.trim()) {
       try {
-        // 먼저 해당 작물의 품목 코드를 검색
-        const searchResults = await MarketPriceService.getItemCodes(newCropName.trim());
+        // 해당 작물의 품목 코드 검색
+        const searchResults = await MarketPriceService.getItemCodes(cropName.trim());
+        console.log('검색 결과:', searchResults);
         
         if (searchResults && searchResults.length > 0) {
-          const updatedCrops = [...crops, newCropName.trim()];
+          // 같은 대분류(LARGENAME)와 중분류(MIDNAME)를 가진 모든 품종을 찾음
+          const mainCategory = searchResults[0].LARGENAME;
+          const subCategory = searchResults[0].MIDNAME;
+          const allVarieties = searchResults.filter(
+            item => item.LARGENAME === mainCategory && item.MIDNAME === subCategory
+          );
+
+          console.log('찾은 품종들:', allVarieties);
+
+          // 작물 정보를 저장할 때 모든 품종 정보를 포함
+          const cropInfo = {
+            name: subCategory,
+            category: mainCategory,
+            varieties: allVarieties.map(item => ({
+              name: item.GOODNAME,
+              code: `${item.LARGE}${item.MID}${item.SMALL}`
+            }))
+          };
+
+          // 이미 존재하는 작물인지 확인
+          const existingCropIndex = crops.findIndex(crop => crop.name === cropInfo.name);
+          let updatedCrops;
+          
+          if (existingCropIndex >= 0) {
+            // 이미 존재하는 작물이면 업데이트
+            updatedCrops = [...crops];
+            updatedCrops[existingCropIndex] = cropInfo;
+          } else {
+            // 새로운 작물이면 추가
+            updatedCrops = [...crops, cropInfo];
+          }
+
           setCrops(updatedCrops);
-          saveCrops(updatedCrops);
+          await saveCrops(updatedCrops);
+          setSelectedCrop(cropInfo);
+          setSelectedItemCode(cropInfo.varieties[0].code);
           setNewCropName('');
           setIsAddCropModalVisible(false);
           
-          if (updatedCrops.length === 1) {
-            setSelectedCrop(newCropName.trim());
-            // 검색된 첫 번째 결과의 코드를 사용
-            const foundItem = searchResults[0];
-            setSelectedItemCode(foundItem.LARGE + foundItem.MID + foundItem.SMALL);
-            console.log('선택된 품목 코드:', foundItem.LARGE + foundItem.MID + foundItem.SMALL);
-          }
+          // 작물 선택 후 데이터 로드
+          loadPriceData();
         } else {
           alert('해당 작물의 품목 코드를 찾을 수 없습니다. 다른 이름으로 시도해주세요.');
         }
@@ -176,18 +205,69 @@ export default function MarketPrice() {
 
   // 작물 삭제
   const handleRemoveCrop = (cropToRemove) => {
-    const updatedCrops = crops.filter(crop => crop !== cropToRemove);
+    const updatedCrops = crops.filter(crop => crop.name !== cropToRemove.name);
     setCrops(updatedCrops);
     saveCrops(updatedCrops);
-    if (selectedCrop === cropToRemove) {
-      setSelectedCrop(updatedCrops[0] || '');
+    if (selectedCrop?.name === cropToRemove.name) {
+      setSelectedCrop(updatedCrops[0] || null);
+      setSelectedItemCode(updatedCrops[0]?.varieties[0]?.code || '');
     }
   };
 
   // 작물 선택
   const handleSelectCrop = (crop) => {
     setSelectedCrop(crop);
-    findAndSetItemCode(crop);
+    if (crop.varieties && crop.varieties.length > 0) {
+      setSelectedItemCode(crop.varieties[0].code);
+      loadPriceData();
+    }
+  };
+
+  // 인기 작물 선택
+  const handleSelectPopularCrop = async (cropName) => {
+    try {
+      const searchResults = await MarketPriceService.getItemCodes(cropName);
+      if (searchResults && searchResults.length > 0) {
+        const mainCategory = searchResults[0].LARGENAME;
+        const subCategory = searchResults[0].MIDNAME;
+        const allVarieties = searchResults.filter(
+          item => item.LARGENAME === mainCategory && item.MIDNAME === subCategory
+        );
+
+        const cropInfo = {
+          name: subCategory,
+          category: mainCategory,
+          varieties: allVarieties.map(item => ({
+            name: item.GOODNAME,
+            code: `${item.LARGE}${item.MID}${item.SMALL}`
+          }))
+        };
+
+        const existingCropIndex = crops.findIndex(crop => crop.name === cropInfo.name);
+        let updatedCrops;
+        
+        if (existingCropIndex >= 0) {
+          updatedCrops = [...crops];
+          updatedCrops[existingCropIndex] = cropInfo;
+        } else {
+          updatedCrops = [...crops, cropInfo];
+        }
+
+        setCrops(updatedCrops);
+        await saveCrops(updatedCrops);
+        setSelectedCrop(cropInfo);
+        setSelectedItemCode(cropInfo.varieties[0].code);
+        loadPriceData();
+      }
+    } catch (error) {
+      console.error('인기 작물 선택 중 오류:', error);
+      alert('인기 작물 선택 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 품종 선택
+  const handleSelectVariety = (variety) => {
+    setSelectedItemCode(variety.code);
   };
 
   // 품목 코드 로드
@@ -237,29 +317,35 @@ export default function MarketPrice() {
       }
 
       if (selectedTab === '경매내역') {
-        const data = await MarketPriceService.getDailyPrice(selectedItemCode);
-        if (data && data.row) {
-          setDailyPrices(data.row);
-          console.log('일일 시세 데이터:', data.row);
+        const data = await MarketPriceService.getDailyPrice(selectedItemCode, selectedDate);
+        if (data && data.length > 0) {
+          // 데이터를 날짜순으로 정렬
+          const sortedData = data.sort((a, b) => {
+            const dateA = new Date(a.AUCNGDE);
+            const dateB = new Date(b.AUCNGDE);
+            return dateB - dateA;
+          });
+          setDailyPrices(sortedData);
+          console.log('일일 시세 데이터:', sortedData);
+        } else {
+          setDailyPrices([]);
         }
       } else {
         const marketPricesData = [];
         for (const market of marketCodes) {
-          const data = await MarketPriceService.getRegionalPrices(selectedItemCode, market.CODEID);
-          if (data && data.row) {
+          const data = await MarketPriceService.getRegionalPrices(selectedItemCode, market.CODEID, selectedDate);
+          if (data && data.length > 0) {
             marketPricesData.push({
-              marketCode: market.CODEID,
-              marketName: market.CODENAME,
-              data: data.row
+              marketName: market.MRKTNM,
+              prices: data
             });
           }
         }
         setMarketPrices(marketPricesData);
-        console.log('지역별 시세 데이터:', marketPricesData);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('데이터 로드 오류:', error);
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
-      console.error('데이터 로드 오류:', err);
     } finally {
       setLoading(false);
     }
@@ -346,7 +432,7 @@ export default function MarketPrice() {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => {
                 setNewCropName('');
                 setIsAddCropModalVisible(false);
@@ -360,19 +446,6 @@ export default function MarketPrice() {
           </View>
 
           <ScrollView style={styles.modalScrollView}>
-            {/* 직접 추가하기 버튼 */}
-            <TouchableOpacity 
-              style={styles.directInputButton}
-              onPress={() => {
-                if (newCropName.trim()) {
-                  handleAddCrop();
-                  setIsAddCropModalVisible(false);
-                }
-              }}
-            >
-              <Text style={styles.directInputText}>직접 추가하기</Text>
-            </TouchableOpacity>
-
             {/* 작물 이름 입력 필드 */}
             <TextInput
               style={styles.input}
@@ -382,6 +455,18 @@ export default function MarketPrice() {
               placeholderTextColor="#999"
             />
 
+            {/* 직접 추가하기 버튼 */}
+            <TouchableOpacity
+              style={styles.directInputButton}
+              onPress={() => {
+                if (newCropName.trim()) {
+                  handleAddCrop(newCropName);
+                }
+              }}
+            >
+              <Text style={styles.directInputText}>직접 추가하기</Text>
+            </TouchableOpacity>
+
             {/* 인기작물 TOP 12 */}
             <Text style={styles.popularCropsTitle}>인기작물 TOP 12</Text>
             <View style={styles.popularCropsGrid}>
@@ -389,11 +474,7 @@ export default function MarketPrice() {
                 <TouchableOpacity
                   key={index}
                   style={styles.cropItem}
-                  onPress={() => {
-                    setNewCropName(crop.name);
-                    handleAddCrop();
-                    setIsAddCropModalVisible(false);
-                  }}
+                  onPress={() => handleSelectPopularCrop(crop.name)}
                 >
                   <Text style={styles.cropIcon}>{crop.icon}</Text>
                   <Text style={styles.cropName}>{crop.name}</Text>
@@ -488,6 +569,112 @@ export default function MarketPrice() {
     </Modal>
   );
 
+  // 경매내역 탭 렌더링
+  const renderAuctionHistory = () => (
+    <View style={styles.tabContent}>
+      {loading ? (
+        <ActivityIndicator size="large" color="#4CAF50" />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : dailyPrices.length > 0 ? (
+        <ScrollView>
+          {dailyPrices.map((price, index) => (
+            <View key={index} style={styles.priceItem}>
+              <View style={styles.priceHeader}>
+                <Text style={styles.dateText}>
+                  {new Date(price.AUCNGDE).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </Text>
+                <Text style={styles.marketText}>{price.MRKTNM}</Text>
+              </View>
+              <View style={styles.priceDetails}>
+                <View style={styles.priceColumn}>
+                  <Text style={styles.priceLabel}>최고가</Text>
+                  <Text style={styles.highPrice}>{price.MAXPRC}원</Text>
+                </View>
+                <View style={styles.priceColumn}>
+                  <Text style={styles.priceLabel}>최저가</Text>
+                  <Text style={styles.lowPrice}>{price.MINPRC}원</Text>
+                </View>
+                <View style={styles.priceColumn}>
+                  <Text style={styles.priceLabel}>평균가</Text>
+                  <Text style={styles.avgPrice}>{price.AVGPRI}원</Text>
+                </View>
+              </View>
+              <View style={styles.volumeInfo}>
+                <Text style={styles.volumeText}>거래량: {price.AUCTQY}kg</Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <Text style={styles.noDataText}>해당 기간의 경매 내역이 없습니다.</Text>
+      )}
+    </View>
+  );
+
+  // 작물 선택 탭 렌더링
+  const renderCropSelector = () => (
+    <View style={styles.cropSelector}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {crops.map((crop, index) => (
+          <View key={index} style={styles.cropContainer}>
+            <TouchableOpacity
+              style={[
+                styles.cropTab,
+                selectedCrop?.name === crop.name && styles.selectedCropTab
+              ]}
+              onPress={() => handleSelectCrop(crop)}
+            >
+              <Text style={[
+                styles.cropText,
+                selectedCrop?.name === crop.name && styles.selectedCropText
+              ]}>
+                {crop.name}
+              </Text>
+            </TouchableOpacity>
+            {selectedCrop?.name === crop.name && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.varietiesContainer}>
+                {crop.varieties.map((variety, vIndex) => (
+                  <TouchableOpacity
+                    key={vIndex}
+                    style={[
+                      styles.varietyTab,
+                      selectedItemCode === variety.code && styles.selectedVarietyTab
+                    ]}
+                    onPress={() => handleSelectVariety(variety)}
+                  >
+                    <Text style={[
+                      styles.varietyText,
+                      selectedItemCode === variety.code && styles.selectedVarietyText
+                    ]}>
+                      {variety.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            <TouchableOpacity
+              style={styles.removeCropButton}
+              onPress={() => handleRemoveCrop(crop)}
+            >
+              <Ionicons name="close-circle" size={16} color="#666" />
+            </TouchableOpacity>
+          </View>
+        ))}
+        <TouchableOpacity
+          style={styles.addCropButton}
+          onPress={() => setIsAddCropModalVisible(true)}
+        >
+          <Text style={styles.addCropText}>+ 작물 추가</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -510,39 +697,7 @@ export default function MarketPrice() {
   return (
     <View style={styles.container}>
       {/* 작물 선택 탭 (1/10) */}
-      <View style={styles.cropSelector}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {crops.map((crop, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.cropTab,
-                selectedCrop === crop && styles.selectedCropTab
-              ]}
-              onPress={() => handleSelectCrop(crop)}
-            >
-              <Text style={[
-                styles.cropText,
-                selectedCrop === crop && styles.selectedCropText
-              ]}>
-                {crop}
-              </Text>
-              <TouchableOpacity
-                style={styles.removeCropButton}
-                onPress={() => handleRemoveCrop(crop)}
-              >
-                <Ionicons name="close-circle" size={16} color="#666" />
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            style={styles.addCropButton}
-            onPress={() => setIsAddCropModalVisible(true)}
-          >
-            <Text style={styles.addCropText}>+ 작물 추가</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
+      {renderCropSelector()}
 
       {/* 달력 섹션 (2/10) */}
       <View style={styles.calendarContainer}>
@@ -578,27 +733,27 @@ export default function MarketPrice() {
             {/* 날짜 행 */}
             <View style={styles.datesRow}>
               {getWeekDates(selectedDate).map((date, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
+          <TouchableOpacity 
+            key={index}
+            style={[
                     styles.dateCell,
-                    date.toDateString() === selectedDate.toDateString() && styles.selectedDate
-                  ]}
+              date.toDateString() === selectedDate.toDateString() && styles.selectedDate
+            ]}
                   onPress={() => {
                     setSelectedDate(date);
                     loadPriceData();
                   }}
-                >
-                  <Text style={[
-                    styles.dateText,
+          >
+            <Text style={[
+              styles.dateText,
                     index === 0 && styles.sundayText,
                     index === 6 && styles.saturdayText,
-                    date.toDateString() === selectedDate.toDateString() && styles.selectedDateText
-                  ]}>
-                    {date.getDate()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              date.toDateString() === selectedDate.toDateString() && styles.selectedDateText
+            ]}>
+              {date.getDate()}
+            </Text>
+          </TouchableOpacity>
+        ))}
             </View>
           </View>
         </View>
@@ -612,84 +767,67 @@ export default function MarketPrice() {
       <View style={styles.tabContainer}>
         {/* 탭 버튼 */}
         <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-          <TouchableOpacity 
-            style={[styles.tab, selectedTab === '경매내역' && styles.selectedTab]}
-            onPress={() => setSelectedTab('경매내역')}
-          >
-            <Text style={[styles.tabText, selectedTab === '경매내역' && styles.selectedTabText]}>
-              경매내역
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, selectedTab === '전국시세' && styles.selectedTab]}
-            onPress={() => setSelectedTab('전국시세')}
-          >
-            <Text style={[styles.tabText, selectedTab === '전국시세' && styles.selectedTabText]}>
-              전국시세
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={[styles.tab, selectedTab === '경매내역' && styles.selectedTab]}
+          onPress={() => setSelectedTab('경매내역')}
+        >
+          <Text style={[styles.tabText, selectedTab === '경매내역' && styles.selectedTabText]}>
+            경매내역
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, selectedTab === '전국시세' && styles.selectedTab]}
+          onPress={() => setSelectedTab('전국시세')}
+        >
+          <Text style={[styles.tabText, selectedTab === '전국시세' && styles.selectedTabText]}>
+            전국시세
+          </Text>
+        </TouchableOpacity>
+      </View>
 
         {/* 탭 컨텐츠 */}
         <View style={{ flex: 1 }}>
-          {selectedTab === '경매내역' ? (
-            <View style={styles.priceContainer}>
-              <View style={styles.priceHeader}>
-                <Text style={styles.columnTitle}>품목명</Text>
-                <Text style={styles.columnTitle}>대분류</Text>
-                <Text style={styles.columnTitle}>중분류</Text>
-                <Text style={styles.columnTitle}>소분류</Text>
-              </View>
-              <ScrollView>
-                {itemCodes.map((item, index) => (
-                  <View key={index} style={styles.priceRow}>
-                    <Text style={styles.priceText}>{item.GOODNAME}</Text>
-                    <Text style={styles.priceText}>{item.LARGENAME}</Text>
-                    <Text style={styles.priceText}>{item.MIDNAME}</Text>
-                    <Text style={styles.priceText}>{item.SMALL}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          ) : (
-            <View style={styles.nationalPriceContainer}>
-              <ScrollView>
-                {marketPrices.map((market, index) => (
-                  <View key={index} style={styles.marketSection}>
-                    <View style={styles.marketHeader}>
-                      <Text style={styles.marketName}>{market.marketName}</Text>
-                      {market.data && market.data[0] && (
-                        <>
-                          <Text style={styles.totalVolume}>
-                            총 {market.data[0].VOLUME || '0'}kg
-                          </Text>
-                          <View style={styles.priceChange}>
-                            <Text style={styles.changeLabel}>전일대비</Text>
-                            <Text style={market.data[0].DIFF_PRICE > 0 ? styles.increaseText : styles.decreaseText}>
-                              {market.data[0].DIFF_PRICE || '0'}원
-                              ({market.data[0].DIFF_RATE || '0'}%)
-                            </Text>
-                          </View>
-                        </>
-                      )}
-                    </View>
-                    {market.data && market.data[0] && (
-                      <View style={styles.priceDetails}>
-                        <Text>{market.data[0].GRADE || '등급없음'} / {market.data[0].UNIT || '단위없음'}</Text>
-                        <Text>{market.data[0].VOLUME || '0'}kg</Text>
-                        <Text>{market.data[0].ITEM_NAME || '품목없음'}</Text>
-                        <View style={styles.priceRange}>
-                          <Text>{market.data[0].AVG_PRICE || '0'}원/kg</Text>
-                          <Text style={styles.highPrice}>최고 {market.data[0].MAX_PRICE || '0'}원</Text>
-                          <Text style={styles.lowPrice}>최저 {market.data[0].MIN_PRICE || '0'}원</Text>
-                        </View>
+      {selectedTab === '경매내역' ? (
+        renderAuctionHistory()
+      ) : (
+        <View style={styles.nationalPriceContainer}>
+          <ScrollView>
+            {marketPrices.map((market, index) => (
+              <View key={index} style={styles.marketSection}>
+                <View style={styles.marketHeader}>
+                  <Text style={styles.marketName}>{market.marketName}</Text>
+                  {market.prices && market.prices[0] && (
+                    <>
+                      <Text style={styles.totalVolume}>
+                        총 {market.prices[0].VOLUME || '0'}kg
+                      </Text>
+                      <View style={styles.priceChange}>
+                        <Text style={styles.changeLabel}>전일대비</Text>
+                        <Text style={market.prices[0].DIFF_PRICE > 0 ? styles.increaseText : styles.decreaseText}>
+                          {market.prices[0].DIFF_PRICE || '0'}원
+                          ({market.prices[0].DIFF_RATE || '0'}%)
+                        </Text>
                       </View>
-                    )}
+                    </>
+                  )}
+                </View>
+                {market.prices && market.prices[0] && (
+                  <View style={styles.priceDetails}>
+                    <Text>{market.prices[0].GRADE || '등급없음'} / {market.prices[0].UNIT || '단위없음'}</Text>
+                    <Text>{market.prices[0].VOLUME || '0'}kg</Text>
+                    <Text>{market.prices[0].ITEM_NAME || '품목없음'}</Text>
+                    <View style={styles.priceRange}>
+                      <Text>{market.prices[0].AVG_PRICE || '0'}원/kg</Text>
+                      <Text style={styles.highPrice}>최고 {market.prices[0].MAX_PRICE || '0'}원</Text>
+                      <Text style={styles.lowPrice}>최저 {market.prices[0].MIN_PRICE || '0'}원</Text>
+                    </View>
                   </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+                )}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
         </View>
       </View>
     </View>

@@ -17,15 +17,35 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  cropSelector: {
-    flex: 0.1,
+  cropContainer: {
+    marginRight: 10,
+  },
+  varietiesContainer: {
+    marginTop: 5,
     flexDirection: 'row',
-    paddingHorizontal: 15,
+  },
+  varietyTab: {
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginRight: 8,
+  },
+  selectedVarietyTab: {
+    backgroundColor: '#4CAF50',
+  },
+  varietyText: {
+    color: '#666',
+    fontSize: 12,
+  },
+  selectedVarietyText: {
+    color: '#fff',
+  },
+  cropSelector: {
+    flex: 0.15,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    height: 45,
-    alignItems: 'center',
   },
   cropTab: {
     flexDirection: 'row',
@@ -34,7 +54,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    marginRight: 10,
+    marginBottom: 5,
   },
   selectedCropTab: {
     backgroundColor: '#000',
@@ -233,9 +253,9 @@ export const styles = StyleSheet.create({
   },
   priceHeader: {
     flexDirection: 'row',
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   columnTitle: {
     flex: 1,
@@ -294,16 +314,36 @@ export const styles = StyleSheet.create({
     color: '#0000ff',
   },
   priceDetails: {
-    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   priceRange: {
     marginTop: 8,
   },
   highPrice: {
-    color: '#ff0000',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#e74c3c',
   },
   lowPrice: {
-    color: '#0000ff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3498db',
+  },
+  avgPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2ecc71',
+  },
+  volumeInfo: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 10,
+  },
+  volumeText: {
+    fontSize: 14,
+    color: '#666',
   },
   loadingContainer: {
     flex: 1,
@@ -317,10 +357,9 @@ export const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
-    color: 'red',
+    color: '#e74c3c',
     textAlign: 'center',
-    marginBottom: 16,
+    marginTop: 20,
   },
   retryButton: {
     backgroundColor: '#000',
@@ -436,5 +475,36 @@ export const styles = StyleSheet.create({
   },
   modalScrollView: {
     width: '100%',
+  },
+  priceItem: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  marketText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  priceColumn: {
+    alignItems: 'center',
+  },
+  priceLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 5,
+  },
+  noDataText: {
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
   },
 }); 
