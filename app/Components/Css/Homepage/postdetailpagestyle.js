@@ -204,6 +204,7 @@ export default StyleSheet.create({
         paddingVertical: 2,
         borderRadius: 4,
         marginLeft: 8,
+        marginBottom: 1
     },
     authorBadgeText: {
         fontSize: 10,

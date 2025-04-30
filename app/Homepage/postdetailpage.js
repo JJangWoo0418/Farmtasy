@@ -325,7 +325,7 @@ const PostDetailPage = () => {
                                 <View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <Text style={styles.commentUsername}>{comment.user}</Text>
-                                        {comment.isAuthor && (
+                                        {comment.phone === post.phone && (
                                             <View style={styles.authorBadge}>
                                                 <Text style={styles.authorBadgeText}>작성자</Text>
                                             </View>
