@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
 import API_CONFIG from '../DB/api';
@@ -52,8 +52,11 @@ const PostDetailPage = () => {
         if (post?.id) fetchComments();
     }, [post?.id]);
 
-    // 댓글 작성
-    const handleSendComment = async () => {
+    // 댓글 트리 구조로 변환 함수를 useMemo로 최적화
+    const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
+
+    // 댓글 작성 함수를 useCallback으로 최적화
+    const handleSendComment = useCallback(async () => {
         if (!commentInput.trim()) return;
         await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
             method: 'POST',
@@ -74,10 +77,21 @@ const PostDetailPage = () => {
         const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
         const data = await res.json();
         setComments(Array.isArray(data) ? data : []);
-    };
+        
+        // 댓글 작성 후 입력창 닫기
+        setIsCommentInputVisible(false);
+        Animated.timing(commentInputAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+        
+        // 키보드 내리기
+        Keyboard.dismiss();
+    }, [commentInput, post.id, phone, name, region, profile, introduction]);
 
-    // 대댓글(답글) 작성
-    const handleSendReply = async () => {
+    // 대댓글 작성 함수를 useCallback으로 최적화
+    const handleSendReply = useCallback(async () => {
         if (!replyInput.trim()) return;
         const payload = {
             comment_content: replyInput,
@@ -89,7 +103,6 @@ const PostDetailPage = () => {
             introduction,
             comment_parent_id: replyToCommentId
         };
-        console.log('대댓글 전송 데이터:', payload);
         await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -102,30 +115,10 @@ const PostDetailPage = () => {
         const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
         const data = await res.json();
         setComments(Array.isArray(data) ? data : []);
-    };
+    }, [replyInput, post.id, phone, name, region, profile, introduction, replyToCommentId]);
 
-    if (!post) {
-        // 데이터가 없는 경우 처리 (예: 로딩 표시 또는 에러 메시지)
-        return (
-            <SafeAreaView style={styles.container}>
-                <ScrollView style={styles.scrollView}>
-                    {/* 헤더 */}
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Image source={require('../../assets/gobackicon.png')} />
-                        </TouchableOpacity>
-                        <Text style={styles.headerTitle}>게시글 로딩 중...</Text>
-                    </View>
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={styles.errorText}>게시글 정보를 불러오는데 실패했습니다.</Text>
-                    </View>
-                </ScrollView>
-            </SafeAreaView>
-        );
-    }
-
-    // 댓글 좋아요 토글 함수
-    const handleCommentLike = (commentId) => {
+    // 댓글 좋아요 함수를 useCallback으로 최적화
+    const handleCommentLike = useCallback((commentId) => {
         setComments(prevComments =>
             prevComments.map(comment =>
                 comment.id === commentId
@@ -151,7 +144,7 @@ const PostDetailPage = () => {
                 useNativeDriver: true,
             })
         ]).start();
-    };
+    }, []);
 
     const handleLike = () => {
         setIsLiked(!isLiked);
@@ -245,71 +238,73 @@ const PostDetailPage = () => {
         return roots;
     }
 
-    // 대댓글(답글) 컴포넌트 분리
-    function ReplyComment({ comment, depth, children, post, handleCommentLike, setIsReplyInputVisible, setReplyToCommentId, commentAnimations }) {
-        return (
-            <View
-                style={[
-                    styles.commentContainer,
-                    { marginLeft: 25 * depth, marginTop: 10, paddingLeft: 8, marginBottom: -20 }
-                ]}
-            >
-                <View style={styles.commentHeader}>
-                    <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
-                    <View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.commentUsername}>{comment.user}</Text>
-                            {comment.phone === post.phone && (
-                                <View style={styles.authorBadge}>
-                                    <Text style={styles.authorBadgeText}>작성자</Text>
-                                </View>
-                            )}
+    // 대댓글 컴포넌트를 useMemo로 최적화
+    const ReplyCommentComponent = useMemo(() => {
+        return function ReplyComment({ comment, depth, children, post, handleCommentLike, setIsReplyInputVisible, setReplyToCommentId, commentAnimations }) {
+            return (
+                <View
+                    style={[
+                        styles.commentContainer,
+                        { marginLeft: 25 * depth, marginTop: 10, paddingLeft: 8, marginBottom: -20 }
+                    ]}
+                >
+                    <View style={styles.commentHeader}>
+                        <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
+                        <View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={styles.commentUsername}>{comment.user}</Text>
+                                {comment.phone === post.phone && (
+                                    <View style={styles.authorBadge}>
+                                        <Text style={styles.authorBadgeText}>작성자</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
                         </View>
-                        <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
+                        <TouchableOpacity style={styles.commentMoreBtn2} onPress={() => {
+                            Alert.alert(
+                                "신고하기",
+                                "유저를 신고하시겠습니까?",
+                                [
+                                    { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
+                                    { text: "취소", style: "cancel" }
+                                ],
+                                { cancelable: true }
+                            );
+                        }}>
+                            <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={styles.commentMoreBtn2} onPress={() => {
-                        Alert.alert(
-                            "신고하기",
-                            "유저를 신고하시겠습니까?",
-                            [
-                                { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
-                                { text: "취소", style: "cancel" }
-                            ],
-                            { cancelable: true }
-                        );
-                    }}>
-                        <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
-                    </TouchableOpacity>
+                    <Text style={styles.commentText}>{comment.text}</Text>
+                    <View style={styles.commentActions}>
+                        <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
+                            <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
+                                <Image
+                                    source={comment.isLiked ? require('../../assets/heartgrayicon.png') : require('../../assets/hearticon.png')}
+                                    style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
+                            </Animated.View>
+                            <Text style={styles.commentLikeText}>{comment.likes}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.commentLikeButton} onPress={() => {
+                            setIsReplyInputVisible(true);
+                            setReplyToCommentId(comment.id);
+                        }}>
+                            <Image source={require('../../assets/commenticon.png')} style={styles.commentAnswerIcon} />
+                            <Text style={styles.replyText}>답글쓰기</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {/* 자식 대댓글 재귀 렌더링 */}
+                    {children}
                 </View>
-                <Text style={styles.commentText}>{comment.text}</Text>
-                <View style={styles.commentActions}>
-                    <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
-                        <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
-                            <Image
-                                source={comment.isLiked ? require('../../assets/heartgrayicon.png') : require('../../assets/hearticon.png')}
-                                style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
-                        </Animated.View>
-                        <Text style={styles.commentLikeText}>{comment.likes}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.commentLikeButton} onPress={() => {
-                        setIsReplyInputVisible(true);
-                        setReplyToCommentId(comment.id);
-                    }}>
-                        <Image source={require('../../assets/commenticon.png')} style={styles.commentAnswerIcon} />
-                        <Text style={styles.replyText}>답글쓰기</Text>
-                    </TouchableOpacity>
-                </View>
-                {/* 자식 대댓글 재귀 렌더링 */}
-                {children}
-            </View>
-        );
-    }
+            );
+        };
+    }, []);
 
-    // 댓글 트리 재귀 렌더링 함수
-    function renderComments(comments, depth = 0) {
+    // 댓글 렌더링 함수를 useCallback으로 최적화
+    const renderComments = useCallback((comments, depth = 0) => {
         return comments.map(comment =>
             depth > 0 ? (
-                <ReplyComment
+                <ReplyCommentComponent
                     key={comment.id}
                     comment={comment}
                     depth={depth}
@@ -320,7 +315,7 @@ const PostDetailPage = () => {
                     commentAnimations={commentAnimations}
                 >
                     {comment.children && comment.children.length > 0 && renderComments(comment.children, depth + 1)}
-                </ReplyComment>
+                </ReplyCommentComponent>
             ) : (
                 <View key={comment.id} style={styles.commentContainer}>
                     {/* 일반 댓글 UI */}
@@ -374,10 +369,7 @@ const PostDetailPage = () => {
                 </View>
             )
         );
-    }
-
-    // 댓글 트리 구조로 변환
-    const commentTree = buildCommentTree(comments);
+    }, [post, handleCommentLike, setIsReplyInputVisible, setReplyToCommentId, commentAnimations]);
 
     // 총 댓글 수 계산 함수
     const calculateTotalComments = (comments) => {
@@ -393,6 +385,26 @@ const PostDetailPage = () => {
         countComments(comments);
         return total;
     };
+
+    if (!post) {
+        // 데이터가 없는 경우 처리 (예: 로딩 표시 또는 에러 메시지)
+        return (
+            <SafeAreaView style={styles.container}>
+                <ScrollView style={styles.scrollView}>
+                    {/* 헤더 */}
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <Image source={require('../../assets/gobackicon.png')} />
+                        </TouchableOpacity>
+                        <Text style={styles.headerTitle}>게시글 로딩 중...</Text>
+                    </View>
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={styles.errorText}>게시글 정보를 불러오는데 실패했습니다.</Text>
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
