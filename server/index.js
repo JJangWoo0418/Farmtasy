@@ -157,7 +157,12 @@ app.get('/api/post', async (req, res) => {
         }
 
         // 1. DB에서 rows 받아오기
-        const [rows] = await pool.query(query, params);
+        const [rows] = await pool.query(`
+            SELECT p.*, u.introduction, u.region 
+            FROM post p 
+            LEFT JOIN user u ON p.phone = u.phone
+            ${category ? 'WHERE p.post_category = ?' : ''}
+        `, params);
 
         // 2. ★★★ 여기에서 image_urls 안전하게 파싱 ★★★
         const posts = rows.map(row => {
@@ -170,7 +175,7 @@ app.get('/api/post', async (req, res) => {
                         image_urls = image_urls[0];
                     }
                     if (!Array.isArray(image_urls)) {
-                        image_urls = [image_urls];
+                        image_urls = [row.image_urls];
                     }
                 } catch (e) {
                     image_urls = [row.image_urls];
@@ -185,6 +190,8 @@ app.get('/api/post', async (req, res) => {
                 image_urls,
                 category: row.post_category,
                 likes: row.post_like || 0,
+                introduction: row.introduction,
+                region: row.region
             };
         });
 

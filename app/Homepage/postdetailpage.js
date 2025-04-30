@@ -6,7 +6,7 @@ import styles from '../Components/Css/Homepage/postdetailpagestyle'; // 스타�
 const PostDetailPage = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const { post } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
+    const { post, introduction } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
     const [isLiked, setIsLiked] = useState(false); // 공감 상태 추가
     const [isBookmarked, setIsBookmarked] = useState(false); // 북마크 상태 추가
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -24,6 +24,17 @@ const PostDetailPage = () => {
         // Add more comments as needed
     ]);
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
+
+    // 날짜 포맷 함수 추가
+    const formatDate = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hour = date.getHours().toString().padStart(2, '0');
+        const min = date.getMinutes().toString().padStart(2, '0');
+        return `${month}월 ${day}일 ${hour}:${min}`;
+    };
 
     if (!post) {
         // 데이터가 없는 경우 처리 (예: 로딩 표시 또는 에러 메시지)
@@ -166,8 +177,8 @@ const PostDetailPage = () => {
                                 style={styles.profileImg} 
                             />
                             <View style={styles.userInfoContainer}>
-                                <Text style={styles.username}>{post.user}</Text>
-                                <Text style={styles.userInfo}>{post.region} · {post.time}</Text>
+                                <Text style={styles.username}>[{post.region || '지역 미설정'}] {post.user}</Text>
+                                <Text style={styles.userInfo}>{introduction || '소개 미설정'} · {formatDate(post.time)}</Text>
                             </View>
                             <TouchableOpacity style={styles.moreBtn} onPress={() => {
                                 Alert.alert(

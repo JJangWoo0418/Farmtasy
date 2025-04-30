@@ -18,8 +18,8 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     style={styles.profileImg}
                 />
                 <View style={styles.userInfoContainer}>
-                    <Text style={styles.username}>{item.user}</Text>
-                    <Text style={styles.time}>{formatDate(item.time)}</Text>
+                    <Text style={styles.username}>[{item.region || '지역 미설정'}] {item.user}</Text>
+                    <Text style={styles.time}>{item.introduction || '소개 미설정'} · {formatDate(item.time)}</Text>
                 </View>
                 <TouchableOpacity style={styles.moreBtn}>
                     <Image source={require('../../assets/moreicon.png')} />
@@ -327,7 +327,10 @@ const PostPage = () => {
                     heartAnimation={heartAnimationsRef.current[item.id]}
                     bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                     isBookmarked={isBookmarked}
-                    navigateToDetail={() => navigation.navigate('Homepage/postdetailpage', { post: item })}
+                    navigateToDetail={() => navigation.navigate('Homepage/postdetailpage', { 
+                        post: item,
+                        introduction: item.introduction || '소개 미설정'
+                    })}
                     formatDate={formatDate}
                 />
             );
