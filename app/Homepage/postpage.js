@@ -127,6 +127,12 @@ const PostPage = () => {
     const writeButtonAnim = useRef(new Animated.Value(1)).current;
     const [showText, setShowText] = useState(true);
     const route = useRoute();
+    const userData = route.params?.userData;
+    const phone = route.params?.phone;
+    const name = route.params?.name;
+    const region = route.params?.region || '지역 미설정';
+    const profile = userData?.profile;
+    const introduction = userData?.introduction;
 
     // 애니메이션 객체 useRef로 관리
     const heartAnimationsRef = useRef({});
@@ -137,10 +143,6 @@ const PostPage = () => {
         categoryTitle = '카테고리 없음',
         categoryDesc = '',
         categoryIcon = require('../../assets/Xicon.png'),
-        userData,
-        phone = '',
-        name = '',
-        region = '지역 미설정'
     } = route.params || {};
 
     // 받은 사용자 정보 로깅
@@ -327,15 +329,31 @@ const PostPage = () => {
                     heartAnimation={heartAnimationsRef.current[item.id]}
                     bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                     isBookmarked={isBookmarked}
-                    navigateToDetail={() => navigation.navigate('Homepage/postdetailpage', { 
-                        post: item,
-                        introduction: item.introduction || '소개 미설정'
-                    })}
+                    navigateToDetail={() => {
+                        console.log('push params:', {
+                            post: item,
+                            introduction: item.introduction || '소개 미설정',
+                            phone,
+                            name,
+                            region,
+                            profile,
+                            introduction
+                        });
+                        navigation.push('Homepage/postdetailpage', {
+                            post: item,
+                            introduction: item.introduction || '소개 미설정',
+                            phone,
+                            name,
+                            region,
+                            profile,
+                            introduction
+                        });
+                    }}
                     formatDate={formatDate}
                 />
             );
         },
-        [bookmarkedPosts, handleLike, triggerBookmarkAnimation, navigation]
+        [bookmarkedPosts, handleLike, triggerBookmarkAnimation, navigation, phone, name, region, profile, introduction]
     );
 
     // keyExtractor useCallback

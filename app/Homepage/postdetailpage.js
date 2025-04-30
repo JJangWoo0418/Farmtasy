@@ -1,12 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
+import API_CONFIG from '../DB/api';
 
 const PostDetailPage = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const { post, introduction } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
+    const { post, introduction, phone, name, region, profile } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
     const [isLiked, setIsLiked] = useState(false); // 공감 상태 추가
     const [isBookmarked, setIsBookmarked] = useState(false); // 북마크 상태 추가
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -17,13 +18,10 @@ const PostDetailPage = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const modalAnim = useRef(new Animated.Value(0)).current;
     const scrollViewRef = useRef(null);
+    const [comments, setComments] = useState([]); // 서버에서 불러온 댓글로 초기화
+    const [commentInput, setCommentInput] = useState('');
 
     // 임시 댓글 데이터
-    const [comments, setComments] = useState([
-        { id: 'c1', user: '충북음성 이준호', profile: require('../../assets/leejunho.png'), time: '10분 전', text: '감사감사 ^^', likes: 1, isAuthor: true, isLiked: false },
-        { id: 'c2', user: '충북음성 이준호2', profile: require('../../assets/leejunho.png'), time: '12분 전', text: 'ㅎㅎㅎ', likes: 1, isAuthor: false, isLiked: true },
-        // Add more comments as needed
-    ]);
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
 
     // 날짜 포맷 함수 추가
@@ -35,6 +33,43 @@ const PostDetailPage = () => {
         const hour = date.getHours().toString().padStart(2, '0');
         const min = date.getMinutes().toString().padStart(2, '0');
         return `${month}월 ${day}일 ${hour}:${min}`;
+    };
+
+    // 댓글 목록 불러오기
+    useEffect(() => {
+        const fetchComments = async () => {
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
+                const data = await response.json();
+                setComments(Array.isArray(data) ? data : []);
+            } catch (e) {
+                setComments([]); // 에러 시 빈 배열
+            }
+        };
+        if (post?.id) fetchComments();
+    }, [post?.id]);
+
+    // 댓글 작성
+    const handleSendComment = async () => {
+        if (!commentInput.trim()) return;
+        await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comment_content: commentInput,
+                post_id: post.id,
+                phone,        // 로그인 유저의 전화번호
+                name,         // 필요하다면 이름도 함께
+                region,       // 필요하다면 지역도 함께
+                profile,      // 필요하다면 프로필도 함께
+                introduction  // 필요하다면 소개도 함께
+            })
+        });
+        setCommentInput('');
+        // 댓글 목록 새로고침
+        const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
+        const data = await res.json();
+        setComments(Array.isArray(data) ? data : []);
     };
 
     if (!post) {
@@ -286,7 +321,7 @@ const PostDetailPage = () => {
                     {comments.map(comment => (
                         <View key={comment.id} style={[styles.commentContainer, comment.user === '충북음성 이준호2' ? { marginLeft: 35 } : null]}>
                             <View style={styles.commentHeader}>
-                                <Image source={comment.profile} style={styles.commentProfileImg} />
+                                <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
                                 <View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <Text style={styles.commentUsername}>{comment.user}</Text>
@@ -296,7 +331,7 @@ const PostDetailPage = () => {
                                             </View>
                                         )}
                                     </View>
-                                    <Text style={styles.commentInfo}>고양이가 제일 좋아요 · {comment.time}</Text>
+                                    <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
                                 </View>
                                 <TouchableOpacity style={styles.commentMoreBtn} onPress={() => {
                                     Alert.alert(
@@ -330,15 +365,14 @@ const PostDetailPage = () => {
 
             {/* 댓글 입력 섹션 */}
             <Animated.View style={[styles.commentInputSection, { transform: [{ translateY: commentInputAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }]}>
-                <TouchableOpacity style={styles.cameraButton} onPress={toggleModal}>
-                    <Image source={require('../../assets/cameraicon.png')} style={styles.icon} />
-                </TouchableOpacity>
                 <TextInput
                     style={styles.commentInput}
                     placeholder="댓글을 입력해 주세요"
                     placeholderTextColor="#999"
+                    value={commentInput}
+                    onChangeText={setCommentInput}
                 />
-                <TouchableOpacity style={styles.sendButton}>
+                <TouchableOpacity style={styles.sendButton} onPress={handleSendComment}>
                     <Image source={require('../../assets/arrowrighticon.png')} style={styles.icon} />
                 </TouchableOpacity>
             </Animated.View>

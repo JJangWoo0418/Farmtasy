@@ -265,6 +265,55 @@ app.post('/api/post', async (req, res) => {
     }
 });
 
+// 댓글 목록 조회 API
+app.get('/api/comment', async (req, res) => {
+    const { post_id } = req.query;
+    if (!post_id) return res.status(400).json({ success: false, message: 'post_id 필요' });
+
+    try {
+        const [rows] = await pool.query(`
+            SELECT c.*, u.name, u.profile, u.region, u.introduction
+            FROM Comment c
+            LEFT JOIN user u ON c.phone = u.phone
+            WHERE c.post_id = ?
+            ORDER BY c.comment_created_at ASC
+        `, [post_id]);
+
+        const comments = rows.map(row => ({
+            id: row.comment_id,
+            user: row.region ? `[${row.region}] ${row.name}` : `[지역 미설정] ${row.name}`,
+            profile: row.profile,
+            time: row.comment_created_at,
+            text: row.comment_content,
+            likes: row.comment_like || 0,
+            introduction: row.introduction,
+            isAuthor: false, // 프론트에서 현재 유저와 비교해 처리
+            isLiked: false   // 추후 구현
+        }));
+
+        res.json(comments);
+    } catch (e) {
+        res.status(500).json({ success: false, message: '댓글 조회 실패' });
+    }
+});
+
+// 댓글 작성 API
+app.post('/api/comment', async (req, res) => {
+    const { comment_content, post_id, phone } = req.body;
+    if (!comment_content || !post_id || !phone) {
+        return res.status(400).json({ success: false, message: '필수값 누락' });
+    }
+    try {
+        await pool.query(
+            `INSERT INTO Comment (comment_content, comment_created_at, post_id, phone) VALUES (?, NOW(), ?, ?)`,
+            [comment_content, post_id, phone]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: '댓글 작성 실패' });
+    }
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
