@@ -181,13 +181,15 @@ app.get('/api/post', async (req, res) => {
                 p.post_category as category,
                 p.post_created_at as time,
                 p.image_urls,
-                p.region,
+                u.region,
                 p.post_like as likes,
                 u.introduction,
-                CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked
+                CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                COUNT(DISTINCT c.comment_id) as comment_count
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
+            LEFT JOIN Comment c ON p.post_id = c.post_id
             ${category ? 'WHERE p.post_category = ?' : ''}
             GROUP BY p.post_id
             ORDER BY p.post_created_at DESC
@@ -234,7 +236,8 @@ app.get('/api/post', async (req, res) => {
                 region: post.region || '지역 미설정',
                 introduction: post.introduction || '소개 미설정',
                 likes: parseInt(post.likes) || 0,
-                is_liked: post.is_liked === 1
+                is_liked: post.is_liked === 1,
+                commentCount: parseInt(post.comment_count) || 0
             };
         });
 
