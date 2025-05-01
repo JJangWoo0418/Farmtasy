@@ -56,18 +56,45 @@ const PostDetailPage = () => {
 
     // 댓글 트리 구조로 변환 함수를 useMemo로 최적화
     const commentTree = useMemo(() => {
-        const sortedComments = [...comments].sort((a, b) => {
+        // 일반 댓글만 필터링
+        const parentComments = comments.filter(comment => !comment.comment_parent_id);
+        const childComments = comments.filter(comment => comment.comment_parent_id);
+
+        // 일반 댓글의 좋아요 수와 대댓글 좋아요 수를 합산하는 함수
+        const calculateTotalLikes = (parentComment) => {
+            let totalLikes = parentComment.likes || 0;
+            // 해당 댓글의 대댓글들의 좋아요 수 합산
+            const childLikes = childComments
+                .filter(child => child.comment_parent_id === parentComment.id)
+                .reduce((sum, child) => sum + (child.likes || 0), 0);
+            return totalLikes + childLikes;
+        };
+
+        // 일반 댓글 정렬
+        const sortedParentComments = [...parentComments].sort((a, b) => {
             switch (commentSort) {
                 case '인기순':
-                    return (b.likes || 0) - (a.likes || 0);
+                    const aTotalLikes = calculateTotalLikes(a);
+                    const bTotalLikes = calculateTotalLikes(b);
+                    return bTotalLikes - aTotalLikes;
                 case '등록순':
                     return new Date(a.time) - new Date(b.time);
                 case '최신순':
                     return new Date(b.time) - new Date(a.time);
                 default:
-                    return (b.likes || 0) - (a.likes || 0);
+                    const defaultATotalLikes = calculateTotalLikes(a);
+                    const defaultBTotalLikes = calculateTotalLikes(b);
+                    return defaultBTotalLikes - defaultATotalLikes;
             }
         });
+
+        // 대댓글은 시간순 정렬
+        const sortedChildComments = [...childComments].sort((a, b) => 
+            new Date(a.time) - new Date(b.time)
+        );
+
+        // 정렬된 댓글들을 합치기
+        const sortedComments = [...sortedParentComments, ...sortedChildComments];
         return buildCommentTree(sortedComments);
     }, [comments, commentSort]);
 
