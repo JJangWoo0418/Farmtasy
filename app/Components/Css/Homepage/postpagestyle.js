@@ -138,7 +138,7 @@ export default StyleSheet.create({
     iconRow: {
         flexDirection: 'row',
         justifyContent: 'flex-start',
-        marginTop: 5
+        marginTop: 5,
     },
     iconButton: {
         flexDirection: 'row',
@@ -173,7 +173,7 @@ export default StyleSheet.create({
         height: 24,
         marginRight: 1,
         resizeMode: 'contain',
-        marginLeft: 210,
+        marginLeft: 220,
         marginBottom: 5
     },
     writeButton: {
@@ -256,5 +256,57 @@ export default StyleSheet.create({
     iconContainer:{
         flexDirection: 'row',
         alignItems: 'center',
-    }
+    },
+
+    bestCommentPreview: {
+        backgroundColor: '#F3F3F3',
+        borderRadius: 8,
+        marginTop: 14,
+        marginBottom: 1,
+        padding: 12,
+        marginHorizontal: -8
+    },
+    commentHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    commentProfileImg: {
+        width: 29,
+        height: 29,
+        borderRadius: 16,
+        marginRight: 8,
+    },
+    commentUsername: {
+        fontWeight: 'bold',
+    },
+    commentInfo: {
+        color: '#888',
+        fontSize: 12,
+    },
+    bestCommentText: {
+        color: '#333',
+        fontSize: 15,
+        marginVertical: 4,
+        marginLeft: 37,
+    },
+    commentActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 2,
+    },
+    commentLikeButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    commentLikeIcon: {
+        width: 18,
+        height: 18,
+        marginRight: 2,
+    },
+    commentLikeText: {
+        color: '#888',
+        fontSize: 13,
+    },
 });

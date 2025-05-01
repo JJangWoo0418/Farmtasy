@@ -189,7 +189,77 @@ app.get('/api/post', async (req, res) => {
                     SELECT COUNT(*) 
                     FROM Comment c 
                     WHERE c.post_id = p.post_id
-                ) as comment_count
+                ) as comment_count,
+                (
+                    SELECT c2.comment_content
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_content,
+                (
+                    SELECT u2.name
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_user,
+                (
+                    SELECT u2.profile
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_profile,
+                (
+                    SELECT c2.comment_created_at
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_time,
+                (
+                    SELECT COUNT(*) FROM comment_likes cl
+                    WHERE cl.comment_id = (
+                        SELECT c2.comment_id
+                        FROM Comment c2
+                        WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                        ORDER BY (
+                            SELECT COUNT(*) FROM comment_likes cl2 WHERE cl2.comment_id = c2.comment_id
+                        ) DESC, c2.comment_created_at ASC
+                        LIMIT 1
+                    )
+                ) as best_comment_likes,
+                (
+                    SELECT u2.region
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_region,
+                (
+                    SELECT u2.introduction
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_introduction
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
@@ -240,7 +310,14 @@ app.get('/api/post', async (req, res) => {
                 introduction: post.introduction || '소개 미설정',
                 likes: parseInt(post.likes) || 0,
                 is_liked: post.is_liked === 1,
-                commentCount: parseInt(post.comment_count) || 0
+                commentCount: parseInt(post.comment_count) || 0,
+                best_comment_content: post.best_comment_content || '',
+                best_comment_user: post.best_comment_user || '알 수 없음',
+                best_comment_profile: post.best_comment_profile || '프로필 미설정',
+                best_comment_time: post.best_comment_time || new Date().toISOString(),
+                best_comment_likes: parseInt(post.best_comment_likes) || 0,
+                best_comment_region: post.best_comment_region || '지역 미설정',
+                best_comment_introduction: post.best_comment_introduction || '소개 미설정'
             };
         });
 

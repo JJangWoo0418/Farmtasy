@@ -34,9 +34,9 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     {item.image_urls && item.image_urls.length > 0 && (
                         <View style={styles.postImages}>
                             {item.image_urls.map((url, idx) => (
-                                <RenderImageWithLoading 
-                                    key={`${item.id}-image-${idx}`} 
-                                    url={url} 
+                                <RenderImageWithLoading
+                                    key={`${item.id}-image-${idx}`}
+                                    url={url}
                                 />
                             ))}
                         </View>
@@ -72,6 +72,21 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     </TouchableOpacity>
                 </View>
             </View>
+            {item.best_comment_content && (
+                <View style={styles.bestCommentPreview}>
+                    <View style={styles.commentHeader}>
+                        <Image
+                            source={item.best_comment_profile && item.best_comment_profile !== '프로필 미설정' ? { uri: item.best_comment_profile } : require('../../assets/usericon.png')}
+                            style={styles.commentProfileImg}
+                        />
+                        <View style={styles.userInfoContainer}>
+                            <Text style={styles.commentUsername}>[{item.best_comment_region || '지역 미설정'}] {item.best_comment_user}</Text>
+                            <Text style={styles.commentInfo}>{item.best_comment_introduction || '소개 미설정'} · {item.best_comment_time ? formatDate(item.best_comment_time) : ''}</Text>
+                        </View>
+                    </View>
+                    <Text style={styles.bestCommentText}>{item.best_comment_content}</Text>
+                </View>
+            )}
         </View>
     );
 });
@@ -196,7 +211,7 @@ const PostPage = () => {
 
                 const response = await fetch(url);
                 console.log('서버 응답 상태:', response.status);
-                
+
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => null);
                     console.error('서버 응답 에러:', errorData);
@@ -205,7 +220,7 @@ const PostPage = () => {
 
                 const data = await response.json();
                 console.log('받은 데이터:', data);
-                
+
                 // data가 undefined나 null이 아닌지 확인
                 if (!data || !Array.isArray(data)) {
                     console.error('서버 응답 데이터 형식 오류:', data);
@@ -382,26 +397,28 @@ const PostPage = () => {
             }
 
             return (
-                <PostItem
-                    item={item}
-                    onLike={handleLike}
-                    onBookmark={triggerBookmarkAnimation}
-                    heartAnimation={heartAnimationsRef.current[item.id]}
-                    bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
-                    isBookmarked={bookmarkedPosts[item.id] || false}
-                    navigateToDetail={() => {
-                        navigation.push('Homepage/postdetailpage', {
-                            post: { ...item, phone: item.phone },
-                            introduction: item.introduction || '소개 미설정',
-                            phone,
-                            name,
-                            region,
-                            profile,
-                            introduction
-                        });
-                    }}
-                    formatDate={formatDate}
-                />
+                <View key={item.id} style={styles.postContainer}>
+                    <PostItem
+                        item={item}
+                        onLike={handleLike}
+                        onBookmark={triggerBookmarkAnimation}
+                        heartAnimation={heartAnimationsRef.current[item.id]}
+                        bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
+                        isBookmarked={bookmarkedPosts[item.id] || false}
+                        navigateToDetail={() => {
+                            navigation.push('Homepage/postdetailpage', {
+                                post: { ...item, phone: item.phone },
+                                introduction: item.introduction || '소개 미설정',
+                                phone,
+                                name,
+                                region,
+                                profile,
+                                introduction
+                            });
+                        }}
+                        formatDate={formatDate}
+                    />
+                </View>
             );
         },
         [handleLike, triggerBookmarkAnimation, navigation, phone, name, region, profile, introduction, bookmarkedPosts]
@@ -519,8 +536,8 @@ const PostPage = () => {
                                 opacity: writeButtonAnim,
                             }]}
                         >
-                            글쓰기      
-                        </Animated.Text>   
+                            글쓰기
+                        </Animated.Text>
                     )}
                     <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
                 </TouchableOpacity>
