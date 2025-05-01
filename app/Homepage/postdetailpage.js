@@ -55,7 +55,21 @@ const PostDetailPage = () => {
     }, [post?.id, phone]);
 
     // 댓글 트리 구조로 변환 함수를 useMemo로 최적화
-    const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
+    const commentTree = useMemo(() => {
+        const sortedComments = [...comments].sort((a, b) => {
+            switch (commentSort) {
+                case '인기순':
+                    return (b.likes || 0) - (a.likes || 0);
+                case '등록순':
+                    return new Date(a.time) - new Date(b.time);
+                case '최신순':
+                    return new Date(b.time) - new Date(a.time);
+                default:
+                    return (b.likes || 0) - (a.likes || 0);
+            }
+        });
+        return buildCommentTree(sortedComments);
+    }, [comments, commentSort]);
 
     // 댓글 작성 함수를 useCallback으로 최적화
     const handleSendComment = useCallback(async () => {
