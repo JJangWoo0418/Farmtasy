@@ -99,110 +99,152 @@ app.post('/api/register', async (req, res) => {
 
 // 좋아요 저장 API
 app.post('/api/post/post_like', async (req, res) => {
-    const { postId, like, phone } = req.body;
-    console.log('좋아요 요청 받음:', { postId, like, phone });
-    
     try {
-        // 게시글 정보 조회
-        const [postCheck] = await pool.query(
-            'SELECT post_id, post_liked_users FROM post WHERE post_id = ?',
-            [postId]
-        );
+        const { postId, like, phone } = req.body;
         
-        if (postCheck.length === 0) {
-            return res.status(404).json({ success: false, message: '존재하지 않는 게시글입니다.' });
-        }
-
-        // 기존 좋아요 유저 목록 파싱
-        let likedUsers = [];
-        if (postCheck[0].post_liked_users) {
-            try {
-                likedUsers = JSON.parse(postCheck[0].post_liked_users);
-            } catch (e) {
-                likedUsers = [];
-            }
-        }
+        // 먼저 현재 좋아요 상태 확인
+        const [existingLike] = await pool.query(
+            'SELECT id FROM post_likes WHERE post_id = ? AND user_phone = ?',
+            [postId, phone]
+        );
 
         if (like) {
             // 좋아요 추가
-            if (!likedUsers.includes(phone)) likedUsers.push(phone);
+            if (existingLike.length === 0) {
+                await pool.query(
+                    'INSERT INTO post_likes (post_id, user_phone) VALUES (?, ?)',
+                    [postId, phone]
+                );
+                // post 테이블의 post_like 수 증가
+                await pool.query(
+                    'UPDATE post SET post_like = post_like + 1 WHERE post_id = ?',
+                    [postId]
+                );
+            }
         } else {
-            // 좋아요 취소
-            likedUsers = likedUsers.filter(userPhone => userPhone !== phone);
+            // 좋아요 삭제 - 본인이 누른 좋아요만 취소 가능
+            if (existingLike.length > 0) {
+                // 좋아요를 누른 사용자가 맞는지 확인
+                const [likeOwner] = await pool.query(
+                    'SELECT user_phone FROM post_likes WHERE post_id = ? AND user_phone = ?',
+                    [postId, phone]
+                );
+
+                if (likeOwner.length > 0) {
+                    await pool.query(
+                        'DELETE FROM post_likes WHERE post_id = ? AND user_phone = ?',
+                        [postId, phone]
+                    );
+                    // post 테이블의 post_like 수 감소
+                    await pool.query(
+                        'UPDATE post SET post_like = GREATEST(post_like - 1, 0) WHERE post_id = ?',
+                        [postId]
+                    );
+                } else {
+                    return res.status(403).json({
+                        error: '권한이 없습니다.',
+                        details: '본인이 누른 좋아요만 취소할 수 있습니다.'
+                    });
+                }
+            }
         }
-
-        // DB 업데이트
-        const [updateResult] = await pool.query(
-            'UPDATE post SET post_like = ?, post_liked_users = ? WHERE post_id = ?',
-            [likedUsers.length, JSON.stringify(likedUsers), postId]
-        );
-
+        
         res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ success: false, message: '좋아요 저장 실패' });
+        console.error('좋아요 처리 오류:', error);
+        res.status(500).json({ 
+            error: '서버 오류가 발생했습니다.',
+            details: error.message 
+        });
     }
 });
 
-// 게시글 목록 조회 API 추가
+// 게시글 목록 조회 API 수정
 app.get('/api/post', async (req, res) => {
     try {
-        const { category } = req.query;
+        const { category, user_phone } = req.query;
+        console.log('게시글 조회 요청:', { category, user_phone });
 
-        let query = 'SELECT * FROM post';
-        let params = [];
-
-        if (category) {
-            query += ' WHERE post_category = ?';
-            params.push(category);
+        if (!user_phone) {
+            return res.status(400).json({
+                error: '사용자 전화번호가 필요합니다.',
+                details: 'user_phone 파라미터가 누락되었습니다.'
+            });
         }
 
-        // 1. DB에서 rows 받아오기
-        const [rows] = await pool.query(`
-            SELECT p.post_id, p.name, p.phone, p.post_content, p.post_category, p.post_created_at, p.post_like, p.image_urls, u.introduction, u.region
+        let query = `
+            SELECT 
+                p.post_id as id,
+                p.name as user,
+                p.phone,
+                p.post_content as text,
+                p.post_category as category,
+                p.post_created_at as time,
+                p.image_urls,
+                p.region,
+                p.post_like as likes,
+                u.introduction,
+                CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
+            LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
             ${category ? 'WHERE p.post_category = ?' : ''}
-        `, params);
+            GROUP BY p.post_id
+            ORDER BY p.post_created_at DESC
+        `;
+        
+        const params = [user_phone];
+        if (category) params.push(category);
+        
+        const [posts] = await pool.query(query, params);
+        console.log('조회된 게시글 수:', posts.length);
+        
+        // image_urls 필드 처리 및 데이터 정제
+        const formattedPosts = posts.map(post => {
+            let imageUrls = [];
+            try {
+                if (post.image_urls) {
+                    if (typeof post.image_urls === 'string') {
+                        imageUrls = JSON.parse(post.image_urls);
+                    } else if (Array.isArray(post.image_urls)) {
+                        imageUrls = post.image_urls;
+                    } else {
+                        imageUrls = [post.image_urls];
+                    }
 
-        // 2. ★★★ 여기에서 image_urls 안전하게 파싱 ★★★
-        const posts = rows.map(row => {
-            let image_urls = [];
-            if (row.image_urls) {
-                try {
-                    image_urls = JSON.parse(row.image_urls);
-                    // 2중 배열일 때만 평탄화
-                    while (Array.isArray(image_urls) && Array.isArray(image_urls[0])) {
-                        image_urls = image_urls[0];
+                    if (Array.isArray(imageUrls[0])) {
+                        imageUrls = imageUrls.flat();
                     }
-                    if (!Array.isArray(image_urls)) {
-                        image_urls = [row.image_urls];
-                    }
-                } catch (e) {
-                    image_urls = [row.image_urls];
+
+                    imageUrls = imageUrls.filter(url => url && typeof url === 'string');
                 }
+            } catch (e) {
+                console.error('image_urls 파싱 에러:', e);
+                imageUrls = [];
             }
-            console.log('서버에서 최종 image_urls:', image_urls);
+
             return {
-                id: row.post_id,
-                user: row.name,
-                phone: row.phone,
-                time: row.post_created_at,
-                text: row.post_content,
-                image_urls,
-                category: row.post_category,
-                likes: row.post_like || 0,
-                introduction: row.introduction,
-                region: row.region
+                id: post.id || 0,
+                user: post.user || '알 수 없음',
+                phone: post.phone || '',
+                text: post.text || '',
+                category: post.category || '',
+                time: post.time || new Date().toISOString(),
+                image_urls: imageUrls,
+                region: post.region || '지역 미설정',
+                introduction: post.introduction || '소개 미설정',
+                likes: parseInt(post.likes) || 0,
+                is_liked: post.is_liked === 1
             };
         });
 
-        // 3. 프론트로 posts 배열 반환
-        res.json(posts);
+        console.log('응답 데이터:', JSON.stringify(formattedPosts, null, 2));
+        res.json(formattedPosts);
     } catch (error) {
-        console.error('게시글 목록 조회 오류:', error);
-        res.status(500).json({
-            success: false,
-            message: '게시글을 불러오지 못했습니다.'
+        console.error('게시글 조회 오류:', error);
+        res.status(500).json({ 
+            error: '서버 오류가 발생했습니다.',
+            details: error.message 
         });
     }
 });
@@ -325,18 +367,24 @@ app.use((req, res) => {
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
     console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
 
-    // 서버 시작 시 테이블 확인
-    pool.query("SHOW TABLES")
-        .then(([tables]) => {
-            console.log('테이블 확인 결과:', tables);
-            tables.forEach(table => {
-                console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);  // TABLE_NAME을 Tables_in_farmtasy_db로 수정
-            });
-        })
-        .catch(err => {
-            console.error('테이블 확인 중 오류 발생:', err);
+    try {
+        // post 테이블에 likes 컬럼 추가
+        await pool.query(`
+            ALTER TABLE post 
+            ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0
+        `);
+        console.log('post 테이블 likes 컬럼 추가 완료');
+
+        // 서버 시작 시 테이블 확인
+        const [tables] = await pool.query("SHOW TABLES");
+        console.log('테이블 확인 결과:', tables);
+        tables.forEach(table => {
+            console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);
         });
+    } catch (err) {
+        console.error('테이블 설정 중 오류 발생:', err);
+    }
 }); 

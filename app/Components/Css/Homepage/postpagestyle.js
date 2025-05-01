@@ -133,7 +133,7 @@ export default StyleSheet.create({
         marginBottom: 8,
         marginLeft: -8,
         backgroundColor: '#eee', // 로딩 중에도 영역 보이게
-        resizeMode: 'cover',
+        borderRadius: 0,
     },
     iconRow: {
         flexDirection: 'row',

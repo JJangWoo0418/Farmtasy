@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../DB/api';
@@ -8,65 +8,73 @@ import userIcon from '../../assets/usericon.png'; // 실제 경로에 맞게 수
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // PostItem 컴포넌트 분리 및 memo 적용
-const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnimation, isBookmarked, navigateToDetail, formatDate }) => (
+const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnimation, isBookmarked, navigateToDetail, formatDate }) => {
+    // 애니메이션 값이 없을 경우 기본값 설정
+    const safeHeartAnimation = heartAnimation || new Animated.Value(1);
+    const safeBookmarkAnimation = bookmarkAnimation || new Animated.Value(1);
 
-    <View style={styles.postBox}>
-        <TouchableOpacity onPress={navigateToDetail}>
-            <View style={styles.postHeader}>
-                <Image
-                    source={item.profile ? { uri: item.profile } : userIcon}
-                    style={styles.profileImg}
-                />
-                <View style={styles.userInfoContainer}>
-                    <Text style={styles.username}>[{item.region || '지역 미설정'}] {item.user}</Text>
-                    <Text style={styles.time}>{item.introduction || '소개 미설정'} · {formatDate(item.time)}</Text>
-                </View>
-                <TouchableOpacity style={styles.moreBtn}>
-                    <Image source={require('../../assets/moreicon.png')} />
-                </TouchableOpacity>
-            </View>
-            <View activeOpacity={0.8}>
-                <Text style={styles.postText}>{item.text}</Text>
-                {item.image_urls && item.image_urls.flat().length > 0 && (
-                    <View style={styles.postImages}>
-                        {item.image_urls.flat().map((url, idx) => (
-                            <RenderImageWithLoading key={url + idx} url={url} />
-                        ))}
+    return (
+        <View style={styles.postBox}>
+            <TouchableOpacity onPress={navigateToDetail}>
+                <View style={styles.postHeader}>
+                    <Image
+                        source={item.profile ? { uri: item.profile } : userIcon}
+                        style={styles.profileImg}
+                    />
+                    <View style={styles.userInfoContainer}>
+                        <Text style={styles.username}>[{item.region || '지역 미설정'}] {item.user}</Text>
+                        <Text style={styles.time}>{item.introduction || '소개 미설정'} · {formatDate(item.time)}</Text>
                     </View>
-                )}
-            </View>
-        </TouchableOpacity>
-        <View style={styles.iconRow}>
-            <View style={[styles.iconGroup, styles.likeIconGroup]}>
-                <TouchableOpacity onPress={() => onLike(item.id, item.isLiked)}>
-                    <Animated.Image
-                        source={item.isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
-                        style={[
-                            styles.icon,
-                            { transform: [{ scale: heartAnimation }] }
-                        ]}
-                    />
-                </TouchableOpacity>
-                <Text style={styles.iconText}>{item.likes}</Text>
-            </View>
-            <View style={styles.iconContainer}>
-                <Image source={require('../../assets/commenticon.png')} style={styles.icon} />
-                <Text style={styles.iconText}>{item.commentCount || 0}</Text>
-            </View>
-            <View style={styles.iconGroup}>
-                <TouchableOpacity onPress={() => onBookmark(item.id)}>
-                    <Animated.Image
-                        source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
-                        style={[
-                            styles.icon3,
-                            { transform: [{ scale: bookmarkAnimation }] }
-                        ]}
-                    />
-                </TouchableOpacity>
+                    <TouchableOpacity style={styles.moreBtn}>
+                        <Image source={require('../../assets/moreicon.png')} />
+                    </TouchableOpacity>
+                </View>
+                <View activeOpacity={0.8}>
+                    <Text style={styles.postText}>{item.text}</Text>
+                    {item.image_urls && item.image_urls.length > 0 && (
+                        <View style={styles.postImages}>
+                            {item.image_urls.map((url, idx) => (
+                                <RenderImageWithLoading 
+                                    key={`${item.id}-image-${idx}`} 
+                                    url={url} 
+                                />
+                            ))}
+                        </View>
+                    )}
+                </View>
+            </TouchableOpacity>
+            <View style={styles.iconRow}>
+                <View style={[styles.iconGroup, styles.likeIconGroup]}>
+                    <TouchableOpacity onPress={() => onLike(item.id, item.is_liked)}>
+                        <Animated.Image
+                            source={item.is_liked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
+                            style={[
+                                styles.icon,
+                                { transform: [{ scale: safeHeartAnimation }] }
+                            ]}
+                        />
+                    </TouchableOpacity>
+                    <Text style={styles.iconText}>{item.likes}</Text>
+                </View>
+                <View style={styles.iconContainer}>
+                    <Image source={require('../../assets/commenticon.png')} style={styles.icon} />
+                    <Text style={styles.iconText}>{item.commentCount || 0}</Text>
+                </View>
+                <View style={styles.iconGroup}>
+                    <TouchableOpacity onPress={() => onBookmark(item.id)}>
+                        <Animated.Image
+                            source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
+                            style={[
+                                styles.icon3,
+                                { transform: [{ scale: safeBookmarkAnimation }] }
+                            ]}
+                        />
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
-    </View>
-));
+    );
+});
 
 // 이미지 로딩 애니메이션 추가
 const RenderImageWithLoading = ({ url }) => {
@@ -176,43 +184,60 @@ const PostPage = () => {
         return `${month}월 ${day}일 ${hour}:${min}`;
     };
 
-
     // 게시글 데이터 fetch
     useEffect(() => {
         const fetchPosts = async () => {
             setLoading(true);
             setError(null);
             try {
-                // 카테고리별로 불러오기
-                let url = `${API_CONFIG.BASE_URL}/api/post`;
-                if (category && category !== '카테고리 없음') {
-                    url += `?category=${encodeURIComponent(category)}`;
-                }
+                console.log('게시글 조회 요청:', { category, phone });
+                const url = `${API_CONFIG.BASE_URL}/api/post?category=${encodeURIComponent(category)}&user_phone=${encodeURIComponent(phone)}`;
+                console.log('요청 URL:', url);
+
                 const response = await fetch(url);
-                if (!response.ok) throw new Error('서버 응답 오류');
+                console.log('서버 응답 상태:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    console.error('서버 응답 에러:', errorData);
+                    throw new Error(errorData?.details || '서버 응답 오류');
+                }
+
                 const data = await response.json();
+                console.log('받은 데이터:', data);
+                
+                // data가 undefined나 null이 아닌지 확인
+                if (!data || !Array.isArray(data)) {
+                    console.error('서버 응답 데이터 형식 오류:', data);
+                    setPosts([]);
+                    return;
+                }
 
-                // 각 게시글의 댓글 수를 가져오기
-                const postsWithCommentCount = await Promise.all(
-                    data.map(async (post) => {
-                        const commentResponse = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
-                        const comments = await commentResponse.json();
-                        return {
-                            ...post,
-                            commentCount: Array.isArray(comments) ? comments.length : 0
-                        };
-                    })
-                );
+                // 좋아요 상태 포함하여 게시글 데이터 설정
+                const formattedPosts = data.map(post => ({
+                    ...post,
+                    isLiked: post.is_liked === 1,
+                    likes: post.likes || 0,
+                    image_urls: Array.isArray(post.image_urls) ? post.image_urls : [],
+                    time: post.time || new Date().toISOString(),
+                    text: post.text || '',
+                    user: post.user || '알 수 없음',
+                    region: post.region || '지역 미설정',
+                    introduction: post.introduction || '소개 미설정'
+                }));
 
-                setPosts(postsWithCommentCount);
-            } catch (err) {
-                setError('게시글을 불러오지 못했습니다.');
+                console.log('포맷된 게시글:', formattedPosts);
+                setPosts(formattedPosts);
+            } catch (error) {
+                console.error('게시글 목록 조회 오류:', error);
+                setError(error.message || '게시글을 불러오지 못했습니다.');
+                setPosts([]);
             } finally {
                 setLoading(false);
             }
         };
         fetchPosts();
-    }, [category]);
+    }, [category, phone]);
 
     // ✅ 글쓰기 버튼 애니메이션 관련 함수
     const animateWriteButton = (visible) => {
@@ -287,56 +312,32 @@ const PostPage = () => {
                 useNativeDriver: true,
             })
         ]).start();
-        // 기존 optimistic UI 코드
-        setPosts(prevPosts =>
-            prevPosts.map(post =>
-                post.id === postId
-                    ? {
-                        ...post,
-                        isLiked: !currentLike,
-                        likes: !currentLike ? post.likes + 1 : post.likes - 1
-                    }
-                    : post
-            )
-        );
-        setLikedPosts(prev => ({
-            ...prev,
-            [postId]: !currentLike
-        }));
+
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     postId,
-                    like: !currentLike ? 1 : 0,
+                    like: !currentLike,
                     phone
                 }),
             });
-            const result = await response.json();
-            if (!result.success) {
-                throw new Error(result.message || '좋아요 처리 실패');
+
+            if (!response.ok) {
+                throw new Error('좋아요 처리 실패');
             }
-        } catch (e) {
-            console.error('좋아요 처리 중 오류:', e);
-            // 에러 발생 시 UI 상태 롤백
-            setPosts(prevPosts =>
-                prevPosts.map(post =>
-                    post.id === postId
-                        ? {
-                            ...post,
-                            isLiked: currentLike,
-                            likes: currentLike ? post.likes - 1 : post.likes + 1
-                        }
-                        : post
-                )
-            );
-            setLikedPosts(prev => ({
-                ...prev,
-                [postId]: currentLike
-            }));
+
+            // 서버 응답 성공 시 게시글 목록 새로고침
+            const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/post?category=${category}&user_phone=${phone}`);
+            if (postsResponse.ok) {
+                const updatedPosts = await postsResponse.json();
+                setPosts(updatedPosts);
+            }
+        } catch (error) {
+            console.error('좋아요 처리 오류:', error);
         }
-    }, [phone]);
+    }, [phone, category]);
 
     // 검색 필터링
     const filteredPosts = useMemo(() => {
@@ -372,13 +373,14 @@ const PostPage = () => {
     // renderPost useCallback으로 고정
     const renderPost = useCallback(
         ({ item }) => {
+            // 애니메이션 값 초기화
             if (!heartAnimationsRef.current[item.id]) {
                 heartAnimationsRef.current[item.id] = new Animated.Value(1);
             }
             if (!bookmarkAnimationsRef.current[item.id]) {
                 bookmarkAnimationsRef.current[item.id] = new Animated.Value(1);
             }
-            const isBookmarked = bookmarkedPosts[item.id] || false;
+
             return (
                 <PostItem
                     item={item}
@@ -386,9 +388,8 @@ const PostPage = () => {
                     onBookmark={triggerBookmarkAnimation}
                     heartAnimation={heartAnimationsRef.current[item.id]}
                     bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
-                    isBookmarked={isBookmarked}
+                    isBookmarked={bookmarkedPosts[item.id] || false}
                     navigateToDetail={() => {
-                        console.log('상세 이동 post:', item);
                         navigation.push('Homepage/postdetailpage', {
                             post: { ...item, phone: item.phone },
                             introduction: item.introduction || '소개 미설정',
@@ -403,7 +404,7 @@ const PostPage = () => {
                 />
             );
         },
-        [bookmarkedPosts, handleLike, triggerBookmarkAnimation, navigation, phone, name, region, profile, introduction]
+        [handleLike, triggerBookmarkAnimation, navigation, phone, name, region, profile, introduction, bookmarkedPosts]
     );
 
     // keyExtractor useCallback
