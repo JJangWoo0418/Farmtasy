@@ -78,10 +78,10 @@ export default StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#ddd',
-        padding: 12,
+        padding: 19,
         borderRadius: 8,
         marginBottom: 30,
-        marginTop: 10,
+        marginTop: 2,
         marginHorizontal: 20
     },
     cameraIcon: {
@@ -99,7 +99,7 @@ export default StyleSheet.create({
         paddingVertical: 19,
         borderRadius: 10,
         alignItems: 'center',
-        marginTop: 160,
+        marginTop: 195,
         marginHorizontal: 20
     },
     submitText: {

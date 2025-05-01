@@ -200,7 +200,7 @@ export default StyleSheet.create({
     writeIcon: {
         width: 17,
         height: 17,
-        marginLeft: 5,
+        marginLeft: 3,
     },
     filterButton: {
         alignItems: 'center',
