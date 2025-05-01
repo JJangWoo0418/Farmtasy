@@ -43,15 +43,16 @@ const PostDetailPage = () => {
     useEffect(() => {
         const fetchComments = async () => {
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
                 const data = await response.json();
                 setComments(Array.isArray(data) ? data : []);
             } catch (e) {
+                console.error('댓글 조회 오류:', e);
                 setComments([]); // 에러 시 빈 배열
             }
         };
-        if (post?.id) fetchComments();
-    }, [post?.id]);
+        if (post?.id && phone) fetchComments();
+    }, [post?.id, phone]);
 
     // 댓글 트리 구조로 변환 함수를 useMemo로 최적화
     const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
@@ -59,93 +60,128 @@ const PostDetailPage = () => {
     // 댓글 작성 함수를 useCallback으로 최적화
     const handleSendComment = useCallback(async () => {
         if (!commentInput.trim()) return;
-        await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                comment_content: commentInput,
-                post_id: post.id,
-                phone,
-                name,
-                region,
-                profile,
-                introduction,
-                comment_parent_id: null
-            })
-        });
-        setCommentInput('');
-        // 댓글 목록 새로고침
-        const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
-        const data = await res.json();
-        setComments(Array.isArray(data) ? data : []);
-        
-        // 댓글 작성 후 입력창 닫기
-        setIsCommentInputVisible(false);
-        Animated.timing(commentInputAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-        
-        // 키보드 내리기
-        Keyboard.dismiss();
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    comment_content: commentInput,
+                    post_id: post.id,
+                    phone,
+                    name,
+                    region,
+                    profile,
+                    introduction,
+                    comment_parent_id: null
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('댓글 작성 실패');
+            }
+
+            setCommentInput('');
+            // 댓글 목록 새로고침
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
+            const data = await res.json();
+            setComments(Array.isArray(data) ? data : []);
+            
+            // 댓글 작성 후 입력창 닫기
+            setIsCommentInputVisible(false);
+            Animated.timing(commentInputAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+            
+            // 키보드 내리기
+            Keyboard.dismiss();
+        } catch (error) {
+            console.error('댓글 작성 오류:', error);
+            Alert.alert('오류', '댓글 작성에 실패했습니다.');
+        }
     }, [commentInput, post.id, phone, name, region, profile, introduction]);
 
     // 대댓글 작성 함수를 useCallback으로 최적화
     const handleSendReply = useCallback(async () => {
         if (!replyInput.trim()) return;
-        const payload = {
-            comment_content: replyInput,
-            post_id: post.id,
-            phone,
-            name,
-            region,
-            profile,
-            introduction,
-            comment_parent_id: replyToCommentId
-        };
-        await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        setReplyInput('');
-        setIsReplyInputVisible(false);
-        setReplyToCommentId(null);
-        // 댓글 목록 새로고침
-        const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}`);
-        const data = await res.json();
-        setComments(Array.isArray(data) ? data : []);
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    comment_content: replyInput,
+                    post_id: post.id,
+                    phone,
+                    name,
+                    region,
+                    profile,
+                    introduction,
+                    comment_parent_id: replyToCommentId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('대댓글 작성 실패');
+            }
+
+            setReplyInput('');
+            setIsReplyInputVisible(false);
+            setReplyToCommentId(null);
+            // 댓글 목록 새로고침
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
+            const data = await res.json();
+            setComments(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('대댓글 작성 오류:', error);
+            Alert.alert('오류', '대댓글 작성에 실패했습니다.');
+        }
     }, [replyInput, post.id, phone, name, region, profile, introduction, replyToCommentId]);
 
     // 댓글 좋아요 함수를 useCallback으로 최적화
-    const handleCommentLike = useCallback((commentId) => {
-        setComments(prevComments =>
-            prevComments.map(comment =>
-                comment.id === commentId
-                    ? { ...comment, isLiked: !comment.isLiked, likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1 }
-                    : comment
-            )
-        );
+    const handleCommentLike = useCallback(async (commentId) => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    commentId,
+                    like: !comments.find(c => c.id === commentId)?.isLiked,
+                    phone
+                }),
+            });
 
-        if (!commentAnimations[commentId]) {
-            commentAnimations[commentId] = new Animated.Value(1);
+            if (!response.ok) {
+                throw new Error('댓글 좋아요 처리 실패');
+            }
+
+            // 댓글 목록 새로고침
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
+            const data = await res.json();
+            setComments(Array.isArray(data) ? data : []);
+
+            // 애니메이션
+            if (!commentAnimations[commentId]) {
+                commentAnimations[commentId] = new Animated.Value(1);
+            }
+
+            Animated.sequence([
+                Animated.timing(commentAnimations[commentId], {
+                    toValue: 1.5,
+                    duration: 100,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(commentAnimations[commentId], {
+                    toValue: 1,
+                    friction: 3,
+                    tension: 40,
+                    useNativeDriver: true,
+                })
+            ]).start();
+        } catch (error) {
+            console.error('댓글 좋아요 처리 오류:', error);
         }
-
-        Animated.sequence([
-            Animated.timing(commentAnimations[commentId], {
-                toValue: 1.5,
-                duration: 100,
-                useNativeDriver: true,
-            }),
-            Animated.spring(commentAnimations[commentId], {
-                toValue: 1,
-                friction: 3,
-                tension: 40,
-                useNativeDriver: true,
-            })
-        ]).start();
-    }, []);
+    }, [comments, post.id, phone]);
 
     // 좋아요 처리 함수
     const handleLike = async () => {

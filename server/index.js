@@ -185,11 +185,14 @@ app.get('/api/post', async (req, res) => {
                 p.post_like as likes,
                 u.introduction,
                 CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
-                COUNT(DISTINCT c.comment_id) as comment_count
+                (
+                    SELECT COUNT(*) 
+                    FROM Comment c 
+                    WHERE c.post_id = p.post_id
+                ) as comment_count
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
-            LEFT JOIN Comment c ON p.post_id = c.post_id
             ${category ? 'WHERE p.post_category = ?' : ''}
             GROUP BY p.post_id
             ORDER BY p.post_created_at DESC
@@ -312,19 +315,86 @@ app.post('/api/post', async (req, res) => {
     }
 });
 
-// 댓글 목록 조회 API
+// 댓글 좋아요 API
+app.post('/api/comment/like', async (req, res) => {
+    try {
+        const { commentId, like, phone } = req.body;
+        
+        // 먼저 현재 좋아요 상태 확인
+        const [existingLike] = await pool.query(
+            'SELECT id FROM comment_likes WHERE comment_id = ? AND user_phone = ?',
+            [commentId, phone]
+        );
+
+        if (like) {
+            // 좋아요 추가
+            if (existingLike.length === 0) {
+                await pool.query(
+                    'INSERT INTO comment_likes (comment_id, user_phone) VALUES (?, ?)',
+                    [commentId, phone]
+                );
+            }
+        } else {
+            // 좋아요 삭제
+            if (existingLike.length > 0) {
+                await pool.query(
+                    'DELETE FROM comment_likes WHERE comment_id = ? AND user_phone = ?',
+                    [commentId, phone]
+                );
+            }
+        }
+        
+        // 좋아요 수 업데이트
+        await pool.query(`
+            UPDATE Comment 
+            SET comment_like = (
+                SELECT COUNT(*) 
+                FROM comment_likes 
+                WHERE comment_id = ?
+            )
+            WHERE comment_id = ?
+        `, [commentId, commentId]);
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error('댓글 좋아요 처리 오류:', error);
+        res.status(500).json({ 
+            error: '서버 오류가 발생했습니다.',
+            details: error.message 
+        });
+    }
+});
+
+// 댓글 목록 조회 API 수정
 app.get('/api/comment', async (req, res) => {
-    const { post_id } = req.query;
-    if (!post_id) return res.status(400).json({ success: false, message: 'post_id 필요' });
+    const { post_id, user_phone } = req.query;
+    if (!post_id || !user_phone) return res.status(400).json({ success: false, message: 'post_id와 user_phone 필요' });
 
     try {
         const [rows] = await pool.query(`
-            SELECT c.comment_id, c.comment_content, c.comment_created_at, c.comment_parent_id, c.phone, u.name, u.profile, u.region, u.introduction
+            SELECT 
+                c.comment_id, 
+                c.comment_content, 
+                c.comment_created_at, 
+                c.comment_parent_id, 
+                c.phone, 
+                COALESCE(c.comment_like, 0) as comment_like,
+                u.name, 
+                u.profile, 
+                u.region, 
+                u.introduction,
+                CASE WHEN cl.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                (
+                    SELECT COUNT(*) 
+                    FROM comment_likes cl2 
+                    WHERE cl2.comment_id = c.comment_id
+                ) as like_count
             FROM Comment c
             LEFT JOIN user u ON c.phone = u.phone
+            LEFT JOIN comment_likes cl ON c.comment_id = cl.comment_id AND cl.user_phone = ?
             WHERE c.post_id = ?
             ORDER BY c.comment_created_at ASC
-        `, [post_id]);
+        `, [user_phone, post_id]);
 
         const comments = rows.map(row => ({
             id: row.comment_id,
@@ -332,16 +402,16 @@ app.get('/api/comment', async (req, res) => {
             profile: row.profile,
             time: row.comment_created_at,
             text: row.comment_content,
-            likes: row.comment_like || 0,
+            likes: row.like_count || 0,
             introduction: row.introduction,
             comment_parent_id: row.comment_parent_id,
             phone: row.phone,
-            isAuthor: false,
-            isLiked: false
+            isLiked: row.is_liked === 1
         }));
 
         res.json(comments);
     } catch (e) {
+        console.error('댓글 조회 오류:', e);
         res.status(500).json({ success: false, message: '댓글 조회 실패' });
     }
 });
