@@ -8,7 +8,8 @@ const PostDetailPage = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const { post, introduction, phone, name, region, profile } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
-    const [isLiked, setIsLiked] = useState(false); // 공감 상태 추가
+    const [isLiked, setIsLiked] = useState(post.is_liked);
+    const [likeCount, setLikeCount] = useState(post.likes);
     const [isBookmarked, setIsBookmarked] = useState(false); // 북마크 상태 추가
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const bookmarkScaleAnim = useRef(new Animated.Value(1)).current;
@@ -146,14 +147,13 @@ const PostDetailPage = () => {
         ]).start();
     }, []);
 
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-        
-        // 터지는 듯한 애니메이션
+    // 좋아요 처리 함수
+    const handleLike = async () => {
+        // 애니메이션
         Animated.sequence([
             Animated.timing(scaleAnim, {
                 toValue: 1.5,
-                duration: 100,
+                duration: 120,
                 useNativeDriver: true,
             }),
             Animated.spring(scaleAnim, {
@@ -163,6 +163,28 @@ const PostDetailPage = () => {
                 useNativeDriver: true,
             })
         ]).start();
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    postId: post.id,
+                    like: !isLiked,
+                    phone
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('좋아요 처리 실패');
+            }
+
+            // 좋아요 상태와 카운트 업데이트
+            setIsLiked(!isLiked);
+            setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+        } catch (error) {
+            console.error('좋아요 처리 오류:', error);
+        }
     };
 
     const handleBookmark = () => {
@@ -473,7 +495,7 @@ const PostDetailPage = () => {
                                     source={require('../../assets/heartgreenicon.png')} 
                                     style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]} 
                                 />
-                                <Text style={styles.statsText}>{post.likes}</Text>
+                                <Text style={styles.statsText}>{likeCount}</Text>
                             </View>
                             <View style={styles.statsItem}>
                                 <Text style={styles.statsText2}>댓글 </Text>
@@ -483,10 +505,7 @@ const PostDetailPage = () => {
 
                         {/* 공감 / 댓글 / 저장 버튼 */}
                         <View style={styles.actionRow}>
-                            <TouchableOpacity 
-                                style={styles.actionButton}
-                                onPress={handleLike}
-                            >
+                            <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
                                 <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
                                     <Image 
                                         source={isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')} 
