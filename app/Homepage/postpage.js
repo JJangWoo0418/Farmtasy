@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../DB/api';
 import userIcon from '../../assets/usericon.png'; // 실제 경로에 맞게 수정
+import Toast from 'react-native-root-toast';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -25,8 +26,30 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                         <Text style={styles.username}>[{item.region || '지역 미설정'}] {item.user}</Text>
                         <Text style={styles.time}>{item.introduction || '소개 미설정'} · {formatDate(item.time)}</Text>
                     </View>
-                    <TouchableOpacity style={styles.moreBtn}>
-                        <Image source={require('../../assets/moreicon.png')} />
+                    <TouchableOpacity onPress={() => {
+                        Alert.alert(
+                            "게시글 신고",
+                            "이 게시글을 신고하시겠습니까?",
+                            [
+                                {
+                                    text: "아니요",
+                                    style: "cancel"
+                                },
+                                {
+                                    text: "예",
+                                    onPress: () => {
+                                        Alert.alert(
+                                            "신고 완료",
+                                            "게시글이 신고되었습니다.",
+                                            [{ text: "확인" }],
+                                            { cancelable: true }
+                                        );
+                                    }
+                                }
+                            ]
+                        );
+                    }}>
+                        <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn} />
                     </TouchableOpacity>
                 </View>
                 <View activeOpacity={0.8}>
@@ -83,6 +106,31 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                             <Text style={styles.commentUsername}>[{item.best_comment_region || '지역 미설정'}] {item.best_comment_user}</Text>
                             <Text style={styles.commentInfo}>{item.best_comment_introduction || '소개 미설정'} · {item.best_comment_time ? formatDate(item.best_comment_time) : ''}</Text>
                         </View>
+                        <TouchableOpacity onPress={() => {
+                            Alert.alert(
+                                "댓글 신고",
+                                "이 댓글을 신고하시겠습니까?",
+                                [
+                                    {
+                                        text: "아니요",
+                                        style: "cancel"
+                                    },
+                                    {
+                                        text: "예",
+                                        onPress: () => {
+                                            Alert.alert(
+                                                "신고 완료",
+                                                "댓글이 신고되었습니다.",
+                                                [{ text: "확인" }],
+                                                { cancelable: true }
+                                            );
+                                        }
+                                    }
+                                ]
+                            );
+                        }}>
+                            <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn2} />
+                        </TouchableOpacity>
                     </View>
                     <Text style={styles.bestCommentText}>{item.best_comment_content}</Text>
                 </View>

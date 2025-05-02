@@ -40,8 +40,10 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-image-picker": "^8.2.0",
     "react-native-reanimated": "^3.17.1",
+    "react-native-root-toast": "^4.0.1",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
+    "react-native-toast-message": "^2.3.0",
     "react-native-web": "0.20.0"
   },
   "devDependencies": {

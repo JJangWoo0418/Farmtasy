@@ -110,10 +110,24 @@ export default StyleSheet.create({
         color: '#888',
     },
     moreBtn: {
-        width: 1,
-        height: 1,
-        marginRight: 20,
-        marginBottom: 30
+        width: 23,
+        height: 23,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: 0,
+        top: -13,
+        marginRight: -5,
+        marginBottom: 0
+    },
+    moreBtn2: {
+        width: 20,
+        height: 20,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: 0,
+        top: -13,
+        marginRight: -5,
+        marginBottom: 0
     },
     postText: {
         fontSize: 15,
