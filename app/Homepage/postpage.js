@@ -56,12 +56,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     <Text style={styles.postText}>{item.text}</Text>
                     {item.image_urls && item.image_urls.length > 0 && (
                         <View style={styles.postImages}>
-                            {item.image_urls.map((url, idx) => (
-                                <RenderImageWithLoading
-                                    key={`${item.id}-image-${idx}`}
-                                    url={url}
-                                />
-                            ))}
+                            {renderImages(item.image_urls)}
                         </View>
                     )}
                 </View>
@@ -139,50 +134,52 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
     );
 });
 
-// 이미지 로딩 애니메이션 추가
-const RenderImageWithLoading = ({ url }) => {
-    const [loading, setLoading] = useState(true);
-
+// 이미지 렌더링 함수 (1~3장, 4장 이상 예시처럼)
+const renderImages = (images) => {
+    if (!images || images.length === 0) return null;
+    if (images.length === 1) {
+        return (
+            <Image source={{ uri: images[0] }} style={styles.singleImage} />
+        );
+    }
+    if (images.length === 2) {
+        return (
+            <View style={styles.row2}>
+                <Image source={{ uri: images[0] }} style={styles.multiImage} />
+                <Image source={{ uri: images[1] }} style={styles.multiImage} />
+            </View>
+        );
+    }
+    if (images.length === 3) {
+        return (
+            <View style={styles.row3}>
+                <Image source={{ uri: images[0] }} style={styles.leftLargeImage} />
+                <View style={styles.rightColumn}>
+                    <Image source={{ uri: images[1] }} style={styles.rightSmallImage} />
+                    <Image source={{ uri: images[2] }} style={styles.rightSmallImage} />
+                </View>
+            </View>
+        );
+    }
+    // 4장 이상
     return (
-        <View
-            style={{
-                width: 375,
-                height: 375,
-                marginRight: 10,
-                marginBottom: 8,
-                marginLeft: -8,
-                backgroundColor: '#eee',
-                borderRadius: 0,
-                justifyContent: 'center',
-                alignItems: 'center',
-                overflow: 'hidden',
-            }}
-        >
-            {loading && (
-                <ActivityIndicator
-                    size="large"
-                    color="#22CC6B"
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}
-                />
-            )}
-            <Image
-                source={{ uri: url }}
-                style={{
-                    width: 375,
-                    height: 375,
-                    resizeMode: 'cover',
-                }}
-                onLoadEnd={() => setLoading(false)}
-            />
-        </View>
+        <>
+            <View style={styles.row4}>
+                <Image source={{ uri: images[0] }} style={styles.squadImage} />
+                <Image source={{ uri: images[1] }} style={styles.squadImage} />
+            </View>
+            <View style={styles.row4}>
+                <Image source={{ uri: images[2] }} style={styles.squadImage} />
+                <View>
+                    <Image source={{ uri: images[3] }} style={styles.squadImage} />
+                    {images.length > 4 && (
+                        <View style={styles.overlay}>
+                            <Text style={styles.overlayText}>+{images.length - 4}</Text>
+                        </View>
+                    )}
+                </View>
+            </View>
+        </>
     );
 };
 

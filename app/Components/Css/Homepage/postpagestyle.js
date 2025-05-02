@@ -323,4 +323,71 @@ export default StyleSheet.create({
         color: '#888',
         fontSize: 13,
     },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    row2: {
+        flexDirection: 'row',
+        marginLeft: -5,
+    },
+    row3: {
+        flexDirection: 'row',
+        marginLeft: 1,
+    },
+    row4: {
+        flexDirection: 'row',
+        marginLeft: -5,
+    },
+    singleImage: {
+        width: 363,
+        height: 363,
+        marginLeft: -1,
+        resizeMode: 'cover',
+    },
+    multiImage: {
+        width: 177,
+        height: 177,
+        margin: 4,
+        resizeMode: 'cover',
+    },
+    squadImage: {
+        width: 177,
+        height: 177,
+        margin: 4,
+        resizeMode: 'cover',
+    },
+    overlay: {
+        width: 177,
+        height: 177,
+        marginLeft: 4,
+        marginTop: 4,
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    overlayText: {
+        color: '#fff',
+        fontSize: 28,
+        fontWeight: 'bold',
+    },
+    leftLargeImage: {
+        width: 236,
+        height: 236,
+        marginRight: 5,
+        resizeMode: 'cover',
+        marginBottom: 5
+    },
+    rightColumn: {
+        flexDirection: 'column',
+        marginLeft: 4,
+    },
+    rightSmallImage: {
+        width: 114,
+        height: 114,
+        marginBottom: 8,
+        resizeMode: 'cover',
+    },
 });
