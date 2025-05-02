@@ -37,7 +37,7 @@ console.log('[DEBUG] 로드된 JSON 데이터 샘플:',
   Array.isArray(itemCodeData) ? itemCodeData.slice(0, 2) : '데이터 형식 오류');
 
 // 하드코딩된 품목 데이터
-const ITEM_CODES = {
+const ITEM_CODES = { 
   fruits: [
     { '품목코드': '100', '품목명': '사과', '분류명': '과일류' },
     { '품목코드': '101', '품목명': '배', '분류명': '과일류' },

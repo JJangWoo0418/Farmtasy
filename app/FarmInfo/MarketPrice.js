@@ -54,9 +54,14 @@ export default function MarketPrice() {
           setSelectedCrop(parsedCrops[0]);
           findAndSetItemCode(parsedCrops[0]);
         }
+      } else {
+        // 저장된 작물이 없을 경우 빈 배열로 초기화
+        setCrops([]);
       }
     } catch (error) {
       console.error('저장된 작물 목록 로드 오류:', error);
+      // 오류 발생 시 빈 배열로 초기화
+      setCrops([]);
     }
   };
 
@@ -110,18 +115,27 @@ export default function MarketPrice() {
 
   // 인기 작물 목록 추가
   const popularCrops = [
-    { name: '고추', icon: '🌶️' },
-    { name: '블루베리', icon: '🫐' },
+    { name: '쌀', icon: '🌾' },
+    { name: '배추', icon: '🥬' },
+    { name: '양파', icon: '🧅' },
     { name: '감자', icon: '🥔' },
-    { name: '고구마', icon: '🍠' },
     { name: '사과', icon: '🍎' },
-    { name: '딸기', icon: '🍓' },
+    { name: '고추', icon: '🌶️' },
     { name: '마늘', icon: '🧄' },
-    { name: '상추', icon: '🥬' },
-    { name: '오이', icon: '🥒' },
-    { name: '토마토', icon: '🍅' },
+    { name: '배', icon: '🍐' },
+    { name: '고구마', icon: '🍠' },
+    { name: '수박', icon: '🍉' },
     { name: '포도', icon: '🍇' },
-    { name: '콩', icon: '🫘' },
+    { name: '옥수수', icon: '🌽' },
+    { name: '토마토', icon: '🍅' },
+    { name: '오이', icon: '🥒' },
+    { name: '가지', icon: '🍆' },
+    { name: '복숭아', icon: '🍑' },
+    { name: '딸기', icon: '🍓' },
+    { name: '땅콩', icon: '🥜' },
+    { name: '버섯', icon: '🍄' },
+    { name: '당근', icon: '🥕' },
+    { name: '망고', icon: '🥭' },
   ];
 
   // 작물 추가
@@ -467,8 +481,8 @@ export default function MarketPrice() {
               <Text style={styles.directInputText}>직접 추가하기</Text>
             </TouchableOpacity>
 
-            {/* 인기작물 TOP 12 */}
-            <Text style={styles.popularCropsTitle}>인기작물 TOP 12</Text>
+            {/* 인기작물 TOP 20 */}
+            <Text style={styles.popularCropsTitle}>인기작물 TOP 20</Text>
             <View style={styles.popularCropsGrid}>
               {popularCrops.map((crop, index) => (
                 <TouchableOpacity
@@ -617,53 +631,44 @@ export default function MarketPrice() {
   );
 
   // 작물 선택 탭 렌더링
-  const renderCropSelector = () => (
-    <View style={styles.cropSelector}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+  const renderCropSelector = () => {
+    if (!crops || crops.length === 0) {
+      return (
+        <View style={styles.cropSelector}>
+          <TouchableOpacity
+            style={styles.addCropButton}
+            onPress={() => setIsAddCropModalVisible(true)}
+          >
+            <Text style={styles.addCropText}>+ 작물 추가</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cropSelector}>
         {crops.map((crop, index) => (
-          <View key={index} style={styles.cropContainer}>
-            <TouchableOpacity
-              style={[
-                styles.cropTab,
-                selectedCrop?.name === crop.name && styles.selectedCropTab
-              ]}
-              onPress={() => handleSelectCrop(crop)}
-            >
-              <Text style={[
-                styles.cropText,
-                selectedCrop?.name === crop.name && styles.selectedCropText
-              ]}>
-                {crop.name}
-              </Text>
-            </TouchableOpacity>
-            {selectedCrop?.name === crop.name && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.varietiesContainer}>
-                {crop.varieties.map((variety, vIndex) => (
-                  <TouchableOpacity
-                    key={vIndex}
-                    style={[
-                      styles.varietyTab,
-                      selectedItemCode === variety.code && styles.selectedVarietyTab
-                    ]}
-                    onPress={() => handleSelectVariety(variety)}
-                  >
-                    <Text style={[
-                      styles.varietyText,
-                      selectedItemCode === variety.code && styles.selectedVarietyText
-                    ]}>
-                      {variety.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.cropTab,
+              selectedCrop === crop && styles.selectedCropTab
+            ]}
+            onPress={() => handleSelectCrop(crop)}
+          >
+            <Text style={[
+              styles.cropText,
+              selectedCrop === crop && styles.selectedCropText
+            ]}>
+              {crop.name}
+            </Text>
             <TouchableOpacity
               style={styles.removeCropButton}
               onPress={() => handleRemoveCrop(crop)}
             >
               <Ionicons name="close-circle" size={16} color="#666" />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         ))}
         <TouchableOpacity
           style={styles.addCropButton}
@@ -672,8 +677,8 @@ export default function MarketPrice() {
           <Text style={styles.addCropText}>+ 작물 추가</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
