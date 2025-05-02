@@ -66,7 +66,11 @@ export default StyleSheet.create({
         width: 23,
         height: 23,
         resizeMode: 'cover',
-        marginBottom: 5
+        position: 'absolute',
+        right: 5,
+        top: 2,
+        marginRight: -5,
+        marginBottom: 0
     },
     postText: {
         fontSize: 15,
@@ -222,18 +226,24 @@ export default StyleSheet.create({
         fontWeight: 'bold',
     },
     commentMoreBtn: {
-        width: 23,
-        height: 23,
-        marginLeft: 72,
-        marginBottom: 5,
-        resizeMode: 'cover'
+        width: 20,
+        height: 20,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: 2,
+        top: 1,
+        marginRight: -5,
+        marginBottom: 0
     },
     commentMoreBtn2: {
-        width: 23,
-        height: 23,
-        marginLeft: 55,
-        marginBottom: 5,
-        resizeMode: 'cover'
+        width: 20,
+        height: 20,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: -6,
+        top: 1,
+        marginRight: -5,
+        marginBottom: 0
     },
     commentText: {
         fontSize: 14,

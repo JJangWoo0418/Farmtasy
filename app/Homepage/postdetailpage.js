@@ -427,13 +427,25 @@ const PostDetailPage = () => {
                         </View>
                         <TouchableOpacity style={styles.commentMoreBtn} onPress={() => {
                             Alert.alert(
-                                "신고하기",
-                                "유저를 신고하시겠습니까?",
+                                "댓글 신고",
+                                "이 댓글을 신고하시겠습니까?",
                                 [
-                                    { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
-                                    { text: "취소", style: "cancel" }
-                                ],
-                                { cancelable: true }
+                                    {
+                                        text: "아니요",
+                                        style: "cancel"
+                                    },
+                                    {
+                                        text: "예",
+                                        onPress: () => {
+                                            Alert.alert(
+                                                "신고 완료",
+                                                "댓글이 신고되었습니다.",
+                                                [{ text: "확인" }],
+                                                { cancelable: true }
+                                            );
+                                        }
+                                    }
+                                ]
                             );
                         }}>
                             <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn} />
@@ -537,14 +549,25 @@ const PostDetailPage = () => {
                                 </View>
                                 <TouchableOpacity style={styles.moreBtn} onPress={() => {
                                     Alert.alert(
-                                        "신고하기",
-                                        "무엇을 신고하시겠습니까?",
+                                        "게시글 신고",
+                                        "이 게시글을 신고하시겠습니까?",
                                         [
-                                            { text: "게시글 신고하기", onPress: () => console.log("게시글 신고하기") },
-                                            { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
-                                            { text: "취소", style: "cancel" }
-                                        ],
-                                        { cancelable: true }
+                                            {
+                                                text: "아니요",
+                                                style: "cancel"
+                                            },
+                                            {
+                                                text: "예",
+                                                onPress: () => {
+                                                    Alert.alert(
+                                                        "신고 완료",
+                                                        "게시글이 신고되었습니다.",
+                                                        [{ text: "확인" }],
+                                                        { cancelable: true }
+                                                    );
+                                                }
+                                            }
+                                        ]
                                     );
                                 }}>
                                     <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn} />
