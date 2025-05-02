@@ -334,7 +334,7 @@ export default StyleSheet.create({
     },
     row3: {
         flexDirection: 'row',
-        marginLeft: 1,
+        marginLeft: -1,
     },
     row4: {
         flexDirection: 'row',
@@ -374,8 +374,8 @@ export default StyleSheet.create({
         fontWeight: 'bold',
     },
     leftLargeImage: {
-        width: 236,
-        height: 236,
+        width: 238,
+        height: 238,
         marginRight: 5,
         resizeMode: 'cover',
         marginBottom: 5
@@ -385,8 +385,8 @@ export default StyleSheet.create({
         marginLeft: 4,
     },
     rightSmallImage: {
-        width: 114,
-        height: 114,
+        width: 115,
+        height: 115,
         marginBottom: 8,
         resizeMode: 'cover',
     },
