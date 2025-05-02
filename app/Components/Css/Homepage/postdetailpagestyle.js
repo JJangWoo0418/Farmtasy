@@ -230,7 +230,7 @@ export default StyleSheet.create({
         height: 20,
         resizeMode: 'cover',
         position: 'absolute',
-        right: 2,
+        right: 4,
         top: 1,
         marginRight: -5,
         marginBottom: 0
@@ -240,7 +240,7 @@ export default StyleSheet.create({
         height: 20,
         resizeMode: 'cover',
         position: 'absolute',
-        right: -6,
+        right: -4,
         top: 1,
         marginRight: -5,
         marginBottom: 0
