@@ -134,29 +134,86 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
     );
 });
 
+// 이미지 로딩 컴포넌트
+const ImageWithLoading = ({ uri, style, loadingStyle }) => {
+    const [loading, setLoading] = useState(true);
+
+    return (
+        <View style={[
+            style,
+            { justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }
+        ]}>
+            {loading && (
+                <View style={[
+                    { 
+                        position: 'absolute',
+                        backgroundColor: '#eee',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 9999
+                    },
+                    loadingStyle // 로딩 배경 크기/스타일
+                ]}>
+                    <ActivityIndicator size="large" color="#22CC6B" />
+                </View>
+            )}
+            <Image
+                source={{ uri }}
+                style={[style, { position: 'absolute' }]}
+                onLoadEnd={() => setLoading(false)}
+                resizeMode="cover"
+            />
+        </View>
+    );
+};
+
 // 이미지 렌더링 함수 (1~3장, 4장 이상 예시처럼)
 const renderImages = (images) => {
     if (!images || images.length === 0) return null;
     if (images.length === 1) {
         return (
-            <Image source={{ uri: images[0] }} style={styles.singleImage} />
+            <ImageWithLoading 
+                uri={images[0]} 
+                style={styles.singleImage}
+                loadingStyle={{ width: 300, height: 300 }} // 로딩 배경 크기 조절
+            />
         );
     }
     if (images.length === 2) {
         return (
             <View style={styles.row2}>
-                <Image source={{ uri: images[0] }} style={styles.multiImage} />
-                <Image source={{ uri: images[1] }} style={styles.multiImage} />
+                <ImageWithLoading 
+                    uri={images[0]} 
+                    style={styles.multiImage}
+                    loadingStyle={{ width: 200, height: 200 }}
+                />
+                <ImageWithLoading 
+                    uri={images[1]} 
+                    style={styles.multiImage}
+                    loadingStyle={{ width: 200, height: 200 }}
+                />
             </View>
         );
     }
     if (images.length === 3) {
         return (
             <View style={styles.row3}>
-                <Image source={{ uri: images[0] }} style={styles.leftLargeImage} />
+                <ImageWithLoading 
+                    uri={images[0]} 
+                    style={styles.leftLargeImage}
+                    loadingStyle={{ width: 236, height: 236 }}
+                />
                 <View style={styles.rightColumn}>
-                    <Image source={{ uri: images[1] }} style={styles.rightSmallImage} />
-                    <Image source={{ uri: images[2] }} style={styles.rightSmallImage} />
+                    <ImageWithLoading 
+                        uri={images[1]} 
+                        style={styles.rightSmallImage}
+                        loadingStyle={{ width: 114, height: 114 }}
+                    />
+                    <ImageWithLoading 
+                        uri={images[2]} 
+                        style={styles.rightSmallImage}
+                        loadingStyle={{ width: 114, height: 114 }}
+                    />
                 </View>
             </View>
         );
@@ -165,13 +222,29 @@ const renderImages = (images) => {
     return (
         <>
             <View style={styles.row4}>
-                <Image source={{ uri: images[0] }} style={styles.squadImage} />
-                <Image source={{ uri: images[1] }} style={styles.squadImage} />
+                <ImageWithLoading 
+                    uri={images[0]} 
+                    style={styles.squadImage}
+                    loadingStyle={{ width: 180, height: 180 }}
+                />
+                <ImageWithLoading 
+                    uri={images[1]} 
+                    style={styles.squadImage}
+                    loadingStyle={{ width: 180, height: 180 }}
+                />
             </View>
             <View style={styles.row4}>
-                <Image source={{ uri: images[2] }} style={styles.squadImage} />
+                <ImageWithLoading 
+                    uri={images[2]} 
+                    style={styles.squadImage}
+                    loadingStyle={{ width: 180, height: 180 }}
+                />
                 <View>
-                    <Image source={{ uri: images[3] }} style={styles.squadImage} />
+                    <ImageWithLoading 
+                        uri={images[3]} 
+                        style={styles.squadImage}
+                        loadingStyle={{ width: 180, height: 180 }}
+                    />
                     {images.length > 4 && (
                         <View style={styles.overlay}>
                             <Text style={styles.overlayText}>+{images.length - 4}</Text>
