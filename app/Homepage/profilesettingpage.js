@@ -52,7 +52,7 @@ const ProfileSettingPage = () => {
 
     const handleUpdateProfile = async () => {
         try {
-            const res = await fetch(`${API_CONFIG.BASE_URL}/api/user/update`, {
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/user/update-profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
