@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#222',
         marginBottom: 16,
+        marginTop: 12,
     },
     activityBox: {
         flexDirection: 'row',
@@ -157,6 +158,30 @@ const styles = StyleSheet.create({
         height: 18,
         resizeMode: 'contain',
         tintColor: '#B0B0B0',
+    },
+    introSection: {
+        marginTop: 24,
+        marginHorizontal: 20,
+    },
+    introTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#222',
+        marginBottom: 8,
+    },
+    introText: {
+        fontSize: 15,
+        color: '#222',
+        lineHeight: 22,
+    },
+    introMore: {
+        color: '#888',
+        fontSize: 13,
+        marginTop: 12,
+    },
+    introCard: {
+        marginHorizontal: 20,
+        marginTop: 0,
     },
 });
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import styles from '../Components/Css/Homepage/profilepagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -7,6 +7,9 @@ import { router } from 'expo-router';
 const ProfilePage = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const [showAll, setShowAll] = useState(false);
+    const introduction = `40여년 조선소 근무후\n퇴직하여 조그만 한 텃밭\n장만 하여 소일거리 하며\n먹거리 채소는 조금씩 가꾸고 있는 올해 12년차 ^^`;
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
             {/* 상단 바 */}
@@ -39,6 +42,22 @@ const ProfilePage = () => {
                     <Text style={styles.editBtnText}>프로필 수정</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* 내 소개 UI */}
+            <View style={styles.introCard}>
+                <Text style={styles.activityTitle}>내 소개</Text>
+                <Text style={styles.introText} numberOfLines={showAll ? undefined : 3}>
+                    {introduction}
+                </Text>
+                {introduction.split('\n').length > 3 && (
+                    <TouchableOpacity onPress={() => setShowAll(!showAll)}>
+                        <Text style={styles.introMore}>{showAll ? '닫기' : '더보기'}</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {/* 구분선 */}
+            <View style={styles.divider} />
 
             {/* 활동 */}
             <View style={styles.activitySection}>
@@ -113,6 +132,8 @@ const ProfilePage = () => {
                     <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
             </View>
+
+            
         </ScrollView>
     );
 };
