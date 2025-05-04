@@ -133,7 +133,17 @@ const HomePage = () => {
 
                     {/* drawerTitle, drawerItem 등은 그대로 유지 */}
                     <Text style={styles.drawerTitle}>정보</Text>
-                    <TouchableOpacity style={styles.drawerItem}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/profilepage',
+                            params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region
+                            }
+                        });
+                    }}>
                         <Image source={require('../../assets/profileicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>프로필</Text>
                     </TouchableOpacity>
