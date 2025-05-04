@@ -29,15 +29,29 @@ const ProfilePage = () => {
                 </View>
                 <TouchableOpacity
                     style={styles.editBtn}
-                    onPress={() => router.push({
-                        pathname: 'Homepage/profilesettingpage',
-                        params: {
+                    onPress={() => {
+                        console.log('프로필 수정 이동 params:', {
                             userData: route.params?.userData,
                             phone: route.params?.phone,
                             name: route.params?.name,
-                            region: route.params?.region
-                        }
-                    })}
+                            region: route.params?.region,
+                            profile_image: route.params?.profile_image,
+                            about_me: route.params?.about_me,
+                            introduction: route.params?.introduction,
+                        });
+                        router.push({
+                            pathname: 'Homepage/profilesettingpage',
+                            params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                profile_image: route.params?.profile_image,
+                                about_me: route.params?.about_me,
+                                introduction: route.params?.introduction,
+                            }
+                        });
+                    }}
                 >
                     <Text style={styles.editBtnText}>프로필 수정</Text>
                 </TouchableOpacity>

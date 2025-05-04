@@ -51,7 +51,10 @@ const Register = () => {
                         userData: JSON.stringify(response.data.user),
                         phone: response.data.user.phone,
                         name: response.data.user.name,
-                        region: response.data.user.region || '지역 미설정'
+                        region: response.data.user.region || '지역 미설정',
+                        profile_image: response.data.user.profile_image,
+                        about_me: response.data.user.about_me,
+                        introduction: response.data.user.introduction,
                     }
                 });
                 Alert.alert('성공', '로그인이 완료되었습니다.');

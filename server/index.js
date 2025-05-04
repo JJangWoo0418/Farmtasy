@@ -69,6 +69,16 @@ app.use((err, req, res, next) => {
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);
 
+// 가장 단순한 사용자 정보 조회 API (다른 라우터보다 위에 둘 것)
+app.get('/api/user', async (req, res) => {
+    const { phone } = req.query;
+    console.log('GET /api/user 호출됨, phone:', phone);
+    if (!phone) return res.status(400).json({ error: 'phone 필요' });
+    const [rows] = await pool.query('SELECT * FROM user WHERE phone = ?', [phone]);
+    if (rows.length === 0) return res.status(404).json({ error: '사용자 없음' });
+    res.json(rows[0]);
+});
+
 // 서버 상태 확인용 엔드포인트
 app.get('/', (req, res) => {
     res.json({ message: '서버가 정상적으로 실행 중입니다.' });
@@ -644,6 +654,23 @@ app.post('/api/comment', async (req, res) => {
     }
 });
 
+// 프로필 수정 전용 API
+app.post('/api/user/update-profile', async (req, res) => {
+    const { phone, name, region, introduction, profile_image, about_me } = req.body;
+    if (!phone) {
+        return res.status(400).json({ success: false, message: 'phone 파라미터가 필요합니다.' });
+    }
+    try {
+        await pool.query(
+            `UPDATE user SET name=?, region=?, introduction=?, profile_image=?, about_me=? WHERE phone=?`,
+            [name, region, introduction, profile_image, about_me, phone]
+        );
+        res.json({ success: true, message: '프로필이 성공적으로 수정되었습니다.' });
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'DB 오류', error: e.message });
+    }
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
@@ -671,4 +698,4 @@ app.listen(PORT, '0.0.0.0', async () => {
     } catch (err) {
         console.error('테이블 설정 중 오류 발생:', err);
     }
-}); 
+});

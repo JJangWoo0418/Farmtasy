@@ -14,26 +14,41 @@ const ProfileSettingPage = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const phone = route?.params?.phone;
+
+    // 상태 변수: 모두 빈 문자열로 초기화
     const [name, setName] = useState('');
     const [region, setRegion] = useState('');
-    const [profileLine, setProfileLine] = useState('');
-    const [introduction, setIntroduction] = useState('');
+    const [profileLine, setProfileLine] = useState(''); // 한 줄 프로필
+    const [aboutMe, setAboutMe] = useState('');         // 내 소개
     const [profileImage, setProfileImage] = useState('');
     const [isUploadModalVisible, setIsUploadModalVisible] = useState(false);
     const [uploadTranslateY] = useState(new Animated.Value(400));
 
     useEffect(() => {
+        console.log('phone:', phone);
         if (!phone) return;
-        fetch(`${API_CONFIG.BASE_URL}/api/user/${phone}`)
-            .then(res => res.json())
-            .then(data => {
-                setName(data.name || '');
-                setRegion(data.region || '');
-                setProfileLine(data.introduction || '');
-                setIntroduction(data.about_me || '');
-                setProfileImage(data.profile_image || '');
-            });
+        fetchUserData();
     }, [phone]);
+
+    // 서버에서 사용자 정보 받아오기
+    const fetchUserData = async () => {
+        console.log('요청 경로:', `${API_CONFIG.BASE_URL}/api/user`, 'params:', { phone });
+        try {
+            const response = await axios.get(`${API_CONFIG.BASE_URL}/api/user`, {
+                params: { phone }
+            });
+            const data = response.data;
+            console.log('서버에서 받아온 데이터:', data);
+            setName(data.name || '');
+            setRegion(data.region || '');
+            setProfileLine(data.introduction || '');
+            setAboutMe(data.about_me || '');
+            setProfileImage(data.profile_image || '');
+        } catch (error) {
+            console.error('사용자 정보 조회 실패:', error);
+            Alert.alert('오류', '사용자 정보를 불러오는데 실패했습니다.');
+        }
+    };
 
     const handleUpdateProfile = async () => {
         try {
@@ -45,7 +60,7 @@ const ProfileSettingPage = () => {
                     name,
                     region,
                     introduction: profileLine,
-                    about_me: introduction,
+                    about_me: aboutMe,
                     profile_image: profileImage,
                 }),
             });
@@ -232,8 +247,8 @@ const ProfileSettingPage = () => {
                     <Text style={styles.inputLabel}>내 소개</Text>
                     <TextInput
                         style={[styles.input2, styles.inputMultiline]}
-                        value={introduction}
-                        onChangeText={setIntroduction}
+                        value={aboutMe}
+                        onChangeText={setAboutMe}
                         placeholder="공유하고 싶은 회원님의 자랑스러운 노하우, 특별한 이력, 관심사를 적어주세요"
                         placeholderTextColor="#bbb"
                         multiline
