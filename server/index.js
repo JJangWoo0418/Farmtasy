@@ -5,10 +5,32 @@ require('dotenv').config();
 
 const app = express();
 const AWS = require('aws-sdk');
-const s3 = new AWS.S3({
+
+// 환경변수 체크
+const requiredEnvVars = [
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_REGION',
+    'AWS_S3_BUCKET'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+    console.error('필수 환경변수가 설정되지 않았습니다:', missingEnvVars);
+    process.exit(1);
+}
+
+// AWS SDK 설정
+AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     region: process.env.AWS_REGION,
+    signatureVersion: 'v4'
+});
+
+const s3 = new AWS.S3({
+    apiVersion: '2006-03-01',
+    signatureVersion: 'v4'
 });
 
 // CORS 설정을 더 구체적으로
@@ -230,7 +252,7 @@ app.get('/api/post', async (req, res) => {
                     LIMIT 1
                 ) as best_comment_user,
                 (
-                    SELECT u2.profile
+                    SELECT u2.profile_image
                     FROM Comment c2
                     LEFT JOIN user u2 ON c2.phone = u2.phone
                     WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
@@ -411,17 +433,38 @@ app.get('/api/post', async (req, res) => {
     }
 });
 
+// S3 presigned URL 생성 API 수정
 app.post('/api/s3/presign', (req, res) => {
     const { fileName, fileType } = req.body;
+    console.log('Presigned URL 요청:', { fileName, fileType });
+    console.log('S3 버킷:', process.env.AWS_S3_BUCKET);
+
+    if (!process.env.AWS_S3_BUCKET) {
+        console.error('AWS_S3_BUCKET 환경변수가 설정되지 않았습니다.');
+        return res.status(500).json({
+            error: 'S3 설정 오류',
+            details: 'S3 버킷이 설정되지 않았습니다.'
+        });
+    }
+
     const params = {
         Bucket: process.env.AWS_S3_BUCKET,
         Key: fileName,
         Expires: 60,
-        ContentType: fileType,
-        // ACL: 'public-read',
+        ContentType: fileType
     };
+
+    console.log('S3 파라미터:', params);
+
     s3.getSignedUrl('putObject', params, (err, url) => {
-        if (err) return res.status(500).json({ error: err });
+        if (err) {
+            console.error('S3 presigned URL 생성 실패:', err);
+            return res.status(500).json({ 
+                error: 'S3 URL 생성 실패',
+                details: err.message 
+            });
+        }
+        console.log('S3 presigned URL 생성 성공');
         res.json({ url });
     });
 });
@@ -431,29 +474,33 @@ app.post('/api/post', async (req, res) => {
     console.log('게시글 작성 요청 받음:', req.body);
 
     try {
-        // 테이블 존재 여부 확인 방식 수정
-        const [tables] = await pool.query("SHOW TABLES");
-        const postTableExists = tables.some(table => table.Tables_in_farmtasy_db === 'post');
+        const { name, post_content, post_category, phone, region, image_urls } = req.body;
+        console.log('파싱된 데이터:', { name, post_content, post_category, phone, region, image_urls });
 
-        if (postTableExists) {
-            console.log('post 테이블 확인 완료');
-        } else {
-            console.error('post 테이블이 존재하지 않습니다');
-            return res.status(500).json({
+        // 필수 필드 검증
+        if (!name || !post_content || !post_category || !phone) {
+            console.log('필수 필드 누락:', { name, post_content, post_category, phone });
+            return res.status(400).json({
                 success: false,
-                message: '서버 설정 오류가 발생했습니다.'
+                message: '필수 정보가 누락되었습니다.'
             });
         }
 
-        // post_title 제거
-        const { name, post_content, post_category, phone, region, image_urls } = req.body;
+        // image_urls 처리
+        const imageUrlsString = image_urls ? JSON.stringify(image_urls) : JSON.stringify([]);
+        console.log('이미지 URL 처리:', imageUrlsString);
 
-        const [result] = await pool.query(
-            `INSERT INTO post (name, post_content, post_category, phone, region, image_urls) 
-    VALUES (?, ?, ?, ?, ?, ?)`,
-            [name, post_content, post_category, phone, region, JSON.stringify(image_urls)]
-        );
+        const query = `
+            INSERT INTO post 
+            (name, post_content, post_category, phone, region, image_urls, post_created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+        `;
+        const params = [name, post_content, post_category, phone, region, imageUrlsString];
+        
+        console.log('실행할 쿼리:', query);
+        console.log('쿼리 파라미터:', params);
 
+        const [result] = await pool.query(query, params);
         console.log('게시글 등록 성공:', result);
 
         res.json({
@@ -464,9 +511,17 @@ app.post('/api/post', async (req, res) => {
 
     } catch (error) {
         console.error('게시글 등록 오류:', error);
+        console.error('에러 상세:', {
+            message: error.message,
+            code: error.code,
+            sqlMessage: error.sqlMessage,
+            sqlState: error.sqlState
+        });
         res.status(500).json({
             success: false,
-            message: '서버 오류가 발생했습니다.'
+            message: '서버 오류가 발생했습니다.',
+            error: error.message,
+            details: error.sqlMessage || '데이터베이스 오류'
         });
     }
 });
