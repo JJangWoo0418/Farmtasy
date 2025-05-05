@@ -682,6 +682,43 @@ app.post('/api/user/update-profile', async (req, res) => {
     }
 });
 
+// 사용자 통계 정보 조회 API
+app.get('/api/user/stats', async (req, res) => {
+    const { phone } = req.query;
+    if (!phone) {
+        return res.status(400).json({ error: '전화번호가 필요합니다.' });
+    }
+
+    try {
+        // 게시글 수 조회 - 전화번호로 매칭
+        const [postCount] = await pool.query(
+            'SELECT COUNT(*) as post_count FROM post WHERE phone = ?',
+            [phone]
+        );
+
+        // 댓글 수 조회 - 전화번호로 매칭
+        const [commentCount] = await pool.query(
+            'SELECT COUNT(*) as comment_count FROM comment WHERE phone = ?',
+            [phone]
+        );
+
+        // 받은 좋아요 수 조회 - 게시글 작성자의 전화번호로 매칭
+        const [likeCount] = await pool.query(
+            'SELECT COUNT(*) as like_count FROM post_likes pl JOIN post p ON pl.post_id = p.post_id WHERE p.phone = ?',
+            [phone]
+        );
+
+        res.json({
+            post_count: postCount[0].post_count || 0,
+            comment_count: commentCount[0].comment_count || 0,
+            like_count: likeCount[0].like_count || 0
+        });
+    } catch (error) {
+        console.error('사용자 통계 조회 실패:', error);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
