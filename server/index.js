@@ -723,6 +723,38 @@ app.get('/api/user/stats', async (req, res) => {
     }
 });
 
+// 특정 사용자가 작성한 게시글 목록 조회 API
+app.get('/api/post/user', async (req, res) => {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ error: 'phone 파라미터 필요' });
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT 
+                p.post_id as id,
+                u.name as user,
+                p.phone,
+                p.post_content as text,
+                p.post_category as category,
+                p.post_created_at as time,
+                p.image_urls,
+                u.region,
+                p.post_like as likes,
+                u.introduction,
+                u.profile_image,
+                (SELECT COUNT(*) FROM Comment c WHERE c.post_id = p.post_id) as commentCount
+            FROM post p
+            LEFT JOIN user u ON p.phone = u.phone
+            WHERE p.phone = ?
+            ORDER BY p.post_created_at DESC`,
+            [phone]
+        );
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ error: 'DB 오류' });
+    }
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });

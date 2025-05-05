@@ -136,7 +136,20 @@ const ProfilePage = () => {
                     <Text style={styles.sectionText}>저장한 글</Text>
                     <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.sectionRow}>
+                <TouchableOpacity style={styles.sectionRow} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/collectionwriting',
+                            params: {
+                                userData: userData,
+                                phone: route.params?.phone,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
+                            }
+                        });
+                    }}>
                     <Image source={require('../../assets/paperpencil2.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>작성한 글</Text>
                     <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />

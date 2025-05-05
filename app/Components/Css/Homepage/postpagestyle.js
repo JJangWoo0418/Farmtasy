@@ -23,7 +23,7 @@ export default StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        paddingLeft: 130
+        paddingLeft: 120
     },
     topicBox: {
         flexDirection: 'row',
