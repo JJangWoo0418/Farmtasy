@@ -589,6 +589,8 @@ app.post('/api/comment/like', async (req, res) => {
 // 댓글 목록 조회 API 수정
 app.get('/api/comment', async (req, res) => {
     const { post_id, user_phone } = req.query;
+    console.log('댓글 목록 조회 요청:', { post_id, user_phone });
+    
     if (!post_id || !user_phone) return res.status(400).json({ success: false, message: 'post_id와 user_phone 필요' });
 
     try {
@@ -601,7 +603,7 @@ app.get('/api/comment', async (req, res) => {
                 c.phone, 
                 COALESCE(c.comment_like, 0) as comment_like,
                 u.name, 
-                u.profile, 
+                u.profile_image as profile, 
                 u.region, 
                 u.introduction,
                 CASE WHEN cl.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
@@ -617,19 +619,23 @@ app.get('/api/comment', async (req, res) => {
             ORDER BY c.comment_created_at ASC
         `, [user_phone, post_id]);
 
+        console.log('DB에서 조회된 댓글 데이터:', rows);
+
         const comments = rows.map(row => ({
             id: row.comment_id,
-            user: row.region ? `[${row.region}] ${row.name}` : `[지역 미설정] ${row.name}`,
+            user: row.name,
             profile: row.profile,
             time: row.comment_created_at,
-            text: row.comment_content,
+            comment_content: row.comment_content,
             likes: row.like_count || 0,
             introduction: row.introduction,
             comment_parent_id: row.comment_parent_id,
             phone: row.phone,
-            isLiked: row.is_liked === 1
+            isLiked: row.is_liked === 1,
+            region: row.region || '지역 미설정'
         }));
 
+        console.log('클라이언트로 보내는 댓글 데이터:', comments);
         res.json(comments);
     } catch (e) {
         console.error('댓글 조회 오류:', e);

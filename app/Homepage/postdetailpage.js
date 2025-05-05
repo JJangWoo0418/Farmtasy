@@ -43,15 +43,22 @@ const PostDetailPage = () => {
     useEffect(() => {
         const fetchComments = async () => {
             try {
+                console.log('댓글 목록 요청:', `${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
                 const data = await response.json();
+                console.log('서버에서 받은 댓글 데이터:', data);
                 setComments(Array.isArray(data) ? data : []);
             } catch (e) {
                 console.error('댓글 조회 오류:', e);
                 setComments([]); // 에러 시 빈 배열
             }
         };
-        if (post?.id && phone) fetchComments();
+        if (post?.id && phone) {
+            console.log('댓글 목록 불러오기 시작 - post.id:', post.id, 'phone:', phone);
+            fetchComments();
+        } else {
+            console.log('댓글 목록을 불러올 수 없음 - post.id 또는 phone이 없음:', { postId: post?.id, phone });
+        }
     }, [post?.id, phone]);
 
     // 댓글 트리 구조로 변환 함수를 useMemo로 최적화
@@ -349,7 +356,7 @@ const PostDetailPage = () => {
                         <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
                         <View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.commentUsername}>{comment.user}</Text>
+                                <Text style={styles.commentUsername}>[{comment.region || '지역 미설정'}] {comment.user}</Text>
                                 {String(comment.phone) === String(post.phone) && (
                                     <View style={styles.authorBadge}>
                                         <Text style={styles.authorBadgeText}>작성자</Text>
@@ -372,7 +379,7 @@ const PostDetailPage = () => {
                             <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.commentText}>{comment.text}</Text>
+                    <Text style={styles.commentText}>{comment.comment_content}</Text>
                     <View style={styles.commentActions}>
                         <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
                             <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
@@ -416,7 +423,7 @@ const PostDetailPage = () => {
                         <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
                         <View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.commentUsername}>{comment.user}</Text>
+                                <Text style={styles.commentUsername}>[{comment.region || '지역 미설정'}] {comment.user}</Text>
                                 {String(comment.phone) === String(post.phone) && (
                                     <View style={styles.authorBadge}>
                                         <Text style={styles.authorBadgeText}>작성자</Text>
@@ -451,7 +458,7 @@ const PostDetailPage = () => {
                             <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn} />
                         </TouchableOpacity>
                     </View>
-                    <Text style={styles.commentText}>{comment.text}</Text>
+                    <Text style={styles.commentText}>{comment.comment_content}</Text>
                     <View style={styles.commentActions}>
                         <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
                             <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
