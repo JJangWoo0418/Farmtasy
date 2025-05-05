@@ -56,18 +56,23 @@ const ITEM_CODES = {
 
 // 도매시장 정산가격 정보 조회 (시세)
 export async function getDailyPrice({ saledate, whsalcd, large, mid, small, cmpcd }) {
+  // 필수 파라미터 체크
+  if (!saledate || !whsalcd || !large || !mid) {
+    console.error('필수 파라미터 누락:', { saledate, whsalcd, large, mid });
+    throw new Error('필수 파라미터가 누락되었습니다.');
+  }
+
   console.log('[DEBUG] 시세 조회 파라미터:', { saledate, whsalcd, large, mid, small, cmpcd });
 
   // Grid ID를 반드시 문자열로 고정
   let url = `${BASE_URL}/${MARKET_API_KEY}/xml/Grid_20240625000000000653_1/1/100`;
   url += `?AUCNGDE=${saledate}`;
   url += `&WHSALCD=${whsalcd}`;
-  if (large) url += `&LARGE=${large}`;
-  if (mid) url += `&MID=${mid}`;
+  url += `&LARGE=${large}`;
+  url += `&MID=${mid}`;
   if (small) url += `&SMALL=${small}`;
   if (cmpcd) url += `&CMPCD=${cmpcd}`;
 
-  console.log(`[DEBUG] 시세 조회 날짜(AUCNGDE): ${saledate}`);
   console.log('[DEBUG] 시세 조회 URL:', url);
 
   try {
@@ -81,17 +86,22 @@ export async function getDailyPrice({ saledate, whsalcd, large, mid, small, cmpc
     const xmlText = await response.text();
     const parser = new XMLParser();
     const result = parser.parse(xmlText);
-    console.log('[DEBUG] 시세 조회 파싱 결과:', result);
 
     // row 추출 및 배열화
     const grid = result['Grid_20240625000000000653_1'];
-    let rows = grid && grid.row;
+    if (!grid) {
+      throw new Error('API 응답이 올바르지 않습니다.');
+    }
+
+    let rows = grid.row;
     if (!Array.isArray(rows)) {
       rows = rows ? [rows] : [];
     }
+
     if (rows.length === 0) {
       throw new Error('시세 데이터를 찾을 수 없습니다.');
     }
+
     return rows;
   } catch (error) {
     console.error('[ERROR] 시세 데이터 로드 실패:', error);

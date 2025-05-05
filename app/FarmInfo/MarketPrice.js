@@ -455,7 +455,11 @@ export default function MarketPrice() {
   const loadPriceData = async () => {
     // 필수 파라미터 체크
     if (!selectedLarge || !selectedMid) {
-      console.log('품목 코드가 선택되지 않았습니다.');
+      console.log('필수 파라미터 누락:', {
+        대분류: selectedLarge,
+        중분류: selectedMid
+      });
+      setError('품목을 선택해주세요.');
       return;
     }
 
@@ -469,7 +473,7 @@ export default function MarketPrice() {
         품목: {
           대분류: selectedLarge,
           중분류: selectedMid,
-          소분류: selectedSmall
+          소분류: selectedSmall || ''
         }
       });
 
@@ -507,10 +511,10 @@ export default function MarketPrice() {
 
       setDailyPrices(allPrices);
       setMarketPrices(allPrices);
-      setLoading(false);
     } catch (err) {
       console.error('시세 데이터 로드 실패:', err.message);
       setError(err.message || '시세 데이터 로드 실패');
+    } finally {
       setLoading(false);
     }
   };
