@@ -423,15 +423,22 @@ const CollectionWriting = () => {
                 throw new Error('좋아요 처리 실패');
             }
 
-            // 서버 응답 성공 시 게시글 목록 새로고침
-            const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/post?category=${category}&user_phone=${phone}`);
-            if (postsResponse.ok) {
-                const updatedPosts = await postsResponse.json();
-                setPosts(updatedPosts);
-            }
+            // 프론트에서 해당 게시글만 즉시 갱신
+            setPosts(prev =>
+                prev.map(post =>
+                    post.id === postId
+                        ? {
+                            ...post,
+                            is_liked: !currentLike,
+                            likes: post.likes + (!currentLike ? 1 : -1)
+                        }
+                        : post
+                )
+            );
         } catch (error) {
+            // 에러 처리 (필요시)
         }
-    }, [phone, category]);
+    }, [phone]);
 
     // 검색 필터링
     const filteredPosts = useMemo(() => {
