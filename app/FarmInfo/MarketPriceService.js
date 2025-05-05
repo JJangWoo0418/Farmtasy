@@ -3,13 +3,10 @@ import * as XLSX from 'xlsx';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import itemCodeData from '../Components/Utils/item_code_data.json';
+import { MARKET_API_KEY } from '../Components/API/apikey';
 
 // 실제 API URL 설정
 const BASE_URL = 'http://211.237.50.150:7080/openapi';
-const MARKET_API_KEY = 'ce6bfb5a5e29d7ae2f0255c456bbd9caf2a617877fff580bc94c789df5e02efa';
-
-// 엑셀 파일 경로 수정
-const EXCEL_FILE_NAME = 'agricultural_codes.xlsx';
 
 // XML을 JSON으로 변환하는 유틸리티 함수
 const parseXmlToJson = async (xmlString) => {
@@ -28,6 +25,7 @@ const GRID_IDS = {
   MARKET_CODE: 'Grid_20240625000000000661_1',    // 도매시장 코드
   GRADE_CODE: 'Grid_20240626000000000663_1',     // 등급 코드
   ORIGIN_CODE: 'Grid_20240626000000000667_1',    // 산지 코드
+  ITEM_CODE: 'Grid_20240626000000000668_1',      // 품목 코드
   SETTLEMENT_PRICE: 'Grid_20240625000000000653_1', // 도매시장 정산가격 정보
   REALTIME_PRICE: 'Grid_20240625000000000654_1'  // 도매시장 실시간 경락 정보
 };
@@ -56,47 +54,57 @@ const ITEM_CODES = {
   ]
 };
 
-export const MarketPriceService = {
-  // 일일 시세 조회
-  async getDailyPrice(cropCode) {
-    try {
-      const url = `${BASE_URL}/xml/${GRID_IDS.MARKET_CODE}/1/100?ServiceKey=${MARKET_API_KEY}&delngDe=20240322&prdlstCd=${cropCode}`;
-      console.log('[DEBUG] 요청 URL:', url);
-      
-      const response = await fetch(url);
-      console.log('[DEBUG] 응답 상태:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const xmlData = await response.text();
-      console.log('[DEBUG] XML 응답:', xmlData);
-      
-      const jsonData = await parseXmlToJson(xmlData);
-      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
-      
-      if (!jsonData || !jsonData[GRID_IDS.MARKET_CODE]) {
-        throw new Error('API 응답이 비어있습니다.');
-      }
-      
-      const gridData = jsonData[GRID_IDS.MARKET_CODE];
-      
-      if (!gridData.row || !Array.isArray(gridData.row)) {
-        throw new Error('API 응답에 유효한 데이터가 없습니다.');
-      }
-      
-      return gridData.row;
-    } catch (error) {
-      console.error('일일 시세 조회 오류:', error);
-      throw error;
-    }
-  },
+// 도매시장 정산가격 정보 조회 (시세)
+export async function getDailyPrice({ saledate, whsalcd, large, mid, small, cmpcd }) {
+  console.log('[DEBUG] 시세 조회 파라미터:', { saledate, whsalcd, large, mid, small, cmpcd });
 
+  // Grid ID를 반드시 문자열로 고정
+  let url = `${BASE_URL}/${MARKET_API_KEY}/xml/Grid_20240625000000000653_1/1/100`;
+  url += `?AUCNGDE=${saledate}`;
+  url += `&WHSALCD=${whsalcd}`;
+  if (large) url += `&LARGE=${large}`;
+  if (mid) url += `&MID=${mid}`;
+  if (small) url += `&SMALL=${small}`;
+  if (cmpcd) url += `&CMPCD=${cmpcd}`;
+
+  console.log(`[DEBUG] 시세 조회 날짜(AUCNGDE): ${saledate}`);
+  console.log('[DEBUG] 시세 조회 URL:', url);
+
+  try {
+    const response = await fetch(url);
+    console.log('[DEBUG] 시세 조회 응답 상태:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const xmlText = await response.text();
+    const parser = new XMLParser();
+    const result = parser.parse(xmlText);
+    console.log('[DEBUG] 시세 조회 파싱 결과:', result);
+
+    // row 추출 및 배열화
+    const grid = result['Grid_20240625000000000653_1'];
+    let rows = grid && grid.row;
+    if (!Array.isArray(rows)) {
+      rows = rows ? [rows] : [];
+    }
+    if (rows.length === 0) {
+      throw new Error('시세 데이터를 찾을 수 없습니다.');
+    }
+    return rows;
+  } catch (error) {
+    console.error('[ERROR] 시세 데이터 로드 실패:', error);
+    throw error;
+  }
+}
+
+const MarketPriceService = {
+  getDailyPrice,
   // 품종별 일일 시세 조회
   async getVarietyPrice(cropCode, varietyCode) {
     try {
-      const url = `${BASE_URL}/xml/${GRID_IDS.GRADE_CODE}/1/100?ServiceKey=${MARKET_API_KEY}&prdlstCd=${cropCode}`;
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.GRADE_CODE}/1/100?prdlstCd=${cropCode}`;
       console.log('[DEBUG] 요청 URL:', url);
       
       const response = await fetch(url);
@@ -132,9 +140,10 @@ export const MarketPriceService = {
   // 시세 비교 (과거 vs 현재)
   async comparePrices(cropCode, startDate, endDate) {
     try {
-      const response = await fetch(
-        `${BASE_URL}/sample/xml/Grid_20240625000000000663_1/1/5?ServiceKey=${MARKET_API_KEY}&startDate=${startDate}&endDate=${endDate}&prdlstCd=${cropCode}`
-      );
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.GRADE_CODE}/1/100?startDate=${startDate}&endDate=${endDate}&prdlstCd=${cropCode}`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -147,19 +156,53 @@ export const MarketPriceService = {
   },
 
   // 지역별 시세 조회
-  async getRegionalPrices(cropCode, region) {
+  async getRegionalPrices({ saledate, whsalcd, large, mid, small, cmpcd }) {
+    // 필수 파라미터 체크
+    if (!saledate || !whsalcd) {
+      console.error('필수 파라미터 누락:', { saledate, whsalcd });
+      return null;
+    }
+
+    let url = `${BASE_URL}/${MARKET_API_KEY}/xml/Grid_0000001/1/100?SALEDATE=${saledate}&WHSALCD=${whsalcd}`;
+    
+    // 선택 파라미터 추가
+    if (large) url += `&LARGE=${large}`;
+    if (mid) url += `&MID=${mid}`;
+    if (small) url += `&SMALL=${small}`;
+    if (cmpcd) url += `&CMPCD=${cmpcd}`;
+
+    console.log('전국 시세 API 요청 URL:', url);
+
     try {
-      const response = await fetch(
-        `${BASE_URL}/sample/xml/Grid_20240625000000000664_1/1/5?ServiceKey=${MARKET_API_KEY}&delngDe=20240322&prdlstCd=${cropCode}`
-      );
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.text();
-      return data;
+      const xmlData = await response.text();
+      const jsonData = await parseXmlToJson(xmlData);
+      
+      if (!jsonData || !jsonData[GRID_IDS.SETTLEMENT_PRICE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.SETTLEMENT_PRICE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      return gridData.row.map(item => ({
+        AUCNGDE: item.AUCNGDE,
+        MRKTNM: item.MARKETNAME || item.MRKTNM,
+        ITEM_NAME: item.ITEMNAME || item.ITEM_NAME,
+        AVGPRI: item.AVGP || item.AVGPRI,
+        MAXPRC: item.MAXP || item.MAXPRC,
+        MINPRC: item.MINP || item.MINPRC,
+        AUCTQY: item.VOLUME || item.AUCTQY
+      }));
     } catch (error) {
-      console.error('지역별 시세 조회 오류:', error);
-      throw error;
+      console.error('전국 시세 조회 실패:', error);
+      return null;
     }
   },
 
@@ -240,7 +283,7 @@ export const MarketPriceService = {
       };
       
       // 검색어가 없는 경우 전체 데이터 반환
-      if (!searchKeyword) {
+      if (!searchKeyword || typeof searchKeyword !== 'string') {
         return categorizedItems;
       }
       
@@ -441,3 +484,5 @@ export const MarketPriceService = {
     }
   }
 };
+
+export default MarketPriceService;
