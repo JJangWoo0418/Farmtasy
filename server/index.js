@@ -207,7 +207,7 @@ app.get('/api/post', async (req, res) => {
         let query = `
             SELECT 
                 p.post_id as id,
-                p.name as user,
+                u.name as user,
                 p.phone,
                 p.post_content as text,
                 p.post_category as category,
@@ -216,6 +216,7 @@ app.get('/api/post', async (req, res) => {
                 u.region,
                 p.post_like as likes,
                 u.introduction,
+                u.profile_image,
                 CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
                 (
                     SELECT COUNT(*) 
@@ -384,6 +385,7 @@ app.get('/api/post', async (req, res) => {
         
         const [posts] = await pool.query(query, params);
         console.log('조회된 게시글 수:', posts.length);
+        console.log('첫 번째 게시글의 프로필 이미지:', posts[0]?.profile_image);
         
         // image_urls 필드 처리 및 데이터 정제
         const formattedPosts = posts.map(post => {
@@ -409,6 +411,8 @@ app.get('/api/post', async (req, res) => {
                 imageUrls = [];
             }
 
+            console.log('게시글 작성자 프로필:', post.profile_image);
+
             return {
                 id: post.id || 0,
                 user: post.user || '알 수 없음',
@@ -421,6 +425,7 @@ app.get('/api/post', async (req, res) => {
                 introduction: post.introduction || '소개 미설정',
                 likes: parseInt(post.likes) || 0,
                 is_liked: post.is_liked === 1,
+                profile_image: post.profile_image || null,
                 commentCount: parseInt(post.comment_count) || 0,
                 best_comment_content: post.best_comment_content || '',
                 best_comment_user: post.best_comment_user || '알 수 없음',

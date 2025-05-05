@@ -19,7 +19,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
             <TouchableOpacity onPress={navigateToDetail}>
                 <View style={styles.postHeader}>
                     <Image
-                        source={item.profile ? { uri: item.profile } : userIcon}
+                        source={item.profile_image && item.profile_image !== '프로필 미설정' ? { uri: item.profile_image } : require('../../assets/usericon.png')}
                         style={styles.profileImg}
                     />
                     <View style={styles.userInfoContainer}>
