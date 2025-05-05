@@ -702,11 +702,15 @@ app.get('/api/user/stats', async (req, res) => {
             [phone]
         );
 
-        // 받은 좋아요 수 조회 - 게시글 작성자의 전화번호로 매칭
-        const [likeCount] = await pool.query(
-            'SELECT COUNT(*) as like_count FROM post_likes pl JOIN post p ON pl.post_id = p.post_id WHERE p.phone = ?',
-            [phone]
-        );
+        // 받은 좋아요 수 조회 - 게시글과 댓글의 좋아요 합산
+        const [likeCount] = await pool.query(`
+            SELECT (
+                -- 게시글 좋아요 수
+                (SELECT COALESCE(SUM(post_like), 0) FROM post WHERE phone = ?) +
+                -- 댓글 좋아요 수
+                (SELECT COALESCE(SUM(comment_like), 0) FROM comment WHERE phone = ?)
+            ) as like_count
+        `, [phone, phone]);
 
         res.json({
             post_count: postCount[0].post_count || 0,

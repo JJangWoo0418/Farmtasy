@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     activityValue: {
-        color: '#888',
+        color: '#111',
         fontWeight: 'bold',
         fontSize: 16,
     },
