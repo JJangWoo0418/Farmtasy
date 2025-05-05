@@ -12,7 +12,7 @@ export default StyleSheet.create({
     },
     header: {
         position: 'absolute',
-        top: 0,
+        top: -14,
         left: 0,
         right: 0,
         zIndex: 1,
@@ -27,7 +27,7 @@ export default StyleSheet.create({
         marginTop: 15
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
         flex: 1,
@@ -35,8 +35,8 @@ export default StyleSheet.create({
     },
     scrollView: {
         flex: 1,
-        marginTop: 60, // 헤더 높이에 맞게 조정
-        marginBottom: 0,
+        marginTop: 30, // 헤더 높이에 맞게 조정
+        paddingBottom:200,
     },
     postContainer: {
         padding: 16,

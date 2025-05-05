@@ -520,21 +520,21 @@ const PostDetailPage = () => {
                                 <Image source={require('../../assets/gobackicon.png')} />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.headerTitle}>자유주제</Text>
+                        <Text style={styles.headerTitle}>{post.category || '자유주제'}</Text>
                         <View style={{ width: 30 }} />
                     </View>
 
                     {/* 스크롤 가능한 내용 */}
                     <ScrollView 
                         ref={scrollViewRef}
-                        style={styles.scrollView} 
-                        contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : 0 }}
+                        style={styles.scrollView}
+                        contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : isReplyInputVisible ? 60 : 0 }}
                     >
                         {/* 게시글 내용 */}
                         <View style={styles.postContainer}>
                             <View style={styles.postHeader}>
                                 <Image 
-                                    source={post.profile ? { uri: post.profile } : require('../../assets/usericon.png')} 
+                                    source={post.profile_image ? { uri: post.profile_image } : require('../../assets/usericon.png')} 
                                     style={styles.profileImg} 
                                 />
                                 <View style={styles.userInfoContainer}>
