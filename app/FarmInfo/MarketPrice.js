@@ -113,7 +113,7 @@ export default function MarketPrice() {
     }
   };
 
-  // 인기 작물 목록 추가
+  // 인기 작물 목록 추가 
   const popularCrops = [
     { name: '쌀', icon: '🌾' },
     { name: '배추', icon: '🥬' },
