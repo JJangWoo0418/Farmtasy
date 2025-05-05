@@ -755,6 +755,241 @@ app.get('/api/post/user', async (req, res) => {
     }
 });
 
+// collectionwriting.js 전용: 특정 사용자의 전체 게시글 목록 조회 API (카테고리 구분 없이)
+app.get('/api/collection/user-posts', async (req, res) => {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ error: 'phone 파라미터 필요' });
+
+    try {
+        const [posts] = await pool.query(`
+            SELECT 
+                p.post_id as id,
+                u.name as user,
+                p.phone,
+                p.post_content as text,
+                p.post_category as category,
+                p.post_created_at as time,
+                p.image_urls,
+                u.region,
+                p.post_like as likes,
+                u.introduction,
+                u.profile_image,
+                CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                (
+                    SELECT COUNT(*) 
+                    FROM Comment c 
+                    WHERE c.post_id = p.post_id
+                ) as comment_count,
+                (
+                    SELECT c2.comment_content
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_content,
+                (
+                    SELECT u2.name
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_user,
+                (
+                    SELECT u2.profile_image
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_profile,
+                (
+                    SELECT c2.comment_created_at
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_time,
+                (
+                    SELECT (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    )
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_likes,
+                (
+                    SELECT u2.region
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_region,
+                (
+                    SELECT u2.introduction
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_introduction
+            FROM post p
+            LEFT JOIN user u ON p.phone = u.phone
+            LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
+            WHERE p.phone = ?
+            GROUP BY p.post_id
+            ORDER BY p.post_created_at DESC
+        `, [phone, phone]);
+
+        // image_urls 필드 처리 및 데이터 정제
+        const formattedPosts = posts.map(post => {
+            let imageUrls = [];
+            try {
+                if (post.image_urls) {
+                    if (typeof post.image_urls === 'string') {
+                        imageUrls = JSON.parse(post.image_urls);
+                    } else if (Array.isArray(post.image_urls)) {
+                        imageUrls = post.image_urls;
+                    } else {
+                        imageUrls = [post.image_urls];
+                    }
+
+                    if (Array.isArray(imageUrls[0])) {
+                        imageUrls = imageUrls.flat();
+                    }
+
+                    imageUrls = imageUrls.filter(url => url && typeof url === 'string');
+                }
+            } catch (e) {
+                imageUrls = [];
+            }
+
+            return {
+                id: post.id || 0,
+                user: post.user || '알 수 없음',
+                phone: post.phone || '',
+                text: post.text || '',
+                category: post.category || '',
+                time: post.time || new Date().toISOString(),
+                image_urls: imageUrls,
+                region: post.region || '지역 미설정',
+                introduction: post.introduction || '소개 미설정',
+                likes: parseInt(post.likes) || 0,
+                is_liked: post.is_liked === 1,
+                profile_image: post.profile_image || null,
+                commentCount: parseInt(post.comment_count) || 0,
+                best_comment_content: post.best_comment_content || '',
+                best_comment_user: post.best_comment_user || '알 수 없음',
+                best_comment_profile: post.best_comment_profile || '프로필 미설정',
+                best_comment_time: post.best_comment_time || new Date().toISOString(),
+                best_comment_likes: parseInt(post.best_comment_likes) || 0,
+                best_comment_region: post.best_comment_region || '지역 미설정',
+                best_comment_introduction: post.best_comment_introduction || '소개 미설정'
+            };
+        });
+
+        res.json(formattedPosts);
+    } catch (error) {
+        res.status(500).json({ error: 'DB 오류', details: error.message });
+    }
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });

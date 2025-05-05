@@ -322,7 +322,7 @@ const CollectionWriting = () => {
         const fetchUserPosts = async () => {
             setLoading(true);
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/user?phone=${phone}`);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/collection/user-posts?phone=${phone}`);
                 const data = await response.json();
                 setPosts(Array.isArray(data) ? data : []);
             } catch (e) {
