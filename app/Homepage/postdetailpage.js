@@ -43,21 +43,15 @@ const PostDetailPage = () => {
     useEffect(() => {
         const fetchComments = async () => {
             try {
-                console.log('댓글 목록 요청:', `${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
                 const data = await response.json();
-                console.log('서버에서 받은 댓글 데이터:', data);
                 setComments(Array.isArray(data) ? data : []);
             } catch (e) {
-                console.error('댓글 조회 오류:', e);
                 setComments([]); // 에러 시 빈 배열
             }
         };
         if (post?.id && phone) {
-            console.log('댓글 목록 불러오기 시작 - post.id:', post.id, 'phone:', phone);
             fetchComments();
-        } else {
-            console.log('댓글 목록을 불러올 수 없음 - post.id 또는 phone이 없음:', { postId: post?.id, phone });
         }
     }, [post?.id, phone]);
 
@@ -145,7 +139,6 @@ const PostDetailPage = () => {
             // 키보드 내리기
             Keyboard.dismiss();
         } catch (error) {
-            console.error('댓글 작성 오류:', error);
             Alert.alert('오류', '댓글 작성에 실패했습니다.');
         }
     }, [commentInput, post.id, phone, name, region, profile, introduction]);
@@ -181,7 +174,6 @@ const PostDetailPage = () => {
             const data = await res.json();
             setComments(Array.isArray(data) ? data : []);
         } catch (error) {
-            console.error('대댓글 작성 오류:', error);
             Alert.alert('오류', '대댓글 작성에 실패했습니다.');
         }
     }, [replyInput, post.id, phone, name, region, profile, introduction, replyToCommentId]);
@@ -227,7 +219,6 @@ const PostDetailPage = () => {
                 })
             ]).start();
         } catch (error) {
-            console.error('댓글 좋아요 처리 오류:', error);
         }
     }, [comments, post.id, phone]);
 
@@ -267,7 +258,6 @@ const PostDetailPage = () => {
             setIsLiked(!isLiked);
             setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
         } catch (error) {
-            console.error('좋아요 처리 오류:', error);
         }
     };
 
@@ -400,9 +390,6 @@ const PostDetailPage = () => {
     // 댓글 렌더링 함수를 useCallback으로 최적화
     const renderComments = useCallback((comments, depth = 0) => {
         return comments.map(comment => {
-            // 댓글 phone 콘솔 출력
-            console.log('게시글 작성자 phone:', post?.phone, typeof post?.phone);
-            console.log('댓글 phone:', comment.phone, typeof comment.phone, '댓글 id:', comment.id);
             return depth > 0 ? (
                 <ReplyCommentComponent
                     key={comment.id}

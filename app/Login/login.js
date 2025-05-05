@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native'; // ✅ 네비게이션
 import { executeKakaoLogin } from '../DB/kakaologindb';
 
 const Login = () => {
-    console.log("Login Screen Loaded");
+    console.log("인트로 창 로드");
     const navigation = useNavigation(); // ✅ 네비게이션 설정
     const [isLoading, setIsLoading] = useState(false);
 

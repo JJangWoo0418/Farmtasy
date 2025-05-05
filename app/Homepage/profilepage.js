@@ -1,14 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import styles from '../Components/Css/Homepage/profilepagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
+import API_CONFIG from '../DB/api';
 
 const ProfilePage = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const [showAll, setShowAll] = useState(false);
-    const introduction = `40여년 조선소 근무후\n퇴직하여 조그만 한 텃밭\n장만 하여 소일거리 하며\n먹거리 채소는 조금씩 가꾸고 있는 올해 12년차 ^^`;
+    const [userData, setUserData] = useState(null);
+    const [introduction, setIntroduction] = useState('');
+    const [aboutMe, setAboutMe] = useState('');
+    const [postCount, setPostCount] = useState(0);
+    const [commentCount, setCommentCount] = useState(0);
+    const [likeCount, setLikeCount] = useState(0);
+
+    useEffect(() => {
+        if (route.params?.phone) {
+            fetchUserData();
+            fetchUserStats();
+        }
+    }, [route.params?.phone]);
+
+    const fetchUserData = async () => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/user?phone=${route.params?.phone}`);
+            const data = await response.json();
+            setUserData(data);
+            setIntroduction(data.introduction || '한 줄 프로필을 입력해주세요');
+            setAboutMe(data.about_me || '내 소개를 입력해주세요');
+        } catch (error) {
+            console.error('사용자 정보 조회 실패:', error);
+        }
+    };
+
+    const fetchUserStats = async () => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/user/stats?phone=${route.params?.phone}`);
+            const data = await response.json();
+            setPostCount(data.post_count || 0);
+            setCommentCount(data.comment_count || 0);
+            setLikeCount(data.like_count || 0);
+        } catch (error) {
+            console.error('사용자 통계 조회 실패:', error);
+        }
+    };
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -22,33 +59,27 @@ const ProfilePage = () => {
 
             {/* 프로필 정보 */}
             <View style={styles.profileSection}>
-                <Image source={require('../../assets/usericon.png')} style={styles.profileImg} />
+                <Image 
+                    source={userData?.profile_image ? { uri: userData.profile_image } : require('../../assets/usericon.png')} 
+                    style={styles.profileImg} 
+                />
                 <View style={styles.profileInfo}>
-                    <Text style={styles.profileName}>[충남 아산] 홍길동</Text>
-                    <Text style={styles.profileLevel}>저는 초보자예요</Text>
+                    <Text style={styles.profileName}>[{userData?.region || '지역 미설정'}] {userData?.name || '이름 없음'}</Text>
+                    <Text style={styles.profileLevel}>저는 {userData?.level || '초보자'}예요</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.editBtn}
                     onPress={() => {
-                        console.log('프로필 수정 이동 params:', {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            profile_image: route.params?.profile_image,
-                            about_me: route.params?.about_me,
-                            introduction: route.params?.introduction,
-                        });
                         router.push({
                             pathname: 'Homepage/profilesettingpage',
                             params: {
-                                userData: route.params?.userData,
+                                userData: userData,
                                 phone: route.params?.phone,
-                                name: route.params?.name,
-                                region: route.params?.region,
-                                profile_image: route.params?.profile_image,
-                                about_me: route.params?.about_me,
-                                introduction: route.params?.introduction,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
                             }
                         });
                     }}
@@ -61,9 +92,9 @@ const ProfilePage = () => {
             <View style={styles.introCard}>
                 <Text style={styles.activityTitle}>내 소개</Text>
                 <Text style={styles.introText} numberOfLines={showAll ? undefined : 3}>
-                    {introduction}
+                    {aboutMe}
                 </Text>
-                {introduction.split('\n').length > 3 && (
+                {aboutMe.split('\n').length > 3 && (
                     <TouchableOpacity onPress={() => setShowAll(!showAll)}>
                         <Text style={styles.introMore}>{showAll ? '닫기' : '더보기'}</Text>
                     </TouchableOpacity>
@@ -79,17 +110,17 @@ const ProfilePage = () => {
                 <View style={styles.activityBox}>
                     <View style={styles.activityItem}>
                         <Text style={styles.activityLabel}>게시글 작성</Text>
-                        <Text style={styles.activityValue}>-</Text>
+                        <Text style={styles.activityValue}>{postCount > 0 ? `${postCount}회` : '-'}</Text>
                     </View>
                     <View style={styles.activityDivider} />
                     <View style={styles.activityItem}>
                         <Text style={styles.activityLabel}>댓글 작성</Text>
-                        <Text style={styles.activityValueActive}>1회</Text>
+                        <Text style={styles.activityValueActive}>{commentCount > 0 ? `${commentCount}회` : '-'}</Text>
                     </View>
                     <View style={styles.activityDivider} />
                     <View style={styles.activityItem}>
                         <Text style={styles.activityLabel}>받은 좋아요</Text>
-                        <Text style={styles.activityValue}>-</Text>
+                        <Text style={styles.activityValue}>{likeCount > 0 ? `${likeCount}회` : '-'}</Text>
                     </View>
                 </View>
             </View>

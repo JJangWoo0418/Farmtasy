@@ -323,25 +323,19 @@ const PostPage = () => {
             setLoading(true);
             setError(null);
             try {
-                console.log('게시글 조회 요청:', { category, phone });
                 const url = `${API_CONFIG.BASE_URL}/api/post?category=${encodeURIComponent(category)}&user_phone=${encodeURIComponent(phone)}`;
-                console.log('요청 URL:', url);
 
                 const response = await fetch(url);
-                console.log('서버 응답 상태:', response.status);
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => null);
-                    console.error('서버 응답 에러:', errorData);
                     throw new Error(errorData?.details || '서버 응답 오류');
                 }
 
                 const data = await response.json();
-                console.log('받은 데이터:', data);
 
                 // data가 undefined나 null이 아닌지 확인
                 if (!data || !Array.isArray(data)) {
-                    console.error('서버 응답 데이터 형식 오류:', data);
                     setPosts([]);
                     return;
                 }
@@ -359,10 +353,8 @@ const PostPage = () => {
                     introduction: post.introduction || '소개 미설정'
                 }));
 
-                console.log('포맷된 게시글:', formattedPosts);
                 setPosts(formattedPosts);
             } catch (error) {
-                console.error('게시글 목록 조회 오류:', error);
                 setError(error.message || '게시글을 불러오지 못했습니다.');
                 setPosts([]);
             } finally {
@@ -468,7 +460,6 @@ const PostPage = () => {
                 setPosts(updatedPosts);
             }
         } catch (error) {
-            console.error('좋아요 처리 오류:', error);
         }
     }, [phone, category]);
 

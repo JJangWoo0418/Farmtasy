@@ -66,7 +66,12 @@ const ProfileSettingPage = () => {
             });
             const data = await res.json();
             if (data.success) {
-                alert('프로필이 수정되었습니다.');
+                Alert.alert(
+                    "알림",
+                    "프로필이 수정되었습니다.",
+                    [{ text: "확인" }],
+                    { cancelable: true }
+                );
                 navigation.goBack();
             } else {
                 alert(data.message || '수정 실패');
@@ -226,12 +231,14 @@ const ProfileSettingPage = () => {
                     />
 
                     <Text style={styles.inputLabel}>지역</Text>
-                    <TouchableOpacity style={styles.regionSelectBox} activeOpacity={0.8}>
-                        <Text style={region ? styles.regionText : styles.regionPlaceholder}>
-                            {region || '지역을 선택해 주세요'}
-                        </Text>
-                        <Image source={require('../../assets/arrowupdownicon.png')} style={styles.regionIcon} />
-                    </TouchableOpacity>
+                    <TextInput
+                        style={styles.input}
+                        value={region}
+                        onChangeText={setRegion}
+                        placeholder="지역을 입력해 주세요"
+                        placeholderTextColor="#bbb"
+                    />
+                    <Text style={styles.inputHint}>ex. 충남 아산</Text>
 
                     <Text style={styles.inputLabel}>한 줄 프로필</Text>
                     <TextInput
