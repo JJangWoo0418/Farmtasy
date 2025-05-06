@@ -133,7 +133,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/post/post_like', async (req, res) => {
     try {
         const { postId, like, phone } = req.body;
-        
+
         // 먼저 현재 좋아요 상태 확인
         const [existingLike] = await pool.query(
             'SELECT id FROM post_likes WHERE post_id = ? AND user_phone = ?',
@@ -180,13 +180,13 @@ app.post('/api/post/post_like', async (req, res) => {
                 }
             }
         }
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('좋아요 처리 오류:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: '서버 오류가 발생했습니다.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -218,6 +218,7 @@ app.get('/api/post', async (req, res) => {
                 u.introduction,
                 u.profile_image,
                 CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                CASE WHEN pb.id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
                 (
                     SELECT COUNT(*) 
                     FROM Comment c 
@@ -375,18 +376,19 @@ app.get('/api/post', async (req, res) => {
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
+            LEFT JOIN post_bookmarks pb ON p.post_id = pb.post_id AND pb.user_phone = ?
             ${category ? 'WHERE p.post_category = ?' : ''}
             GROUP BY p.post_id
             ORDER BY p.post_created_at DESC
         `;
-        
-        const params = [user_phone];
+
+        const params = [user_phone, user_phone];
         if (category) params.push(category);
-        
+
         const [posts] = await pool.query(query, params);
         console.log('조회된 게시글 수:', posts.length);
         console.log('첫 번째 게시글의 프로필 이미지:', posts[0]?.profile_image);
-        
+
         // image_urls 필드 처리 및 데이터 정제
         const formattedPosts = posts.map(post => {
             let imageUrls = [];
@@ -425,6 +427,7 @@ app.get('/api/post', async (req, res) => {
                 introduction: post.introduction || '소개 미설정',
                 likes: parseInt(post.likes) || 0,
                 is_liked: post.is_liked === 1,
+                is_bookmarked: post.is_bookmarked === 1,
                 profile_image: post.profile_image || null,
                 commentCount: parseInt(post.comment_count) || 0,
                 best_comment_content: post.best_comment_content || '',
@@ -441,9 +444,9 @@ app.get('/api/post', async (req, res) => {
         res.json(formattedPosts);
     } catch (error) {
         console.error('게시글 조회 오류:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: '서버 오류가 발생했습니다.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -474,9 +477,9 @@ app.post('/api/s3/presign', (req, res) => {
     s3.getSignedUrl('putObject', params, (err, url) => {
         if (err) {
             console.error('S3 presigned URL 생성 실패:', err);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: 'S3 URL 생성 실패',
-                details: err.message 
+                details: err.message
             });
         }
         console.log('S3 presigned URL 생성 성공');
@@ -511,7 +514,7 @@ app.post('/api/post', async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, NOW())
         `;
         const params = [name, post_content, post_category, phone, region, imageUrlsString];
-        
+
         console.log('실행할 쿼리:', query);
         console.log('쿼리 파라미터:', params);
 
@@ -545,7 +548,7 @@ app.post('/api/post', async (req, res) => {
 app.post('/api/comment/like', async (req, res) => {
     try {
         const { commentId, like, phone } = req.body;
-        
+
         // 먼저 현재 좋아요 상태 확인
         const [existingLike] = await pool.query(
             'SELECT id FROM comment_likes WHERE comment_id = ? AND user_phone = ?',
@@ -569,7 +572,7 @@ app.post('/api/comment/like', async (req, res) => {
                 );
             }
         }
-        
+
         // 좋아요 수 업데이트
         await pool.query(`
             UPDATE Comment 
@@ -580,13 +583,13 @@ app.post('/api/comment/like', async (req, res) => {
             )
             WHERE comment_id = ?
         `, [commentId, commentId]);
-        
+
         res.json({ success: true });
     } catch (error) {
         console.error('댓글 좋아요 처리 오류:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             error: '서버 오류가 발생했습니다.',
-            details: error.message 
+            details: error.message
         });
     }
 });
@@ -595,7 +598,7 @@ app.post('/api/comment/like', async (req, res) => {
 app.get('/api/comment', async (req, res) => {
     const { post_id, user_phone } = req.query;
     console.log('댓글 목록 조회 요청:', { post_id, user_phone });
-    
+
     if (!post_id || !user_phone) return res.status(400).json({ success: false, message: 'post_id와 user_phone 필요' });
 
     try {
@@ -987,6 +990,76 @@ app.get('/api/collection/user-posts', async (req, res) => {
         res.json(formattedPosts);
     } catch (error) {
         res.status(500).json({ error: 'DB 오류', details: error.message });
+    }
+});
+
+// 북마크 추가/삭제 API
+app.post('/api/post_bookmarks', async (req, res) => {
+    const { post_id, user_phone } = req.body;
+    
+    try {
+        // 1. 먼저 북마크가 있는지 확인
+        const [existingBookmark] = await pool.query(
+            'SELECT * FROM post_bookmarks WHERE post_id = ? AND user_phone = ?',
+            [post_id, user_phone]
+        );
+
+        if (existingBookmark.length > 0) {
+            // 2. 있으면 삭제 (북마크 취소)
+            await pool.query(
+                'DELETE FROM post_bookmarks WHERE post_id = ? AND user_phone = ?',
+                [post_id, user_phone]
+            );
+            res.json({ 
+                success: true,
+                message: '북마크가 삭제되었습니다.',
+                is_bookmarked: false
+            });
+        } else {
+            // 3. 없으면 추가 (북마크 추가)
+            await pool.query(
+                'INSERT INTO post_bookmarks (post_id, user_phone) VALUES (?, ?)',
+                [post_id, user_phone]
+            );
+            res.json({ 
+                success: true,
+                message: '북마크가 추가되었습니다.',
+                is_bookmarked: true
+            });
+        }
+    } catch (error) {
+        console.error('북마크 처리 중 오류:', error);
+        res.status(500).json({ 
+            success: false,
+            error: '북마크 처리 중 오류가 발생했습니다.' 
+        });
+    }
+});
+
+// 사용자의 북마크 목록 조회 API
+app.get('/api/post_bookmarks/user/:phone', async (req, res) => {
+    const { phone } = req.params;
+    
+    try {
+        const [bookmarks] = await pool.query(`
+            SELECT p.*, 
+                   CASE WHEN b.id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+            FROM post p
+            INNER JOIN post_bookmarks b ON p.post_id = b.post_id
+            WHERE b.user_phone = ?
+            ORDER BY b.created_at DESC
+        `, [phone]);
+        
+        res.json({
+            success: true,
+            bookmarks
+        });
+    } catch (error) {
+        console.error('북마크 목록 조회 중 오류:', error);
+        res.status(500).json({ 
+            success: false,
+            error: '북마크 목록을 불러오는 중 오류가 발생했습니다.' 
+        });
     }
 });
 

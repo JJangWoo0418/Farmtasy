@@ -79,7 +79,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     <Text style={styles.iconText}>{item.commentCount || 0}</Text>
                 </View>
                 <View style={styles.iconGroup}>
-                    <TouchableOpacity onPress={() => onBookmark(item.id)}>
+                    <TouchableOpacity onPress={onBookmark}>
                         <Animated.Image
                             source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
                             style={[
@@ -317,7 +317,7 @@ const PostPage = () => {
         return `${month}월 ${day}일 ${hour}:${min}`;
     };
 
-    // 게시글 데이터 fetch
+    // 게시글 데이터 fetch 시 북마크 상태도 함께 가져오기 (좋아요와 동일하게)
     useEffect(() => {
         const fetchPosts = async () => {
             setLoading(true);
@@ -334,13 +334,20 @@ const PostPage = () => {
 
                 const data = await response.json();
 
-                // data가 undefined나 null이 아닌지 확인
                 if (!data || !Array.isArray(data)) {
                     setPosts([]);
+                    setBookmarkedPosts({});
                     return;
                 }
 
-                // 좋아요 상태 포함하여 게시글 데이터 설정
+                // 북마크 상태 초기화 (좋아요와 동일하게)
+                const initialBookmarks = {};
+                data.forEach(post => {
+                    initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
+                });
+                setBookmarkedPosts(initialBookmarks);
+
+                // 게시글 데이터 설정
                 const formattedPosts = data.map(post => ({
                     ...post,
                     isLiked: post.is_liked === 1,
@@ -357,12 +364,56 @@ const PostPage = () => {
             } catch (error) {
                 setError(error.message || '게시글을 불러오지 못했습니다.');
                 setPosts([]);
+                setBookmarkedPosts({});
             } finally {
                 setLoading(false);
             }
         };
         fetchPosts();
     }, [category, phone]);
+
+    // 북마크 애니메이션 및 상태 토글 useCallback (좋아요와 동일하게)
+    const handleBookmark = useCallback(async (postId) => {
+        if (!bookmarkAnimationsRef.current[postId]) {
+            bookmarkAnimationsRef.current[postId] = new Animated.Value(1);
+        }
+        Animated.sequence([
+            Animated.timing(bookmarkAnimationsRef.current[postId], {
+                toValue: 1.5,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.spring(bookmarkAnimationsRef.current[postId], {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post_bookmarks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    post_id: postId,
+                    user_phone: phone
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('북마크 처리 실패');
+            }
+
+            // bookmarkedPosts만 즉시 갱신
+            setBookmarkedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+        } catch (error) {
+            // 에러 처리 (필요시)
+        }
+    }, [phone]);
 
     // ✅ 글쓰기 버튼 애니메이션 관련 함수
     const animateWriteButton = (visible) => {
@@ -399,24 +450,6 @@ const PostPage = () => {
     const handleSortPress = (option) => {
         setSortOption(option);
     };
-
-    // 북마크 애니메이션 및 상태 토글 useCallback
-    const triggerBookmarkAnimation = useCallback((postId) => {
-        if (!bookmarkAnimationsRef.current[postId]) {
-            bookmarkAnimationsRef.current[postId] = new Animated.Value(1);
-        }
-        const currentAnimation = bookmarkAnimationsRef.current[postId];
-        currentAnimation.setValue(0.8);
-        Animated.spring(currentAnimation, {
-            toValue: 1,
-            friction: 3,
-            useNativeDriver: true,
-        }).start();
-        setBookmarkedPosts(prev => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
-    }, []);
 
     // 좋아요 핸들러 useCallback
     const handleLike = useCallback(async (postId, currentLike) => {
@@ -510,7 +543,7 @@ const PostPage = () => {
                     <PostItem
                         item={item}
                         onLike={handleLike}
-                        onBookmark={triggerBookmarkAnimation}
+                        onBookmark={() => handleBookmark(item.id)}
                         heartAnimation={heartAnimationsRef.current[item.id]}
                         bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                         isBookmarked={bookmarkedPosts[item.id] || false}
@@ -530,7 +563,7 @@ const PostPage = () => {
                 </View>
             );
         },
-        [handleLike, triggerBookmarkAnimation, navigation, phone, name, region, profile, introduction, bookmarkedPosts]
+        [handleLike, handleBookmark, navigation, phone, name, region, profile, introduction, bookmarkedPosts]
     );
 
     // keyExtractor useCallback
