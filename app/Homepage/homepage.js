@@ -156,7 +156,7 @@ const HomePage = () => {
 
                     {/* 농사 정보 */}
                     <Text style={styles.drawerTitle}>농사 정보</Text>
-                    <TouchableOpacity style={styles.drawerItem}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/directpaymentpage' })}>
                         <Image source={require('../../assets/directdeposit2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>면적 직불금 계산기</Text>
                     </TouchableOpacity>
@@ -235,7 +235,7 @@ const HomePage = () => {
                     <Image source={require('../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({ pathname: '/Homepage/directpaymentpage' })}>
                     <Image source={require('../../assets/directdeposit4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>직불금계산</Text>
                 </TouchableOpacity>
