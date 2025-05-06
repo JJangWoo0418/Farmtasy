@@ -322,8 +322,10 @@ const CommentWritingpage = () => {
         const fetchCommentedPosts = async () => {
             setLoading(true);
             try {
+                console.log('fetchCommentedPosts 호출, phone:', phone);
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment/user-posts?phone=${phone}`);
                 const data = await response.json();
+                console.log('받아온 댓글 게시글:', data);
                 setPosts(Array.isArray(data) ? data : []);
                 // 북마크/좋아요 상태 초기화
                 const initialBookmarks = {};
@@ -335,6 +337,7 @@ const CommentWritingpage = () => {
                 setBookmarkedPosts(initialBookmarks);
                 setLikedPosts(initialLikes);
             } catch (e) {
+                console.log('fetchCommentedPosts 에러:', e);
                 setPosts([]);
                 setBookmarkedPosts({});
                 setLikedPosts({});
@@ -344,6 +347,14 @@ const CommentWritingpage = () => {
         };
         if (phone) fetchCommentedPosts();
     }, [phone]);
+
+    // posts, sortedPosts 상태 변화 추적
+    useEffect(() => {
+        console.log('posts state:', posts);
+    }, [posts]);
+    useEffect(() => {
+        console.log('sortedPosts state:', sortedPosts);
+    }, [sortedPosts]);
 
     // ✅ 글쓰기 버튼 애니메이션 관련 함수
     const animateWriteButton = (visible) => {
@@ -601,6 +612,7 @@ const CommentWritingpage = () => {
                             </View>
                         </>
                     }
+                    ListEmptyComponent={<Text style={{textAlign:'center',marginTop:40}}>표시할 게시글이 없습니다.</Text>}
                 />
             )}
         </View>

@@ -1078,35 +1078,7 @@ app.get('/api/post_bookmarks/user/:phone', async (req, res) => {
     }
 });
 
-// 404 에러 핸들러
-app.use((req, res) => {
-    res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
-});
-
-// 서버 시작
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', async () => {
-    console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
-
-    try {
-        // post 테이블에 likes 컬럼 추가
-        await pool.query(`
-            ALTER TABLE post 
-            ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0
-        `);
-        console.log('post 테이블 likes 컬럼 추가 완료');
-
-        // 서버 시작 시 테이블 확인
-        const [tables] = await pool.query("SHOW TABLES");
-        console.log('테이블 확인 결과:', tables);
-        tables.forEach(table => {
-            console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);
-        });
-    } catch (err) {
-        console.error('테이블 설정 중 오류 발생:', err);
-    }
-});
-
+// 댓글 단 게시글 조회 라우터 (404 핸들러보다 반드시 위에 위치)
 app.get('/api/comment/user-posts', async (req, res) => {
     const { phone } = req.query;
     if (!phone) return res.status(400).json({ error: 'phone 파라미터 필요' });
@@ -1178,5 +1150,34 @@ app.get('/api/comment/user-posts', async (req, res) => {
     } catch (e) {
         console.error('댓글 작성 게시글 조회 오류:', e);
         res.status(500).json({ error: 'DB 오류' });
+    }
+});
+
+// 404 에러 핸들러 (맨 마지막에 위치)
+app.use((req, res) => {
+    res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
+});
+
+// 서버 시작
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+
+    try {
+        // post 테이블에 likes 컬럼 추가
+        await pool.query(`
+            ALTER TABLE post 
+            ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0
+        `);
+        console.log('post 테이블 likes 컬럼 추가 완료');
+
+        // 서버 시작 시 테이블 확인
+        const [tables] = await pool.query("SHOW TABLES");
+        console.log('테이블 확인 결과:', tables);
+        tables.forEach(table => {
+            console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);
+        });
+    } catch (err) {
+        console.error('테이블 설정 중 오류 발생:', err);
     }
 });
