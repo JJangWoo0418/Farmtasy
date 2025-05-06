@@ -131,7 +131,20 @@ const ProfilePage = () => {
             {/* 게시글 활동 */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>게시글 활동</Text>
-                <TouchableOpacity style={styles.sectionRow}>
+                <TouchableOpacity style={styles.sectionRow} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/bookmarks',
+                            params: {
+                                userData: userData,
+                                phone: route.params?.phone,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
+                            }
+                        });
+                    }}>
                     <Image source={require('../../assets/bookmarkicon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>저장한 글</Text>
                     <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
