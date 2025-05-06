@@ -1,18 +1,48 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView, Animated, Easing } from 'react-native';
 import styles from '../Components/Css/Homepage/directpaymentpage2style';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const DirectPaymentPage2 = () => {
     const navigation = useNavigation();
-    // 예시 데이터 (실제 계산 결과와 props로 받을 수도 있음)
-    const area = '5,000';
-    const landType = '논';
-    const regionType = '진흥지역';
-    const result = '3,553,720원';
+    const route = useRoute();
+    const { area, landType, regionType } = route.params;
+
+    const areaNum = parseFloat(area.replace(/,/g, ''));
+
+    // 지급 단가 계산
+    let unitPrice = 0;
+    if (landType === '논') {
+        unitPrice = regionType === '진흥지역' ? 710.744 : 567.8;
+    } else if (landType === '밭') {
+        unitPrice = regionType === '진흥지역' ? 527.9 : 470.3;
+    }
+
+    const resultAmount = Math.round(areaNum * unitPrice);
+
+    // Animated 숫자 선언
+    const animatedValue = useRef(new Animated.Value(0)).current;
+    const [displayedValue, setDisplayedValue] = useState(0);
+
+    useEffect(() => {
+        Animated.timing(animatedValue, {
+            toValue: resultAmount,
+            duration: 1500,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: false,
+        }).start();
+
+        const listener = animatedValue.addListener(({ value }) => {
+            setDisplayedValue(Math.floor(value));
+        });
+
+        return () => {
+            animatedValue.removeListener(listener);
+        };
+    }, [resultAmount]);
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 10}}>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 10 }}>
             {/* 상단 헤더 */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.navigate('Homepage/homepage')}>
@@ -23,7 +53,9 @@ const DirectPaymentPage2 = () => {
 
             {/* 내 예상 금액 */}
             <Text style={styles.sectionTitle}>내 예상 금액</Text>
-            <Text style={styles.result}>{result}</Text>
+            <Text style={styles.result}>
+                {displayedValue.toLocaleString()}원
+            </Text>
             <View style={styles.inputSummaryRow}>
                 <View style={styles.inputSummaryBox}><Text style={styles.inputSummaryText}>{area}평</Text></View>
                 <View style={styles.inputSummaryBox}><Text style={styles.inputSummaryText}>{landType}</Text></View>
