@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet, Alert, ToastAndroid, Platform } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../DB/api';
@@ -79,7 +79,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     <Text style={styles.iconText}>{item.commentCount || 0}</Text>
                 </View>
                 <View style={styles.iconGroup}>
-                    <TouchableOpacity onPress={() => onBookmark(item.id)}>
+                    <TouchableOpacity onPress={onBookmark}>
                         <Animated.Image
                             source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
                             style={[
@@ -145,7 +145,7 @@ const ImageWithLoading = ({ uri, style, loadingStyle }) => {
         ]}>
             {loading && (
                 <View style={[
-                    { 
+                    {
                         position: 'absolute',
                         backgroundColor: '#eee',
                         justifyContent: 'center',
@@ -172,8 +172,8 @@ const renderImages = (images) => {
     if (!images || images.length === 0) return null;
     if (images.length === 1) {
         return (
-            <ImageWithLoading 
-                uri={images[0]} 
+            <ImageWithLoading
+                uri={images[0]}
                 style={styles.singleImage}
                 loadingStyle={{ width: 300, height: 300 }} // 로딩 배경 크기 조절
             />
@@ -182,13 +182,13 @@ const renderImages = (images) => {
     if (images.length === 2) {
         return (
             <View style={styles.row2}>
-                <ImageWithLoading 
-                    uri={images[0]} 
+                <ImageWithLoading
+                    uri={images[0]}
                     style={styles.multiImage}
                     loadingStyle={{ width: 200, height: 200 }}
                 />
-                <ImageWithLoading 
-                    uri={images[1]} 
+                <ImageWithLoading
+                    uri={images[1]}
                     style={styles.multiImage}
                     loadingStyle={{ width: 200, height: 200 }}
                 />
@@ -198,19 +198,19 @@ const renderImages = (images) => {
     if (images.length === 3) {
         return (
             <View style={styles.row3}>
-                <ImageWithLoading 
-                    uri={images[0]} 
+                <ImageWithLoading
+                    uri={images[0]}
                     style={styles.leftLargeImage}
                     loadingStyle={{ width: 236, height: 236 }}
                 />
                 <View style={styles.rightColumn}>
-                    <ImageWithLoading 
-                        uri={images[1]} 
+                    <ImageWithLoading
+                        uri={images[1]}
                         style={styles.rightSmallImage}
                         loadingStyle={{ width: 114, height: 114 }}
                     />
-                    <ImageWithLoading 
-                        uri={images[2]} 
+                    <ImageWithLoading
+                        uri={images[2]}
                         style={styles.rightSmallImage}
                         loadingStyle={{ width: 114, height: 114 }}
                     />
@@ -222,26 +222,26 @@ const renderImages = (images) => {
     return (
         <>
             <View style={styles.row4}>
-                <ImageWithLoading 
-                    uri={images[0]} 
+                <ImageWithLoading
+                    uri={images[0]}
                     style={styles.squadImage}
                     loadingStyle={{ width: 180, height: 180 }}
                 />
-                <ImageWithLoading 
-                    uri={images[1]} 
+                <ImageWithLoading
+                    uri={images[1]}
                     style={styles.squadImage}
                     loadingStyle={{ width: 180, height: 180 }}
                 />
             </View>
             <View style={styles.row4}>
-                <ImageWithLoading 
-                    uri={images[2]} 
+                <ImageWithLoading
+                    uri={images[2]}
                     style={styles.squadImage}
                     loadingStyle={{ width: 180, height: 180 }}
                 />
                 <View>
-                    <ImageWithLoading 
-                        uri={images[3]} 
+                    <ImageWithLoading
+                        uri={images[3]}
                         style={styles.squadImage}
                         loadingStyle={{ width: 180, height: 180 }}
                     />
@@ -317,7 +317,7 @@ const CollectionWriting = () => {
         return `${month}월 ${day}일 ${hour}:${min}`;
     };
 
-    // 게시글 데이터 fetch
+    // 게시글 데이터 fetch 시 좋아요/북마크 상태도 함께 가져오기
     useEffect(() => {
         const fetchUserPosts = async () => {
             setLoading(true);
@@ -325,8 +325,19 @@ const CollectionWriting = () => {
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/collection/user-posts?phone=${phone}`);
                 const data = await response.json();
                 setPosts(Array.isArray(data) ? data : []);
+                // 북마크 상태 초기화
+                const initialBookmarks = {};
+                const initialLikes = {};
+                (Array.isArray(data) ? data : []).forEach(post => {
+                    initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
+                    initialLikes[post.id] = post.is_liked === true || post.is_liked === 1;
+                });
+                setBookmarkedPosts(initialBookmarks);
+                setLikedPosts(initialLikes);
             } catch (e) {
                 setPosts([]);
+                setBookmarkedPosts({});
+                setLikedPosts({});
             } finally {
                 setLoading(false);
             }
@@ -370,25 +381,66 @@ const CollectionWriting = () => {
         setSortOption(option);
     };
 
-    // 북마크 애니메이션 및 상태 토글 useCallback
-    const triggerBookmarkAnimation = useCallback((postId) => {
+    // 북마크 애니메이션 및 상태 토글 useCallback (좋아요와 동일하게)
+    const handleBookmark = useCallback(async (postId) => {
         if (!bookmarkAnimationsRef.current[postId]) {
             bookmarkAnimationsRef.current[postId] = new Animated.Value(1);
         }
-        const currentAnimation = bookmarkAnimationsRef.current[postId];
-        currentAnimation.setValue(0.8);
-        Animated.spring(currentAnimation, {
-            toValue: 1,
-            friction: 3,
-            useNativeDriver: true,
-        }).start();
-        setBookmarkedPosts(prev => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
-    }, []);
+        Animated.sequence([
+            Animated.timing(bookmarkAnimationsRef.current[postId], {
+                toValue: 1.5,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.spring(bookmarkAnimationsRef.current[postId], {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
 
-    // 좋아요 핸들러 useCallback
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post_bookmarks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    post_id: postId,
+                    user_phone: phone
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('북마크 처리 실패');
+            }
+
+            const result = await response.json();
+            setBookmarkedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+
+            // 알림
+            if (Platform.OS === 'android') {
+                ToastAndroid.show(
+                    result.is_bookmarked
+                        ? '북마크 리스트에 추가되었습니다.'
+                        : '북마크가 해제되었습니다.',
+                    ToastAndroid.SHORT
+                );
+            } else {
+                Alert.alert(
+                    result.is_bookmarked
+                        ? '북마크 리스트에 추가되었습니다.'
+                        : '북마크가 해제되었습니다.'
+                );
+            }
+        } catch (error) {
+            // 에러 처리 (필요시)
+        }
+    }, [phone]);
+
+    // 좋아요 핸들러 useCallback (북마크와 동일하게)
     const handleLike = useCallback(async (postId, currentLike) => {
         // 하트 애니메이션 동작
         if (!heartAnimationsRef.current[postId]) {
@@ -423,7 +475,12 @@ const CollectionWriting = () => {
                 throw new Error('좋아요 처리 실패');
             }
 
-            // 프론트에서 해당 게시글만 즉시 갱신
+            // likedPosts만 즉시 갱신
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+            // posts의 likes, is_liked도 즉시 갱신
             setPosts(prev =>
                 prev.map(post =>
                     post.id === postId
@@ -485,9 +542,9 @@ const CollectionWriting = () => {
             return (
                 <View key={item.id} style={styles.postContainer}>
                     <PostItem
-                        item={item}
-                        onLike={handleLike}
-                        onBookmark={triggerBookmarkAnimation}
+                        item={{ ...item, is_liked: likedPosts[item.id] || false }}
+                        onLike={() => handleLike(item.id, likedPosts[item.id] || false)}
+                        onBookmark={() => handleBookmark(item.id)}
                         heartAnimation={heartAnimationsRef.current[item.id]}
                         bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                         isBookmarked={bookmarkedPosts[item.id] || false}
@@ -507,7 +564,7 @@ const CollectionWriting = () => {
                 </View>
             );
         },
-        [handleLike, triggerBookmarkAnimation, navigation, phone, name, region, profile, introduction, bookmarkedPosts]
+        [handleLike, handleBookmark, navigation, phone, name, region, profile, introduction, bookmarkedPosts, likedPosts]
     );
 
     // keyExtractor useCallback

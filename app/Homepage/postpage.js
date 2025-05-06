@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
-import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet, Alert, ToastAndroid, Platform } from 'react-native';
 import styles from '../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../DB/api';
@@ -405,11 +405,27 @@ const PostPage = () => {
                 throw new Error('북마크 처리 실패');
             }
 
-            // bookmarkedPosts만 즉시 갱신
+            const result = await response.json();
             setBookmarkedPosts(prev => ({
                 ...prev,
                 [postId]: !prev[postId]
             }));
+
+            // 알림
+            if (Platform.OS === 'ios') {
+                ToastAndroid.show(
+                    result.is_bookmarked
+                        ? '북마크 리스트에 추가되었습니다.'
+                        : '북마크가 해제되었습니다.',
+                    ToastAndroid.SHORT
+                );
+            } else {
+                Alert.alert(
+                    result.is_bookmarked
+                        ? '북마크 리스트에 추가되었습니다.'
+                        : '북마크가 해제되었습니다.'
+                );
+            }
         } catch (error) {
             // 에러 처리 (필요시)
         }
