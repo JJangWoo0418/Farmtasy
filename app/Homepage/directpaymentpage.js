@@ -105,7 +105,7 @@ const DirectPaymentPage = () => {
                         style={[styles.calcBtn, { backgroundColor: isButtonActive ? '#22CC6B' : '#D9D9D9' }]}
                         activeOpacity={isButtonActive ? 0.7 : 1}
                         disabled={!isButtonActive}
-                        onPress={isButtonActive ? () => {/* 직불금 계산 로직 */} : undefined}
+                        onPress={isButtonActive ? () => navigation.navigate('Homepage/directpaymentpage2') : undefined}
                     >
                         <Text style={[styles.calcBtnText, { color: isButtonActive ? '#fff' : '#888' }]}>내 직불금 알아보기</Text>
                     </TouchableOpacity>
