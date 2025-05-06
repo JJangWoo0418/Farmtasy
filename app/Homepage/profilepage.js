@@ -133,7 +133,7 @@ const ProfilePage = () => {
                 <Text style={styles.sectionTitle}>게시글 활동</Text>
                 <TouchableOpacity style={styles.sectionRow} onPress={() => {
                         router.push({
-                            pathname: 'Homepage/bookmarks',
+                            pathname: 'Homepage/bookmarkspage',
                             params: {
                                 userData: userData,
                                 phone: route.params?.phone,
@@ -151,7 +151,7 @@ const ProfilePage = () => {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.sectionRow} onPress={() => {
                         router.push({
-                            pathname: 'Homepage/collectionwriting',
+                            pathname: 'Homepage/collectionwritingpage',
                             params: {
                                 userData: userData,
                                 phone: route.params?.phone,
@@ -167,7 +167,20 @@ const ProfilePage = () => {
                     <Text style={styles.sectionText}>작성한 글</Text>
                     <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.sectionRow}>
+                <TouchableOpacity style={styles.sectionRow} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/commentwritingpage',
+                            params: {
+                                userData: userData,
+                                phone: route.params?.phone,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
+                            }
+                        });
+                    }}>
                     <Image source={require('../../assets/commenticon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>작성한 댓글</Text>
                     <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />

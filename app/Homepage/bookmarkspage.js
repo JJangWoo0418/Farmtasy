@@ -256,7 +256,7 @@ const renderImages = (images) => {
     );
 };
 
-const CollectionWriting = () => {
+const Bookmarkspage = () => {
     const navigation = useNavigation();
     const TAB_LIST = ['인기순', '최신순', '오래된 순'];
     const TAB_COUNT = TAB_LIST.length;
@@ -319,16 +319,17 @@ const CollectionWriting = () => {
 
     // 게시글 데이터 fetch 시 좋아요/북마크 상태도 함께 가져오기
     useEffect(() => {
-        const fetchUserPosts = async () => {
+        const fetchBookmarkedPosts = async () => {
             setLoading(true);
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}/api/collection/user-posts?phone=${phone}`);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/post_bookmarks/user/${phone}`);
                 const data = await response.json();
-                setPosts(Array.isArray(data) ? data : []);
-                // 북마크 상태 초기화
+                // 북마크된 글만 posts에 저장
+                setPosts(Array.isArray(data.bookmarks) ? data.bookmarks : []);
+                // 북마크/좋아요 상태 초기화
                 const initialBookmarks = {};
                 const initialLikes = {};
-                (Array.isArray(data) ? data : []).forEach(post => {
+                (Array.isArray(data.bookmarks) ? data.bookmarks : []).forEach(post => {
                     initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
                     initialLikes[post.id] = post.is_liked === true || post.is_liked === 1;
                 });
@@ -342,7 +343,7 @@ const CollectionWriting = () => {
                 setLoading(false);
             }
         };
-        if (phone) fetchUserPosts();
+        if (phone) fetchBookmarkedPosts();
     }, [phone]);
 
     // ✅ 글쓰기 버튼 애니메이션 관련 함수
@@ -597,7 +598,7 @@ const CollectionWriting = () => {
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
                                     <Image source={require('../../assets/gobackicon.png')} />
                                 </TouchableOpacity>
-                                <Text style={styles.title}>작성한 글</Text>
+                                <Text style={styles.title}>저장한 글</Text>
                             </View>
                         </>
                     }
@@ -607,4 +608,4 @@ const CollectionWriting = () => {
     );
 };
 
-export default CollectionWriting;
+export default Bookmarkspage;

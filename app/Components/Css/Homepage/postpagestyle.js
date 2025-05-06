@@ -25,6 +25,16 @@ export default StyleSheet.create({
         fontWeight: 'bold',
         paddingLeft: 120
     },
+    title2: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        paddingLeft: 112
+    },
+    title3: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        paddingLeft: 132
+    },
     topicBox: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -1106,3 +1106,77 @@ app.listen(PORT, '0.0.0.0', async () => {
         console.error('테이블 설정 중 오류 발생:', err);
     }
 });
+
+app.get('/api/comment/user-posts', async (req, res) => {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ error: 'phone 파라미터 필요' });
+
+    try {
+        // 1. 댓글에서 내가 쓴 post_id 목록 추출
+        const [commentRows] = await pool.query(
+            'SELECT DISTINCT post_id FROM Comment WHERE phone = ?',
+            [phone]
+        );
+        const postIds = commentRows.map(row => row.post_id);
+        if (postIds.length === 0) return res.json([]); // 댓글 단 게시글이 없으면 빈 배열
+
+        // 2. 해당 post_id의 게시글 정보 조회
+        const [posts] = await pool.query(`
+            SELECT 
+                p.post_id as id,
+                u.name as user,
+                p.phone,
+                p.post_content as text,
+                p.post_category as category,
+                p.post_created_at as time,
+                p.image_urls,
+                u.region,
+                p.post_like as likes,
+                u.introduction,
+                u.profile_image,
+                CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                CASE WHEN pb.id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
+                (SELECT COUNT(*) FROM Comment c2 WHERE c2.post_id = p.post_id) as commentCount
+            FROM post p
+            LEFT JOIN user u ON p.phone = u.phone
+            LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
+            LEFT JOIN post_bookmarks pb ON p.post_id = pb.post_id AND pb.user_phone = ?
+            WHERE p.post_id IN (${postIds.map(() => '?').join(',')})
+            ORDER BY p.post_created_at DESC
+        `, [phone, phone, ...postIds]);
+
+        // image_urls 등 데이터 정제
+        const formattedPosts = posts.map(post => {
+            let imageUrls = [];
+            try {
+                if (post.image_urls) {
+                    if (typeof post.image_urls === 'string') {
+                        imageUrls = JSON.parse(post.image_urls);
+                    } else if (Array.isArray(post.image_urls)) {
+                        imageUrls = post.image_urls;
+                    } else {
+                        imageUrls = [post.image_urls];
+                    }
+                    if (Array.isArray(imageUrls[0])) {
+                        imageUrls = imageUrls.flat();
+                    }
+                    imageUrls = imageUrls.filter(url => url && typeof url === 'string');
+                }
+            } catch (e) {
+                imageUrls = [];
+            }
+
+            return {
+                ...post,
+                image_urls: imageUrls,
+                is_bookmarked: post.is_bookmarked === 1,
+                is_liked: post.is_liked === 1
+            };
+        });
+
+        res.json(formattedPosts);
+    } catch (e) {
+        console.error('댓글 작성 게시글 조회 오류:', e);
+        res.status(500).json({ error: 'DB 오류' });
+    }
+});

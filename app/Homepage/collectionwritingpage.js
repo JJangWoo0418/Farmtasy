@@ -145,7 +145,7 @@ const ImageWithLoading = ({ uri, style, loadingStyle }) => {
         ]}>
             {loading && (
                 <View style={[
-                    { 
+                    {
                         position: 'absolute',
                         backgroundColor: '#eee',
                         justifyContent: 'center',
@@ -172,8 +172,8 @@ const renderImages = (images) => {
     if (!images || images.length === 0) return null;
     if (images.length === 1) {
         return (
-            <ImageWithLoading 
-                uri={images[0]} 
+            <ImageWithLoading
+                uri={images[0]}
                 style={styles.singleImage}
                 loadingStyle={{ width: 300, height: 300 }} // 로딩 배경 크기 조절
             />
@@ -182,13 +182,13 @@ const renderImages = (images) => {
     if (images.length === 2) {
         return (
             <View style={styles.row2}>
-                <ImageWithLoading 
-                    uri={images[0]} 
+                <ImageWithLoading
+                    uri={images[0]}
                     style={styles.multiImage}
                     loadingStyle={{ width: 200, height: 200 }}
                 />
-                <ImageWithLoading 
-                    uri={images[1]} 
+                <ImageWithLoading
+                    uri={images[1]}
                     style={styles.multiImage}
                     loadingStyle={{ width: 200, height: 200 }}
                 />
@@ -198,19 +198,19 @@ const renderImages = (images) => {
     if (images.length === 3) {
         return (
             <View style={styles.row3}>
-                <ImageWithLoading 
-                    uri={images[0]} 
+                <ImageWithLoading
+                    uri={images[0]}
                     style={styles.leftLargeImage}
                     loadingStyle={{ width: 236, height: 236 }}
                 />
                 <View style={styles.rightColumn}>
-                    <ImageWithLoading 
-                        uri={images[1]} 
+                    <ImageWithLoading
+                        uri={images[1]}
                         style={styles.rightSmallImage}
                         loadingStyle={{ width: 114, height: 114 }}
                     />
-                    <ImageWithLoading 
-                        uri={images[2]} 
+                    <ImageWithLoading
+                        uri={images[2]}
                         style={styles.rightSmallImage}
                         loadingStyle={{ width: 114, height: 114 }}
                     />
@@ -222,26 +222,26 @@ const renderImages = (images) => {
     return (
         <>
             <View style={styles.row4}>
-                <ImageWithLoading 
-                    uri={images[0]} 
+                <ImageWithLoading
+                    uri={images[0]}
                     style={styles.squadImage}
                     loadingStyle={{ width: 180, height: 180 }}
                 />
-                <ImageWithLoading 
-                    uri={images[1]} 
+                <ImageWithLoading
+                    uri={images[1]}
                     style={styles.squadImage}
                     loadingStyle={{ width: 180, height: 180 }}
                 />
             </View>
             <View style={styles.row4}>
-                <ImageWithLoading 
-                    uri={images[2]} 
+                <ImageWithLoading
+                    uri={images[2]}
                     style={styles.squadImage}
                     loadingStyle={{ width: 180, height: 180 }}
                 />
                 <View>
-                    <ImageWithLoading 
-                        uri={images[3]} 
+                    <ImageWithLoading
+                        uri={images[3]}
                         style={styles.squadImage}
                         loadingStyle={{ width: 180, height: 180 }}
                     />
@@ -256,7 +256,7 @@ const renderImages = (images) => {
     );
 };
 
-const PostPage = () => {
+const CollectionWritingpage = () => {
     const navigation = useNavigation();
     const TAB_LIST = ['인기순', '최신순', '오래된 순'];
     const TAB_COUNT = TAB_LIST.length;
@@ -317,60 +317,69 @@ const PostPage = () => {
         return `${month}월 ${day}일 ${hour}:${min}`;
     };
 
-    // 게시글 데이터 fetch 시 북마크 상태도 함께 가져오기 (좋아요와 동일하게)
+    // 게시글 데이터 fetch 시 좋아요/북마크 상태도 함께 가져오기
     useEffect(() => {
-        const fetchPosts = async () => {
+        const fetchUserPosts = async () => {
             setLoading(true);
-            setError(null);
             try {
-                const url = `${API_CONFIG.BASE_URL}/api/post?category=${encodeURIComponent(category)}&user_phone=${encodeURIComponent(phone)}`;
-
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => null);
-                    throw new Error(errorData?.details || '서버 응답 오류');
-                }
-
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/collection/user-posts?phone=${phone}`);
                 const data = await response.json();
-
-                if (!data || !Array.isArray(data)) {
-                    setPosts([]);
-                    setBookmarkedPosts({});
-                    return;
-                }
-
-                // 북마크 상태 초기화 (좋아요와 동일하게)
+                setPosts(Array.isArray(data) ? data : []);
+                // 북마크 상태 초기화
                 const initialBookmarks = {};
-                data.forEach(post => {
+                const initialLikes = {};
+                (Array.isArray(data) ? data : []).forEach(post => {
                     initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
+                    initialLikes[post.id] = post.is_liked === true || post.is_liked === 1;
                 });
                 setBookmarkedPosts(initialBookmarks);
-
-                // 게시글 데이터 설정
-                const formattedPosts = data.map(post => ({
-                    ...post,
-                    isLiked: post.is_liked === 1,
-                    likes: post.likes || 0,
-                    image_urls: Array.isArray(post.image_urls) ? post.image_urls : [],
-                    time: post.time || new Date().toISOString(),
-                    text: post.text || '',
-                    user: post.user || '알 수 없음',
-                    region: post.region || '지역 미설정',
-                    introduction: post.introduction || '소개 미설정'
-                }));
-
-                setPosts(formattedPosts);
-            } catch (error) {
-                setError(error.message || '게시글을 불러오지 못했습니다.');
+                setLikedPosts(initialLikes);
+            } catch (e) {
                 setPosts([]);
                 setBookmarkedPosts({});
+                setLikedPosts({});
             } finally {
                 setLoading(false);
             }
         };
-        fetchPosts();
-    }, [category, phone]);
+        if (phone) fetchUserPosts();
+    }, [phone]);
+
+    // ✅ 글쓰기 버튼 애니메이션 관련 함수
+    const animateWriteButton = (visible) => {
+        Animated.timing(writeButtonAnim, {
+            toValue: visible ? 1 : 0,
+            duration: 1000,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: false, // ✅ transform에만 쓰더라도 safe 처리
+        }).start();
+    };
+
+    const handleScroll = (e) => {
+        const yOffset = e.nativeEvent.contentOffset.y;
+        const shouldShow = yOffset < 200;
+
+        if (showText !== shouldShow) {
+            setShowText(shouldShow);
+            animateWriteButton(shouldShow);
+        }
+    };
+
+    const handleTabPress = (item, index) => {
+        setSelectedTabIndex(index);
+        setSelectedFilter(item);
+        if (item !== '전체') setSortOption(item);
+        Animated.timing(underlineAnim, {
+            toValue: index * (SCREEN_WIDTH / TAB_COUNT),
+            duration: 400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const handleSortPress = (option) => {
+        setSortOption(option);
+    };
 
     // 북마크 애니메이션 및 상태 토글 useCallback (좋아요와 동일하게)
     const handleBookmark = useCallback(async (postId) => {
@@ -412,7 +421,7 @@ const PostPage = () => {
             }));
 
             // 알림
-            if (Platform.OS === 'ios') {
+            if (Platform.OS === 'android') {
                 ToastAndroid.show(
                     result.is_bookmarked
                         ? '북마크 리스트에 추가되었습니다.'
@@ -431,43 +440,7 @@ const PostPage = () => {
         }
     }, [phone]);
 
-    // ✅ 글쓰기 버튼 애니메이션 관련 함수
-    const animateWriteButton = (visible) => {
-        Animated.timing(writeButtonAnim, {
-            toValue: visible ? 1 : 0,
-            duration: 1000,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false, // ✅ transform에만 쓰더라도 safe 처리
-        }).start();
-    };
-
-    const handleScroll = (e) => {
-        const yOffset = e.nativeEvent.contentOffset.y;
-        const shouldShow = yOffset < 200;
-
-        if (showText !== shouldShow) {
-            setShowText(shouldShow);
-            animateWriteButton(shouldShow);
-        }
-    };
-
-    const handleTabPress = (item, index) => {
-        setSelectedTabIndex(index);
-        setSelectedFilter(item);
-        if (item !== '전체') setSortOption(item);
-        Animated.timing(underlineAnim, {
-            toValue: index * (SCREEN_WIDTH / TAB_COUNT),
-            duration: 400,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-        }).start();
-    };
-
-    const handleSortPress = (option) => {
-        setSortOption(option);
-    };
-
-    // 좋아요 핸들러 useCallback
+    // 좋아요 핸들러 useCallback (북마크와 동일하게)
     const handleLike = useCallback(async (postId, currentLike) => {
         // 하트 애니메이션 동작
         if (!heartAnimationsRef.current[postId]) {
@@ -502,15 +475,27 @@ const PostPage = () => {
                 throw new Error('좋아요 처리 실패');
             }
 
-            // 서버 응답 성공 시 게시글 목록 새로고침
-            const postsResponse = await fetch(`${API_CONFIG.BASE_URL}/api/post?category=${category}&user_phone=${phone}`);
-            if (postsResponse.ok) {
-                const updatedPosts = await postsResponse.json();
-                setPosts(updatedPosts);
-            }
+            // likedPosts만 즉시 갱신
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+            // posts의 likes, is_liked도 즉시 갱신
+            setPosts(prev =>
+                prev.map(post =>
+                    post.id === postId
+                        ? {
+                            ...post,
+                            is_liked: !currentLike,
+                            likes: post.likes + (!currentLike ? 1 : -1)
+                        }
+                        : post
+                )
+            );
         } catch (error) {
+            // 에러 처리 (필요시)
         }
-    }, [phone, category]);
+    }, [phone]);
 
     // 검색 필터링
     const filteredPosts = useMemo(() => {
@@ -557,8 +542,8 @@ const PostPage = () => {
             return (
                 <View key={item.id} style={styles.postContainer}>
                     <PostItem
-                        item={item}
-                        onLike={handleLike}
+                        item={{ ...item, is_liked: likedPosts[item.id] || false }}
+                        onLike={() => handleLike(item.id, likedPosts[item.id] || false)}
                         onBookmark={() => handleBookmark(item.id)}
                         heartAnimation={heartAnimationsRef.current[item.id]}
                         bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
@@ -579,7 +564,7 @@ const PostPage = () => {
                 </View>
             );
         },
-        [handleLike, handleBookmark, navigation, phone, name, region, profile, introduction, bookmarkedPosts]
+        [handleLike, handleBookmark, navigation, phone, name, region, profile, introduction, bookmarkedPosts, likedPosts]
     );
 
     // keyExtractor useCallback
@@ -612,96 +597,14 @@ const PostPage = () => {
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
                                     <Image source={require('../../assets/gobackicon.png')} />
                                 </TouchableOpacity>
-                                <Text style={styles.title3}>게시글</Text>
-                            </View>
-                            <View style={styles.topicBox}>
-                                <Image source={categoryIcon} style={styles.topicIcon} />
-                                <View>
-                                    <Text style={styles.topicText}>{categoryTitle}</Text>
-                                    <Text style={styles.topicSub}>{categoryDesc}</Text>
-                                </View>
-                            </View>
-                            <View style={styles.searchBox}>
-                                <Image source={require('../../assets/searchicon.png')} style={styles.searchIcon} />
-                                <TextInput
-                                    style={styles.searchInput}
-                                    placeholder="  농부(유저)나 내용으로 게시글 검색"
-                                    placeholderTextColor="#aaa"
-                                    value={searchText}
-                                    onChangeText={setSearchText}
-                                />
-                            </View>
-                            <View style={styles.tabContainer}>
-                                {TAB_LIST.map((item, index) => (
-                                    <TouchableOpacity
-                                        key={item}
-                                        style={styles.tabItem}
-                                        onPress={() => handleTabPress(item, index)}
-                                    >
-                                        <Text style={[styles.tabText, selectedTabIndex === index && styles.activeTabText]}>
-                                            {item}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                                <Animated.View
-                                    style={[
-                                        styles.underline,
-                                        { width: `${100 / TAB_COUNT}%`, transform: [{ translateX: underlineAnim }] },
-                                    ]}
-                                />
+                                <Text style={styles.title}>작성한 글</Text>
                             </View>
                         </>
                     }
                 />
             )}
-            <Animated.View
-                style={[
-                    styles.writeButton,
-                    {
-                        transform: [
-                            {
-                                scale: writeButtonAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0.9, 1],
-                                }),
-                            },
-                            {
-                                translateY: writeButtonAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [15, 0],
-                                }),
-                            },
-                        ],
-                    },
-                ]}
-            >
-                <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center' }}
-                    onPress={() => {
-                        navigation.push('Homepage/writingpage', {
-                            category: category,
-                            icon: categoryIcon,
-                            userData,
-                            name,
-                            phone,
-                            region,
-                        });
-                    }}
-                >
-                    {showText && (
-                        <Animated.Text
-                            style={[styles.writeButtonText, {
-                                opacity: writeButtonAnim,
-                            }]}
-                        >
-                            글쓰기
-                        </Animated.Text>
-                    )}
-                    <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
-                </TouchableOpacity>
-            </Animated.View>
         </View>
     );
 };
 
-export default PostPage;
+export default CollectionWritingpage;
