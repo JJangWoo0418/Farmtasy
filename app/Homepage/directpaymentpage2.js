@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Animated, Easing } from 'react-native';
 import styles from '../Components/Css/Homepage/directpaymentpage2style';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation} from '@react-navigation/native';
+import { useLocalSearchParams, router } from 'expo-router';
+
 
 const DirectPaymentPage2 = () => {
     const navigation = useNavigation();
-    const route = useRoute();
-    const { area, landType, regionType } = route.params;
+    const { area, landType, regionType, userData, phone, name, region } = useLocalSearchParams();
 
     const areaNum = parseFloat(area.replace(/,/g, ''));
 
@@ -45,7 +46,12 @@ const DirectPaymentPage2 = () => {
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 10 }}>
             {/* 상단 헤더 */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.navigate('Homepage/homepage')}>
+                <TouchableOpacity onPress={() => router.push({ pathname: '/Homepage/homepage', params: {
+                    userData,
+                    phone,
+                    name,
+                    region
+                } })}>
                     <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                 </TouchableOpacity>
                 <Text style={styles.title}>면적 직불금 계산기</Text>

@@ -12,12 +12,18 @@ import {
 } from 'react-native';
 import styles from '../Components/Css/Homepage/directpaymentpagestyle';
 import { useNavigation } from '@react-navigation/native';
+import { router, useLocalSearchParams } from 'expo-router';
+
 
 const DirectPaymentPage = () => {
     const navigation = useNavigation();
     const [area, setArea] = useState('');
     const [landType, setLandType] = useState('논');
     const [regionType, setRegionType] = useState('진흥지역');
+    const { userData, phone, name, region } = useLocalSearchParams();
+
+    console.log('유저이름:', name);
+    console.log('지역:', region);
 
     const isButtonActive = area.trim().length > 0 && !isNaN(Number(area));
 
@@ -96,10 +102,16 @@ const DirectPaymentPage = () => {
                         onPress={
                             isButtonActive
                                 ? () =>
-                                    navigation.navigate('Homepage/directpaymentpage2', {
-                                        area,
-                                        landType,
-                                        regionType,
+                                    router.push({
+                                        pathname: 'Homepage/directpaymentpage2', params: {
+                                            area,
+                                            landType,
+                                            regionType,
+                                            userData,
+                                            phone,
+                                            name,
+                                            region
+                                        }
                                     })
                                 : undefined
                         }

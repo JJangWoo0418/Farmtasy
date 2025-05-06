@@ -596,7 +596,7 @@ const Bookmarkspage = () => {
                         <>
                             <View style={styles.header}>
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                                    <Image source={require('../../assets/gobackicon.png')} />
+                                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon}/>
                                 </TouchableOpacity>
                                 <Text style={styles.title}>저장한 글</Text>
                             </View>

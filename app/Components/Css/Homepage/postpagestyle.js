@@ -400,4 +400,9 @@ export default StyleSheet.create({
         marginBottom: 8,
         resizeMode: 'cover',
     },
+    backIcon: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
+    },
 });

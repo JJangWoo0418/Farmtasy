@@ -606,7 +606,7 @@ const CommentWritingpage = () => {
                         <>
                             <View style={styles.header}>
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                                    <Image source={require('../../assets/gobackicon.png')} />
+                                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.title2}>작성한 댓글</Text>
                             </View>

@@ -4,14 +4,14 @@ import styles from '../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 const HomePage = () => {
     const navigation = useNavigation();
     const [isDrawerVisible, setDrawerVisible] = useState(false);
     const [isWriteToggleVisible, setWriteToggleVisible] = useState(false);
     const route = useRoute();
-
+    const { userData, phone, name, region } = useLocalSearchParams();
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
 
@@ -235,7 +235,12 @@ const HomePage = () => {
                     <Image source={require('../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({ pathname: '/Homepage/directpaymentpage' })}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({ pathname: '/Homepage/directpaymentpage', params: {
+                    userData: route.params?.userData,
+                    phone: route.params?.phone,
+                    name: route.params?.name,
+                    region: route.params?.region
+                } })}>
                     <Image source={require('../../assets/directdeposit4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>직불금계산</Text>
                 </TouchableOpacity>

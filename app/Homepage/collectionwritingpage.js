@@ -595,7 +595,7 @@ const CollectionWritingpage = () => {
                         <>
                             <View style={styles.header}>
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                                    <Image source={require('../../assets/gobackicon.png')} />
+                                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.title}>작성한 글</Text>
                             </View>

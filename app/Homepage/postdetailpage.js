@@ -493,7 +493,7 @@ const PostDetailPage = () => {
                     {/* 헤더 */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Image source={require('../../assets/gobackicon.png')} />
+                            <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>게시글 로딩 중...</Text>
                     </View>
@@ -517,7 +517,7 @@ const PostDetailPage = () => {
                     <View style={styles.header}>
                         <View style={{ width: 30 }}>
                             <TouchableOpacity onPress={() => navigation.goBack()}>
-                                <Image source={require('../../assets/gobackicon.png')} />
+                                <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.headerTitle}>{post.category || '자유주제'}</Text>

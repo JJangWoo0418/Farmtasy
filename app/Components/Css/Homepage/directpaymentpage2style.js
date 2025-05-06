@@ -13,16 +13,16 @@ export default StyleSheet.create({
         padding: 24,
     },
     backIcon: {
-        width: 28,
-        height: 28,
-        marginRight: 8,
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
         flex: 1,
         textAlign: 'center',
-        marginRight: 36,
+        marginRight: 20,
     },
     sectionTitle: {
         fontSize: 20,

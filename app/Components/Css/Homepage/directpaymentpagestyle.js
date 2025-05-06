@@ -13,16 +13,16 @@ export default StyleSheet.create({
         marginTop: -20,
     },
     backIcon: {
-        width: 28,
-        height: 28,
-        marginRight: 8,
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
     },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
         flex: 1,
         textAlign: 'center',
-        marginRight: 36, // 아이콘 공간 확보
+        marginRight: 20, // 아이콘 공간 확보
     },
     desc: {
         fontSize: 22,

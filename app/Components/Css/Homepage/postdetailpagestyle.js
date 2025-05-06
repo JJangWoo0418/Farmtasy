@@ -410,5 +410,10 @@ export default StyleSheet.create({
         height: 24,
         resizeMode: 'contain',
     },
+    backIcon: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
+    },
     // ... add more styles if needed for replies, input fields, etc.
 });
