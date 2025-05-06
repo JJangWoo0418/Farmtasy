@@ -15,7 +15,7 @@ const DirectPaymentPage2 = () => {
         <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 10}}>
             {/* 상단 헤더 */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
+                <TouchableOpacity onPress={() => navigation.navigate('Homepage/homepage')}>
                     <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                 </TouchableOpacity>
                 <Text style={styles.title}>면적 직불금 계산기</Text>
