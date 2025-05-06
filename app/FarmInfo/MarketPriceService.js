@@ -4,9 +4,11 @@ import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import itemCodeData from '../Components/Utils/item_code_data.json';
 import { MARKET_API_KEY } from '../Components/API/apikey';
+import axios from 'axios';
 
 // 실제 API URL 설정
 const BASE_URL = 'http://211.237.50.150:7080/openapi';
+const API_BASE_URL = BASE_URL; // axios용 추가
 
 // XML을 JSON으로 변환하는 유틸리티 함수
 const parseXmlToJson = async (xmlString) => {
@@ -27,55 +29,49 @@ const GRID_IDS = {
   ORIGIN_CODE: 'Grid_20240626000000000667_1',    // 산지 코드
   ITEM_CODE: 'Grid_20240626000000000668_1',      // 품목 코드
   SETTLEMENT_PRICE: 'Grid_20240625000000000653_1', // 도매시장 정산가격 정보
-  REALTIME_PRICE: 'Grid_20240625000000000654_1'  // 도매시장 실시간 경락 정보
+  REALTIME_PRICE: 'Grid_20240625000000000654_1',  // 도매시장 실시간 경락 정보
+  DAILY_PRICE: 'Grid_20240625000000000653_1'     // 일별 시세 조회를 위한 가상의 그리드 ID
 };
 
 // 디버그용: JSON 데이터 확인
 console.log('[DEBUG] 로드된 JSON 데이터 샘플:', 
   Array.isArray(itemCodeData) ? itemCodeData.slice(0, 2) : '데이터 형식 오류');
 
-// 하드코딩된 품목 데이터
-const ITEM_CODES = { 
-  fruits: [
-    { '품목코드': '100', '품목명': '사과', '분류명': '과일류' },
-    { '품목코드': '101', '품목명': '배', '분류명': '과일류' },
-    { '품목코드': '102', '품목명': '복숭아', '분류명': '과일류' },
-    { '품목코드': '103', '품목명': '포도', '분류명': '과일류' },
-    { '품목코드': '104', '품목명': '감귤', '분류명': '과일류' },
-    { '품목코드': '105', '품목명': '단감', '분류명': '과일류' }
-  ],
-  vegetables: [
-    { '품목코드': '200', '품목명': '고추', '분류명': '채소류' },
-    { '품목코드': '201', '품목명': '마늘', '분류명': '채소류' },
-    { '품목코드': '202', '품목명': '양파', '분류명': '채소류' },
-    { '품목코드': '203', '품목명': '무', '분류명': '채소류' },
-    { '품목코드': '204', '품목명': '배추', '분류명': '채소류' },
-    { '품목코드': '205', '품목명': '당근', '분류명': '채소류' }
-  ]
+// 선택된 itemCode, varietyCode 기반으로 cmpcd 찾는 함수 수정
+const findCmpcd = (itemCode, varietyCode) => {
+  const normalizedItemCode = String(itemCode).padStart(2, '0');
+  const normalizedVarietyCode = String(varietyCode).padStart(2, '0');
+  const matched = itemCodeData.find(item => 
+    item.itemCode === normalizedItemCode &&
+    item.varietyCode === normalizedVarietyCode
+  );
+  console.log('[DEBUG] findCmpcd 검색:', { normalizedItemCode, normalizedVarietyCode, matched });
+  return matched?.cmpcd || null;
 };
 
-// 도매시장 정산가격 정보 조회 (시세)
-export async function getDailyPrice({ saledate, whsalcd, large, mid, small, cmpcd }) {
-  // 필수 파라미터 체크
-  if (!saledate || !whsalcd || !large || !mid) {
-    console.error('필수 파라미터 누락:', { saledate, whsalcd, large, mid });
-    throw new Error('필수 파라미터가 누락되었습니다.');
-  }
-
-  console.log('[DEBUG] 시세 조회 파라미터:', { saledate, whsalcd, large, mid, small, cmpcd });
-
-  // Grid ID를 반드시 문자열로 고정
-  let url = `${BASE_URL}/${MARKET_API_KEY}/xml/Grid_20240625000000000653_1/1/100`;
-  url += `?AUCNGDE=${saledate}`;
-  url += `&WHSALCD=${whsalcd}`;
-  url += `&LARGE=${large}`;
-  url += `&MID=${mid}`;
-  if (small) url += `&SMALL=${small}`;
-  if (cmpcd) url += `&CMPCD=${cmpcd}`;
-
-  console.log('[DEBUG] 시세 조회 URL:', url);
-
+// 일별 시세 조회 함수
+export async function getDailyPrice({ saledate, whsalcd, large, mid, small }) {
   try {
+    // 소분류(small) 파라미터 필수 체크
+    if (!small) {
+      throw new Error('품종(소분류)을 선택해주세요. 품종별 시세를 확인하기 위해서는 반드시 필요합니다.');
+    }
+
+    // 현재 날짜와 선택된 날짜 비교
+    const today = new Date();
+    const selectedDate = new Date(saledate);
+    
+    // 미래 날짜인 경우 어제 날짜로 조회
+    if (selectedDate > today) {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      saledate = yesterday.toISOString().split('T')[0].replace(/-/g, '');
+    }
+
+    // URL 파라미터 조립 (소분류 필수 포함)
+    const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.DAILY_PRICE}/1/100?SALEDATE=${saledate}&WHSALCD=${whsalcd}&LARGE=${large}&MID=${mid}&SMALL=${small}`;
+    console.log('[DEBUG] 시세 조회 URL:', url);
+
     const response = await fetch(url);
     console.log('[DEBUG] 시세 조회 응답 상태:', response.status);
 
@@ -83,23 +79,25 @@ export async function getDailyPrice({ saledate, whsalcd, large, mid, small, cmpc
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const xmlText = await response.text();
-    const parser = new XMLParser();
-    const result = parser.parse(xmlText);
+    const xmlData = await response.text();
+    console.log('[DEBUG] XML 응답:', xmlData);
 
-    // row 추출 및 배열화
-    const grid = result['Grid_20240625000000000653_1'];
-    if (!grid) {
-      throw new Error('API 응답이 올바르지 않습니다.');
+    const jsonData = await parseXmlToJson(xmlData);
+    console.log('[DEBUG] 파싱된 JSON:', jsonData);
+
+    const rows = jsonData?.Grid_20240625000000000653_1?.row;
+    if (!rows) {
+      console.log('[DEBUG] row 데이터 없음');
+      throw new Error(`선택하신 ${getCropName(large, mid, small).cropName}의 ${saledate} 날짜 시세 데이터가 없습니다. 해당 작물의 출하 시기가 아닐 수 있습니다.`);
     }
 
-    let rows = grid.row;
     if (!Array.isArray(rows)) {
-      rows = rows ? [rows] : [];
+      rows = [rows];
     }
 
     if (rows.length === 0) {
-      throw new Error('시세 데이터를 찾을 수 없습니다.');
+      console.log('[DEBUG] 조회된 데이터 없음');
+      throw new Error(`선택하신 ${getCropName(large, mid, small).cropName}의 ${saledate} 날짜 시세 데이터가 없습니다. 해당 작물의 출하 시기가 아닐 수 있습니다.`);
     }
 
     return rows;
@@ -107,6 +105,29 @@ export async function getDailyPrice({ saledate, whsalcd, large, mid, small, cmpc
     console.error('[ERROR] 시세 데이터 로드 실패:', error);
     throw error;
   }
+}
+
+// 작물 이름, 품목명, 품종명 동적 조회 함수
+function getCropName(large, mid, small) {
+  // itemCodeData에서 코드 일치하는 항목 찾기
+  const found = itemCodeData.find(item =>
+    item.categoryCode?.toString() === large?.toString() &&
+    item.itemCode?.toString() === mid?.toString() &&
+    item.varietyCode?.toString() === small?.toString()
+  );
+  if (found) {
+    return {
+      cropName: found.categoryName,
+      itemName: found.itemName,
+      varietyName: found.varietyName
+    };
+  }
+  // 일치하는 항목이 없으면 빈 값 반환
+  return {
+    cropName: '',
+    itemName: '',
+    varietyName: ''
+  };
 }
 
 const MarketPriceService = {
@@ -281,7 +302,7 @@ const MarketPriceService = {
         과일: fruitCategories,
         채소: vegetableCategories
       });
-      
+
       // 과일류와 채소류로 분류
       const categorizedItems = {
         fruits: itemCodeData.filter(item => 
@@ -295,10 +316,10 @@ const MarketPriceService = {
       // 검색어가 없는 경우 전체 데이터 반환
       if (!searchKeyword || typeof searchKeyword !== 'string') {
         return categorizedItems;
-      }
-      
+        }
+
       // 검색어가 있는 경우 필터링
-      const keyword = searchKeyword.toLowerCase();
+          const keyword = searchKeyword.toLowerCase();
       const filteredData = {
         fruits: categorizedItems.fruits.filter(item => 
           (item.itemName || '').toLowerCase().includes(keyword) ||
@@ -323,7 +344,7 @@ const MarketPriceService = {
           varietyName: item.varietyName
         }))
       });
-      
+
       return filteredData;
     } catch (error) {
       console.error('[ERROR] 품목 코드 조회 오류:', error);
