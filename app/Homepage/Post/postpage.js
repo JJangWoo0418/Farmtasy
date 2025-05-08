@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, memo, useMemo } from 'react';
 import { View, Text, TextInput, Image, FlatList, TouchableOpacity, Animated, Dimensions, Easing, ActivityIndicator, StyleSheet, Alert, ToastAndroid, Platform } from 'react-native';
-import styles from '../Components/Css/Homepage/postpagestyle';
+import styles from '../../Components/Css/Homepage/postpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import API_CONFIG from '../DB/api';
-import userIcon from '../../assets/usericon.png'; // 실제 경로에 맞게 수정
+import API_CONFIG from '../../DB/api';
+import userIcon from '../../../assets/usericon.png'; // 실제 경로에 맞게 수정
 import Toast from 'react-native-root-toast';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -19,7 +19,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
             <TouchableOpacity onPress={navigateToDetail}>
                 <View style={styles.postHeader}>
                     <Image
-                        source={item.profile_image && item.profile_image !== '프로필 미설정' ? { uri: item.profile_image } : require('../../assets/usericon.png')}
+                        source={item.profile_image && item.profile_image !== '프로필 미설정' ? { uri: item.profile_image } : require('../../../assets/usericon.png')}
                         style={styles.profileImg}
                     />
                     <View style={styles.userInfoContainer}>
@@ -49,7 +49,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                             ]
                         );
                     }}>
-                        <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn} />
+                        <Image source={require('../../../assets/moreicon.png')} style={styles.moreBtn} />
                     </TouchableOpacity>
                 </View>
                 <View activeOpacity={0.8}>
@@ -65,7 +65,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                 <View style={[styles.iconGroup, styles.likeIconGroup]}>
                     <TouchableOpacity onPress={() => onLike(item.id, item.is_liked)}>
                         <Animated.Image
-                            source={item.is_liked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')}
+                            source={item.is_liked ? require('../../../assets/heartgreenicon.png') : require('../../../assets/hearticon.png')}
                             style={[
                                 styles.icon,
                                 { transform: [{ scale: safeHeartAnimation }] }
@@ -75,13 +75,13 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                     <Text style={styles.iconText}>{item.likes}</Text>
                 </View>
                 <View style={styles.iconContainer}>
-                    <Image source={require('../../assets/commenticon.png')} style={styles.icon} />
+                    <Image source={require('../../../assets/commenticon.png')} style={styles.icon} />
                     <Text style={styles.iconText}>{item.commentCount || 0}</Text>
                 </View>
                 <View style={styles.iconGroup}>
                     <TouchableOpacity onPress={onBookmark}>
                         <Animated.Image
-                            source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')}
+                            source={isBookmarked ? require('../../../assets/bookmarkgreenicon.png') : require('../../../assets/bookmarkicon.png')}
                             style={[
                                 styles.icon3,
                                 { transform: [{ scale: safeBookmarkAnimation }] }
@@ -94,7 +94,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                 <View style={styles.bestCommentPreview}>
                     <View style={styles.commentHeader}>
                         <Image
-                            source={item.best_comment_profile && item.best_comment_profile !== '프로필 미설정' ? { uri: item.best_comment_profile } : require('../../assets/usericon.png')}
+                            source={item.best_comment_profile && item.best_comment_profile !== '프로필 미설정' ? { uri: item.best_comment_profile } : require('../../../assets/usericon.png')}
                             style={styles.commentProfileImg}
                         />
                         <View style={styles.userInfoContainer}>
@@ -124,7 +124,7 @@ const PostItem = memo(({ item, onLike, onBookmark, heartAnimation, bookmarkAnima
                                 ]
                             );
                         }}>
-                            <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn2} />
+                            <Image source={require('../../../assets/moreicon.png')} style={styles.moreBtn2} />
                         </TouchableOpacity>
                     </View>
                     <Text style={styles.bestCommentText}>{item.best_comment_content}</Text>
@@ -289,7 +289,7 @@ const PostPage = () => {
         category = '카테고리 없음',
         categoryTitle = '카테고리 없음',
         categoryDesc = '',
-        categoryIcon = require('../../assets/Xicon.png'),
+        categoryIcon = require('../../../assets/Xicon.png'),
     } = route.params || {};
 
     const tabLabelOpacities = useRef(TAB_LIST.map(() => new Animated.Value(1))).current;
@@ -564,7 +564,7 @@ const PostPage = () => {
                         bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                         isBookmarked={bookmarkedPosts[item.id] || false}
                         navigateToDetail={() => {
-                            navigation.push('Homepage/postdetailpage', {
+                            navigation.push('Homepage/Post/postdetailpage', {
                                 post: { ...item, phone: item.phone },
                                 introduction: item.introduction || '소개 미설정',
                                 phone,
@@ -610,7 +610,7 @@ const PostPage = () => {
                         <>
                             <View style={styles.header}>
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                                    <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                                 </TouchableOpacity>
                                 <Text style={styles.title3}>게시글</Text>
                             </View>
@@ -622,7 +622,7 @@ const PostPage = () => {
                                 </View>
                             </View>
                             <View style={styles.searchBox}>
-                                <Image source={require('../../assets/searchicon.png')} style={styles.searchIcon} />
+                                <Image source={require('../../../assets/searchicon.png')} style={styles.searchIcon} />
                                 <TextInput
                                     style={styles.searchInput}
                                     placeholder="  농부(유저)나 내용으로 게시글 검색"
@@ -678,7 +678,7 @@ const PostPage = () => {
                 <TouchableOpacity
                     style={{ flexDirection: 'row', alignItems: 'center' }}
                     onPress={() => {
-                        navigation.push('Homepage/writingpage', {
+                        navigation.push('Homepage/Post/writingpage', {
                             category: category,
                             icon: categoryIcon,
                             userData,
@@ -697,7 +697,7 @@ const PostPage = () => {
                             글쓰기
                         </Animated.Text>
                     )}
-                    <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
+                    <Image source={require('../../../assets/paperpencil.png')} style={styles.writeIcon} />
                 </TouchableOpacity>
             </Animated.View>
         </View>

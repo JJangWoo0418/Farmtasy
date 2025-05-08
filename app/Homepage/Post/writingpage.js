@@ -1,11 +1,11 @@
 // writingpage.js
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
-import styles from '../Components/Css/Homepage/writingpagestyle';
+import styles from '../../Components/Css/Homepage/writingpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
 import axios from 'axios';
-import API_CONFIG from '../DB/api';
+import API_CONFIG from '../../DB/api';
 import * as ImagePicker from 'expo-image-picker';
 
 const WritingPage = () => {
@@ -209,16 +209,16 @@ const WritingPage = () => {
                     </View>
 
                     <View style={styles.sheetOptions}>
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사질문'); setSelectedIcon(require('../../assets/farmingquestions2.png')); closeCategorySheet(); }}>
-                            <Image source={require('../../assets/FarmingQuestions.png')} style={styles.sheetIcon} />
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사질문'); setSelectedIcon(require('../../../assets/FarmingQuestions.png')); closeCategorySheet(); }}>
+                            <Image source={require('../../../assets/FarmingQuestions.png')} style={styles.sheetIcon} />
                             <Text style={styles.sheetLabel}>농사질문</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사공부'); setSelectedIcon(require('../../assets/studyfarming2.png')); closeCategorySheet(); }}>
-                            <Image source={require('../../assets/studyfarming.png')} style={styles.sheetIcon} />
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사공부'); setSelectedIcon(require('../../../assets/studyfarming2.png')); closeCategorySheet(); }}>
+                            <Image source={require('../../../assets/studyfarming.png')} style={styles.sheetIcon} />
                             <Text style={styles.sheetLabel}>농사공부</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('자유주제'); setSelectedIcon(require('../../assets/freetopic2.png')); closeCategorySheet(); }}>
-                            <Image source={require('../../assets/freetopic.png')} style={styles.sheetIcon} />
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('자유주제'); setSelectedIcon(require('../../../assets/freetopic2.png')); closeCategorySheet(); }}>
+                            <Image source={require('../../../assets/freetopic.png')} style={styles.sheetIcon} />
                             <Text style={styles.sheetLabel}>자유주제</Text>
                         </TouchableOpacity>
                     </View>
@@ -237,11 +237,11 @@ const WritingPage = () => {
 
                     <View style={styles.sheetOptions}>
                         <TouchableOpacity style={styles.sheetItem} onPress={handleTakePhoto}>
-                            <Image source={require('../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
+                            <Image source={require('../../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
                             <Text style={styles.sheetLabel}>사진 촬영</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.sheetItem} onPress={handlePickImage}>
-                            <Image source={require('../../assets/galleryicon.png')} style={styles.sheetIcon} />
+                            <Image source={require('../../../assets/galleryicon.png')} style={styles.sheetIcon} />
                             <Text style={styles.sheetLabel}>앨범 선택</Text>
                         </TouchableOpacity>
                     </View>
@@ -260,7 +260,7 @@ const WritingPage = () => {
                     {/* 헤더 */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                            <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                         </TouchableOpacity>
                         <Text style={styles.title}>글쓰기</Text>
                     </View>
@@ -319,7 +319,7 @@ const WritingPage = () => {
                     </ScrollView>
                     {/* 사진 업로드 */}
                     <TouchableOpacity style={styles.uploadBtn} onPress={openUploadSheet}>
-                        <Image source={require('../../assets/cameraicon.png')} style={styles.cameraIcon} />
+                        <Image source={require('../../../assets/cameraicon.png')} style={styles.cameraIcon} />
                         <Text style={styles.uploadText}>사진 올리기</Text>
                     </TouchableOpacity>
 

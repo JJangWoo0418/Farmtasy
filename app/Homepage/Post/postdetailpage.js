@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import styles from '../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
-import API_CONFIG from '../DB/api';
+import styles from '../../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
+import API_CONFIG from '../../DB/api';
 
 const PostDetailPage = () => {
     const navigation = useNavigation();
@@ -343,7 +343,7 @@ const PostDetailPage = () => {
                     ]}
                 >
                     <View style={styles.commentHeader}>
-                        <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
+                        <Image source={comment.profile ? { uri: comment.profile } : require('../../../assets/usericon.png')} style={styles.commentProfileImg} />
                         <View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={styles.commentUsername}>[{comment.region || '지역 미설정'}] {comment.user}</Text>
@@ -366,7 +366,7 @@ const PostDetailPage = () => {
                                 { cancelable: true }
                             );
                         }}>
-                            <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
+                            <Image source={require('../../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
                         </TouchableOpacity>
                     </View>
                     <Text style={styles.commentText}>{comment.comment_content}</Text>
@@ -374,7 +374,7 @@ const PostDetailPage = () => {
                         <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
                             <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
                                 <Image
-                                    source={comment.isLiked ? require('../../assets/heartgrayicon.png') : require('../../assets/hearticon.png')}
+                                    source={comment.isLiked ? require('../../../assets/heartgrayicon.png') : require('../../../assets/hearticon.png')}
                                     style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
                             </Animated.View>
                             <Text style={styles.commentLikeText}>{comment.likes}</Text>
@@ -407,7 +407,7 @@ const PostDetailPage = () => {
                 <View key={comment.id} style={styles.commentContainer}>
                     {/* 일반 댓글 UI */}
                     <View style={styles.commentHeader}>
-                        <Image source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')} style={styles.commentProfileImg} />
+                        <Image source={comment.profile ? { uri: comment.profile } : require('../../../assets/usericon.png')} style={styles.commentProfileImg} />
                         <View>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={styles.commentUsername}>[{comment.region || '지역 미설정'}] {comment.user}</Text>
@@ -442,7 +442,7 @@ const PostDetailPage = () => {
                                 ]
                             );
                         }}>
-                            <Image source={require('../../assets/moreicon.png')} style={styles.commentMoreBtn} />
+                            <Image source={require('../../../assets/moreicon.png')} style={styles.commentMoreBtn} />
                         </TouchableOpacity>
                     </View>
                     <Text style={styles.commentText}>{comment.comment_content}</Text>
@@ -450,7 +450,7 @@ const PostDetailPage = () => {
                         <TouchableOpacity style={styles.commentLikeButton} onPress={() => handleCommentLike(comment.id)}>
                             <Animated.View style={{ transform: [{ scale: commentAnimations[comment.id] || new Animated.Value(1) }] }}>
                                 <Image
-                                    source={comment.isLiked ? require('../../assets/heartgrayicon.png') : require('../../assets/hearticon.png')}
+                                    source={comment.isLiked ? require('../../../assets/heartgrayicon.png') : require('../../../assets/hearticon.png')}
                                     style={[styles.commentLikeIcon, comment.isLiked && styles.commentLikedIcon]} />
                             </Animated.View>
                             <Text style={styles.commentLikeText}>{comment.likes}</Text>
@@ -459,7 +459,7 @@ const PostDetailPage = () => {
                             setIsReplyInputVisible(true);
                             setReplyToCommentId(comment.id);
                         }}>
-                            <Image source={require('../../assets/commenticon.png')} style={styles.commentAnswerIcon} />
+                            <Image source={require('../../../assets/commenticon.png')} style={styles.commentAnswerIcon} />
                             <Text style={styles.replyText}>답글쓰기</Text>
                         </TouchableOpacity>
                     </View>
@@ -493,7 +493,7 @@ const PostDetailPage = () => {
                     {/* 헤더 */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                            <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>게시글 로딩 중...</Text>
                     </View>
@@ -517,7 +517,7 @@ const PostDetailPage = () => {
                     <View style={styles.header}>
                         <View style={{ width: 30 }}>
                             <TouchableOpacity onPress={() => navigation.goBack()}>
-                                <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                                <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.headerTitle}>{post.category || '자유주제'}</Text>
@@ -534,7 +534,7 @@ const PostDetailPage = () => {
                         <View style={styles.postContainer}>
                             <View style={styles.postHeader}>
                                 <Image 
-                                    source={post.profile_image ? { uri: post.profile_image } : require('../../assets/usericon.png')} 
+                                    source={post.profile_image ? { uri: post.profile_image } : require('../../../assets/usericon.png')} 
                                     style={styles.profileImg} 
                                 />
                                 <View style={styles.userInfoContainer}>
@@ -564,7 +564,7 @@ const PostDetailPage = () => {
                                         ]
                                     );
                                 }}>
-                                    <Image source={require('../../assets/moreicon.png')} style={styles.moreBtn} />
+                                    <Image source={require('../../../assets/moreicon.png')} style={styles.moreBtn} />
                                 </TouchableOpacity>
                             </View>
                             <Text style={styles.postText}>{post.text}</Text>
@@ -586,7 +586,7 @@ const PostDetailPage = () => {
                         <View style={styles.statsRow}>
                             <View style={styles.statsItem}>
                                 <Image 
-                                    source={require('../../assets/heartgreenicon.png')} 
+                                    source={require('../../../assets/heartgreenicon.png')} 
                                     style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]} 
                                 />
                                 <Text style={styles.statsText}>{likeCount}</Text>
@@ -602,14 +602,14 @@ const PostDetailPage = () => {
                             <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
                                 <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
                                     <Image 
-                                        source={isLiked ? require('../../assets/heartgreenicon.png') : require('../../assets/hearticon.png')} 
+                                        source={isLiked ? require('../../../assets/heartgreenicon.png') : require('../../../assets/hearticon.png')} 
                                         style={styles.actionIcon} 
                                     />
                                 </Animated.View>
                                 <Text style={styles.actionText}>좋아요</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.actionButton} onPress={toggleCommentInput}>
-                                <Image source={require('../../assets/commenticon.png')} style={styles.actionIcon} />
+                                <Image source={require('../../../assets/commenticon.png')} style={styles.actionIcon} />
                                 <Text style={styles.actionText}>댓글</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
@@ -618,7 +618,7 @@ const PostDetailPage = () => {
                             >
                                 <Animated.View style={{ transform: [{ scale: bookmarkScaleAnim }] }}>
                                     <Image 
-                                        source={isBookmarked ? require('../../assets/bookmarkgreenicon.png') : require('../../assets/bookmarkicon.png')} 
+                                        source={isBookmarked ? require('../../../assets/bookmarkgreenicon.png') : require('../../../assets/bookmarkicon.png')} 
                                         style={styles.actionIcon} 
                                     />
                                 </Animated.View>
@@ -652,7 +652,7 @@ const PostDetailPage = () => {
                         onChangeText={setCommentInput}
                     />
                     <TouchableOpacity style={styles.sendButton} onPress={handleSendComment}>
-                        <Image source={require('../../assets/arrowrighticon.png')} style={styles.icon} />
+                        <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
                     </TouchableOpacity>
                 </Animated.View>
 
@@ -668,7 +668,7 @@ const PostDetailPage = () => {
                             autoFocus
                         />
                         <TouchableOpacity style={styles.sendButton} onPress={handleSendReply}>
-                            <Image source={require('../../assets/arrowrighticon.png')} style={styles.icon} />
+                            <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
                         </TouchableOpacity>
                     </Animated.View>
                 )}

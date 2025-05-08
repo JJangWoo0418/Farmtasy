@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Animated, Easing } from 'react-native';
-import styles from '../Components/Css/Homepage/directpaymentpage2style';
+import styles from '../../Components/Css/Homepage/directpaymentpage2style';
 import { useNavigation} from '@react-navigation/native';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -52,7 +52,7 @@ const DirectPaymentPage2 = () => {
                     name,
                     region
                 } })}>
-                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                    <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                 </TouchableOpacity>
                 <Text style={styles.title}>면적 직불금 계산기</Text>
             </View>
@@ -72,7 +72,7 @@ const DirectPaymentPage2 = () => {
 
             {/* 지급 단가표 */}
             <Text style={styles.tableTitle}>면적 직불금 지급 단가</Text>
-            <Image source={require('../../assets/directpaymenticon.png')} style={styles.tableImage} />
+            <Image source={require('../../../assets/directpaymenticon.png')} style={styles.tableImage} />
             <Text style={styles.tableTitle2}>출처 | 농림축산식품부 AgriX</Text>
         </ScrollView>
     );

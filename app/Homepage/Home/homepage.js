@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar } from 'react-native';
-import styles from '../Components/Css/Homepage/homepagestyle';
+import styles from '../../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
-import BottomTabNavigator from '../Navigator/BottomTabNavigator';
+import BottomTabNavigator from '../../Navigator/BottomTabNavigator';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -45,12 +45,12 @@ const HomePage = () => {
 
         if (category === '자유주제') {
             router.push({
-                pathname: 'Homepage/postpage',
+                pathname: 'Homepage/Post/postpage',
                 params: {
                     category: '자유주제',
                     categoryTitle: '화목한 농부들의 자유주제',
                     categoryDesc: '다양한 주제로 소통해 보세요',
-                    categoryIcon: require('../../assets/freetopic2.png'),
+                    categoryIcon: require('../../../assets/freetopic2.png'),
                     userData: route.params?.userData,
                     phone: route.params?.phone,
                     name: route.params?.name,
@@ -59,12 +59,12 @@ const HomePage = () => {
             });
         } else if (category === '농사공부') {
             router.push({
-                pathname: 'Homepage/postpage',
+                pathname: 'Homepage/Post/postpage',
                 params: {
                     category: '농사공부',
                     categoryTitle: '똑똑한 농부들의 농사공부',
                     categoryDesc: '유익한 정보들을 공유해보세요',
-                    categoryIcon: require('../../assets/studyfarming2.png'),
+                    categoryIcon: require('../../../assets/studyfarming2.png'),
                     userData: route.params?.userData,
                     phone: route.params?.phone,
                     name: route.params?.name,
@@ -73,12 +73,12 @@ const HomePage = () => {
             });
         } else if (category === '농사질문') {
             router.push({
-                pathname: 'Homepage/postpage',
+                pathname: 'Homepage/Post/postpage',
                 params: {
                     category: '농사질문',
                     categoryTitle: '질문은 배움의 시작 농사질문',
                     categoryDesc: '농사에 대한 질문을 남겨보세요',
-                    categoryIcon: require('../../assets/farmingquestions2.png'),
+                    categoryIcon: require('../../../assets/farmingquestions2.png'),
                     userData: route.params?.userData,
                     phone: route.params?.phone,
                     name: route.params?.name,
@@ -95,8 +95,8 @@ const HomePage = () => {
             username: '충북음성 이준호',
             time: '1시간 전',
             text: '충북 음성 싱싱한 복숭아 과일 살 사람 구합니다.',
-            profileImage: require('../../assets/leejunho.png'),
-            images: [require('../../assets/peach.png'), require('../../assets/mandarin.png')],
+            profileImage: require('../../../assets/leejunho.png'),
+            images: [require('../../../assets/peach.png'), require('../../../assets/mandarin.png')],
         },
     ];
 
@@ -128,14 +128,14 @@ const HomePage = () => {
                     ]}
                 >
                     <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>
-                        <Image source={require('../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
+                        <Image source={require('../../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
                     </TouchableOpacity>
 
                     {/* drawerTitle, drawerItem 등은 그대로 유지 */}
                     <Text style={styles.drawerTitle}>정보</Text>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => {
                         router.push({
-                            pathname: 'Homepage/profilepage',
+                            pathname: 'Homepage/Profile/profilepage',
                             params: {
                                 userData: route.params?.userData,
                                 phone: route.params?.phone,
@@ -144,54 +144,54 @@ const HomePage = () => {
                             }
                         });
                     }}>
-                        <Image source={require('../../assets/profileicon2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/profileicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>프로필</Text>
                     </TouchableOpacity>
                     {/* 장터 */}
                     <Text style={styles.drawerTitle}>장터</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/shopicon2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/shopicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>장터</Text>
                     </TouchableOpacity>
 
                     {/* 농사 정보 */}
                     <Text style={styles.drawerTitle}>농사 정보</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/directpaymentpage' })}>
-                        <Image source={require('../../assets/directdeposit2.png')} style={styles.drawerIcon} />
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage' })}>
+                        <Image source={require('../../../assets/directdeposit2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>면적 직불금 계산기</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/quoteicon2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/quoteicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>작물 시세</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/weathericon2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/weathericon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>날씨</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/bugicon2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/bugicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>병해충</Text>
                     </TouchableOpacity>
 
                     {/* 농사 게시판 */}
                     <Text style={styles.drawerTitle}>농사 게시판</Text>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('자유주제')}>
-                        <Image source={require('../../assets/freetopic2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/freetopic2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>자유주제</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사공부')}>
-                        <Image source={require('../../assets/studyfarming2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/studyfarming2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>농사공부</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사질문')}>
-                        <Image source={require('../../assets/farmingquestions2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/farmingquestions2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>농사질문</Text>
                     </TouchableOpacity>
 
                     {/* AI */}
                     <Text style={styles.drawerTitle}>AI</Text>
                     <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../assets/chatboticon2.png')} style={styles.drawerIcon} />
+                        <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>질문하기</Text>
                     </TouchableOpacity>
                 </Animated.View>
@@ -217,31 +217,31 @@ const HomePage = () => {
 
                 {/* 종 아이콘 */}
                 <TouchableOpacity style={styles.bellIconWrapper}>
-                    <Image source={require('../../assets/bellicon.png')} />
+                    <Image source={require('../../../assets/bellicon.png')} />
                 </TouchableOpacity>
             </View>
 
             {/* 상단 메뉴 */}
             <View style={styles.menuContainer}>
                 <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사질문')}>
-                    <Image source={require('../../assets/farmingquestions4.png')} style={styles.menuIcon} />
+                    <Image source={require('../../../assets/farmingquestions4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사질문</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사공부')}>
-                    <Image source={require('../../assets/studyfarming4.png')} style={styles.menuIcon} />
+                    <Image source={require('../../../assets/studyfarming4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>농사공부</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('자유주제')}>
-                    <Image source={require('../../assets/freetopic4.png')} style={styles.menuIcon} />
+                    <Image source={require('../../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({ pathname: '/Homepage/directpaymentpage', params: {
+                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage', params: {
                     userData: route.params?.userData,
                     phone: route.params?.phone,
                     name: route.params?.name,
                     region: route.params?.region
                 } })}>
-                    <Image source={require('../../assets/directdeposit4.png')} style={styles.menuIcon} />
+                    <Image source={require('../../../assets/directdeposit4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>직불금계산</Text>
                 </TouchableOpacity>
             </View>
@@ -360,10 +360,10 @@ const HomePage = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/writingpage",
+                                pathname: "/Homepage/Post/writingpage",
                                 params: {
                                     category: '농사질문',
-                                    icon: require('../../assets/farmingquestions2.png'),
+                                    icon: require('../../../assets/farmingquestions2.png'),
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -374,7 +374,7 @@ const HomePage = () => {
                         style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
                     >
                         <Image
-                            source={require('../../assets/FarmingQuestions.png')}
+                            source={require('../../../assets/FarmingQuestions.png')}
                             style={{ width: 42, height: 42, marginRight: 7, marginBottom: 7, marginTop: 10 }}
                         />
                         <Text style={{ fontSize: 20, marginRight: 5, marginBottom: 10, marginTop: 10 }}>
@@ -392,10 +392,10 @@ const HomePage = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/writingpage",
+                                pathname: "/Homepage/Post/writingpage",
                                 params: {
                                     category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    icon: require('../../../assets/studyfarming2.png'),
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -406,7 +406,7 @@ const HomePage = () => {
                         style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
                     >
                         <Image
-                            source={require('../../assets/studyfarming.png')}
+                            source={require('../../../assets/studyfarming.png')}
                             style={{ width: 35, height: 35, marginRight: 10, marginLeft: 5, marginBottom: 7 }}
                         />
                         <Text style={{ fontSize: 20, marginBottom: 7 }}>농사공부 글쓰기</Text>
@@ -422,10 +422,10 @@ const HomePage = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/writingpage",
+                                pathname: "/Homepage/Post/writingpage",
                                 params: {
                                     category: '자유주제',
-                                    icon: require('../../assets/freetopic2.png'),
+                                    icon: require('../../../assets/freetopic2.png'),
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -436,7 +436,7 @@ const HomePage = () => {
                         style={{ flexDirection: 'row', alignItems: 'center' }}
                     >
                         <Image
-                            source={require('../../assets/freetopic.png')}
+                            source={require('../../../assets/freetopic.png')}
                             style={{ width: 40, height: 40, marginRight: 10, marginBottom: 15 }}
                         />
                         <Text style={{ fontSize: 20 }}>자유주제 글쓰기</Text>
@@ -467,13 +467,13 @@ const HomePage = () => {
             >
                 {isWriteToggleVisible ? (
                     <Image
-                        source={require('../../assets/Xicon.png')}
+                        source={require('../../../assets/Xicon.png')}
                     />
                 ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Text style={styles.writeButtonText}>글쓰기  </Text>
                         <Image
-                            source={require('../../assets/paperpencil.png')}
+                            source={require('../../../assets/paperpencil.png')}
                             style={styles.paperpencilIcon}
                         />
                     </View>

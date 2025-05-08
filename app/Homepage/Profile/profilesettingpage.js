@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Animated, Modal, Easing, Alert } from 'react-native';
-import styles from '../Components/Css/Homepage/profilesettingpagestyle';
+import styles from '../../Components/Css/Homepage/profilesettingpagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import API_CONFIG from '../DB/api';
+import API_CONFIG from '../../DB/api';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
@@ -201,7 +201,7 @@ const ProfileSettingPage = () => {
                 {/* 상단 바 */}
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                        <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                        <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>프로필 수정</Text>
                     <TouchableOpacity style={styles.doneBtn} onPress={handleUpdateProfile}>
@@ -212,9 +212,9 @@ const ProfileSettingPage = () => {
                 {/* 프로필 이미지 */}
                 <View style={styles.profileImgSection}>
                     <TouchableOpacity style={styles.profileImgWrapper} onPress={openUploadSheet}>
-                        <Image source={profileImage ? { uri: profileImage } : require('../../assets/usericon.png')} style={styles.profileImg} />
+                        <Image source={profileImage ? { uri: profileImage } : require('../../../assets/usericon.png')} style={styles.profileImg} />
                         <View style={styles.cameraBtn}>
-                            <Image source={require('../../assets/cameraicon3.png')} style={styles.cameraIcon} />
+                            <Image source={require('../../../assets/cameraicon3.png')} style={styles.cameraIcon} />
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -282,11 +282,11 @@ const ProfileSettingPage = () => {
                             </View>
                             <View style={styles.sheetOptions}>
                                 <TouchableOpacity style={styles.sheetItem} onPress={handleTakePhoto}>
-                                    <Image source={require('../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
+                                    <Image source={require('../../../assets/cameraicon2.png')} style={styles.sheetIcon3} />
                                     <Text style={styles.sheetLabel}>사진 촬영</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.sheetItem} onPress={handlePickImage}>
-                                    <Image source={require('../../assets/galleryicon.png')} style={styles.sheetIcon} />
+                                    <Image source={require('../../../assets/galleryicon.png')} style={styles.sheetIcon} />
                                     <Text style={styles.sheetLabel}>앨범 선택</Text>
                                 </TouchableOpacity>
                             </View>

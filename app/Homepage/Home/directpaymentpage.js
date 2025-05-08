@@ -10,7 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform
 } from 'react-native';
-import styles from '../Components/Css/Homepage/directpaymentpagestyle';
+import styles from '../../Components/Css/Homepage/directpaymentpagestyle';
 import { useNavigation } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -36,7 +36,7 @@ const DirectPaymentPage = () => {
                 <View style={styles.container}>
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                            <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                         </TouchableOpacity>
                         <Text style={styles.title}>면적 직불금 계산기</Text>
                     </View>

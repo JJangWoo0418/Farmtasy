@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import styles from '../Components/Css/Homepage/profilepagestyle';
+import styles from '../../Components/Css/Homepage/profilepagestyle';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router } from 'expo-router';
-import API_CONFIG from '../DB/api';
+import API_CONFIG from '../../DB/api';
 
 const ProfilePage = () => {
     const navigation = useNavigation();
@@ -52,7 +52,7 @@ const ProfilePage = () => {
             {/* 상단 바 */}
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                    <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>프로필</Text>
             </View>
@@ -60,7 +60,7 @@ const ProfilePage = () => {
             {/* 프로필 정보 */}
             <View style={styles.profileSection}>
                 <Image 
-                    source={userData?.profile_image ? { uri: userData.profile_image } : require('../../assets/usericon.png')} 
+                    source={userData?.profile_image ? { uri: userData.profile_image } : require('../../../assets/usericon.png')} 
                     style={styles.profileImg} 
                 />
                 <View style={styles.profileInfo}>
@@ -71,7 +71,7 @@ const ProfilePage = () => {
                     style={styles.editBtn}
                     onPress={() => {
                         router.push({
-                            pathname: 'Homepage/profilesettingpage',
+                            pathname: 'Homepage/Profile/profilesettingpage',
                             params: {
                                 userData: userData,
                                 phone: route.params?.phone,
@@ -133,7 +133,7 @@ const ProfilePage = () => {
                 <Text style={styles.sectionTitle}>게시글 활동</Text>
                 <TouchableOpacity style={styles.sectionRow} onPress={() => {
                         router.push({
-                            pathname: 'Homepage/bookmarkspage',
+                            pathname: 'Homepage/Profile/bookmarkspage',
                             params: {
                                 userData: userData,
                                 phone: route.params?.phone,
@@ -145,13 +145,13 @@ const ProfilePage = () => {
                             }
                         });
                     }}>
-                    <Image source={require('../../assets/bookmarkicon.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/bookmarkicon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>저장한 글</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.sectionRow} onPress={() => {
                         router.push({
-                            pathname: 'Homepage/collectionwritingpage',
+                            pathname: 'Homepage/Profile/collectionwritingpage',
                             params: {
                                 userData: userData,
                                 phone: route.params?.phone,
@@ -163,13 +163,13 @@ const ProfilePage = () => {
                             }
                         });
                     }}>
-                    <Image source={require('../../assets/paperpencil2.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/paperpencil2.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>작성한 글</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.sectionRow} onPress={() => {
                         router.push({
-                            pathname: 'Homepage/commentwritingpage',
+                            pathname: 'Homepage/Profile/commentwritingpage',
                             params: {
                                 userData: userData,
                                 phone: route.params?.phone,
@@ -181,9 +181,9 @@ const ProfilePage = () => {
                             }
                         });
                     }}>
-                    <Image source={require('../../assets/commenticon.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/commenticon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>작성한 댓글</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
             </View>
 
@@ -191,19 +191,19 @@ const ProfilePage = () => {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>장터 활동</Text>
                 <TouchableOpacity style={styles.sectionRow}>
-                    <Image source={require('../../assets/hearticon.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/hearticon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>관심 상품</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.sectionRow}>
-                    <Image source={require('../../assets/coinicon.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/coinicon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>판매 중 상품</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.sectionRow}>
-                    <Image source={require('../../assets/bagicon.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/bagicon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>구매 내역</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
             </View>
 
@@ -211,9 +211,9 @@ const ProfilePage = () => {
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>내 농장</Text>
                 <TouchableOpacity style={styles.sectionRow}>
-                    <Image source={require('../../assets/mapicon3.png')} style={styles.sectionIcon} />
+                    <Image source={require('../../../assets/mapicon3.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>내 농장 지역</Text>
-                    <Image source={require('../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
+                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
             </View>
 
