@@ -260,7 +260,7 @@ const WritingPage = () => {
                     {/* 헤더 */}
                     <View style={styles.header}>
                         <TouchableOpacity onPress={() => navigation.goBack()}>
-                            <Image source={require('../../assets/gobackicon.png')} />
+                            <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                         </TouchableOpacity>
                         <Text style={styles.title}>글쓰기</Text>
                     </View>

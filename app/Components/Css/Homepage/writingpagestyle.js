@@ -178,5 +178,10 @@ export default StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.3)', // 반투명 검정
         zIndex: 10,
     },
+    backIcon: {
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
+    },
 
 });
