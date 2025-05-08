@@ -1153,6 +1153,83 @@ app.get('/api/comment/user-posts', async (req, res) => {
     }
 });
 
+// 각 카테고리별 인기 게시글 가져오기
+app.get('/api/posts/popular', async (req, res) => {
+    console.log('인기 게시글 요청 받음');
+    
+    try {
+        const categories = ['농사질문', '농사공부', '자유주제'];
+        const popularPosts = [];
+
+        for (const category of categories) {
+            console.log(`${category} 카테고리 게시글 조회 중...`);
+            
+            const [posts] = await pool.query(`
+                SELECT 
+                    p.post_id as id,
+                    u.name as username,
+                    p.phone,
+                    p.post_content as content,
+                    p.post_category as category,
+                    p.post_created_at as createdAt,
+                    p.image_urls,
+                    u.region,
+                    p.post_like as likes,
+                    u.introduction,
+                    u.profile_image as profileImage,
+                    (SELECT COUNT(*) FROM Comment c WHERE c.post_id = p.post_id) as commentCount
+                FROM post p
+                LEFT JOIN user u ON p.phone = u.phone
+                WHERE p.post_category = ?
+                ORDER BY p.post_like DESC
+                LIMIT 1
+            `, [category]);
+
+            console.log(`${category} 카테고리 조회 결과:`, posts.length > 0 ? '게시글 있음' : '게시글 없음');
+
+            if (posts.length > 0) {
+                const post = posts[0];
+                // image_urls 처리
+                let imageUrls = [];
+                try {
+                    if (post.image_urls) {
+                        if (typeof post.image_urls === 'string') {
+                            imageUrls = JSON.parse(post.image_urls);
+                        } else if (Array.isArray(post.image_urls)) {
+                            imageUrls = post.image_urls;
+                        }
+                    }
+                } catch (e) {
+                    console.error('image_urls 파싱 에러:', e);
+                }
+
+                // 날짜 포맷팅
+                const formattedPost = {
+                    ...post,
+                    image_urls: imageUrls,
+                    createdAt: new Date(post.createdAt).toLocaleString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                };
+                popularPosts.push(formattedPost);
+            }
+        }
+
+        console.log('전송할 데이터:', popularPosts);
+        res.json(popularPosts);
+    } catch (error) {
+        console.error('인기 게시글을 가져오는데 실패했습니다:', error);
+        res.status(500).json({ 
+            error: '서버 오류가 발생했습니다.',
+            details: error.message 
+        });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
