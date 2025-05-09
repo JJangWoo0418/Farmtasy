@@ -84,48 +84,184 @@ export default StyleSheet.create({
         flex: 1,
         padding: 10,
     },
-    post: {
+    postBox: {
+        padding: 16,
+        paddingTop: 15,
+        borderBottomWidth: 10,
+        borderColor: '#f0f0f0',
         backgroundColor: '#fff',
-        padding: 10,
-        marginBottom: 10,
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
     },
     postHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        marginBottom: 8,
     },
-    profileImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    profileImg: {
+        width: 30,
+        height: 30,
+        borderRadius: 19,
+        marginRight: 10,
+        marginBottom: 2
+    },
+    userInfoContainer: {
+        flex: 1,
         marginRight: 10,
     },
     username: {
         fontWeight: 'bold',
-        fontSize: 14,
+        fontSize: 16,
     },
-    postTime: {
-        fontSize: 12,
+    time: {
+        fontSize: 13,
         color: '#888',
     },
+    moreBtn: {
+        width: 23,
+        height: 23,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: 0,
+        top: -13,
+        marginRight: -5,
+        marginBottom: 0
+    },
+    moreBtn2: {
+        width: 20,
+        height: 20,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: 0,
+        top: -13,
+        marginRight: -5,
+        marginBottom: 0
+    },
     postText: {
-        fontSize: 14,
-        marginVertical: 5,
+        fontSize: 15,
+        lineHeight: 22,
+        marginBottom: 10,
     },
     postImages: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 5,
+        flexWrap: 'wrap',
+        marginTop: 8,
+        marginBottom: 8,
     },
     postImage: {
-        width: '48%',
-        height: 100,
-        borderRadius: 10,
+        width: 375,
+        height: 375,
+        marginRight: 10,
+        marginBottom: 8,
+        marginLeft: -8,
+        backgroundColor: '#eee', // 로딩 중에도 영역 보이게
+        borderRadius: 0,
+    },
+    iconRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        marginTop: 5,
+    },
+    iconButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconGroup: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 15,
+    },
+    icon: {
+        width: 26,
+        height: 26,
+        resizeMode: 'contain',
+        marginRight: 3,
+    },
+    iconText: {
+        fontSize: 14,
+        color: '#666',
+        marginLeft: 2,
+        width: 20,
+        textAlign: 'center',
+    },
+    icon2: {
+        width: 24,
+        height: 24,
+        marginRight: 1,
+        resizeMode: 'contain',
+    },
+    icon3: {
+        width: 20,
+        height: 24,
+        marginRight: 1,
+        resizeMode: 'contain',
+        marginLeft: 220,
+        marginBottom: 5
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+    },
+    row2: {
+        flexDirection: 'row',
+        marginLeft: -5,
+    },
+    row3: {
+        flexDirection: 'row',
+        marginLeft: -1,
+    },
+    row4: {
+        flexDirection: 'row',
+        marginLeft: -5,
+    },
+    singleImage: {
+        width: 363,
+        height: 363,
+        marginLeft: -1,
+        resizeMode: 'cover',
+    },
+    multiImage: {
+        width: 177,
+        height: 177,
+        margin: 4,
+        resizeMode: 'cover',
+    },
+    squadImage: {
+        width: 177,
+        height: 177,
+        margin: 4,
+        resizeMode: 'cover',
+    },
+    bestCommentPreview: {
+        backgroundColor: '#F3F3F3',
+        borderRadius: 8,
+        marginTop: 14,
+        marginBottom: 1,
+        padding: 12,
+        marginHorizontal: -8
+    },
+    commentHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    commentProfileImg: {
+        width: 29,
+        height: 29,
+        borderRadius: 16,
+        marginRight: 8,
+    },
+    commentUsername: {
+        fontWeight: 'bold',
+    },
+    commentInfo: {
+        color: '#888',
+        fontSize: 12,
+    },
+    bestCommentText: {
+        color: '#333',
+        fontSize: 15,
+        marginVertical: 4,
+        marginLeft: 37,
     },
     bottomNav: {
         flexDirection: 'row',

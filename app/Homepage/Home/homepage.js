@@ -1,10 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import styles from '../../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../../Navigator/BottomTabNavigator';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
+import API_CONFIG from '../../DB/api';
+
+// 이미지 로딩 컴포넌트
+const ImageWithLoading = ({ uri, style, loadingStyle }) => {
+    const [isLoading, setIsLoading] = useState(true);
+
+    return (
+        <View style={[style, isLoading && { backgroundColor: '#eee' }]}>
+            <Image
+                source={{ uri }}
+                style={[style, { position: 'absolute' }]}
+                onLoadEnd={() => setIsLoading(false)}
+            />
+            {isLoading && (
+                <View style={[loadingStyle, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <ActivityIndicator size="small" color="#999" />
+                </View>
+            )}
+        </View>
+    );
+};
 
 const HomePage = () => {
     const navigation = useNavigation();
@@ -12,6 +33,9 @@ const HomePage = () => {
     const [isWriteToggleVisible, setWriteToggleVisible] = useState(false);
     const route = useRoute();
     const { userData, phone, name, region } = useLocalSearchParams();
+    const [popularPosts, setPopularPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
 
@@ -88,39 +112,281 @@ const HomePage = () => {
         }
     };
 
+    useEffect(() => {
+        fetchPopularPosts();
+    }, []);
 
-    const posts = [
-        {
-            id: '1',
-            username: '충북음성 이준호',
-            time: '1시간 전',
-            text: '충북 음성 싱싱한 복숭아 과일 살 사람 구합니다.',
-            profileImage: require('../../../assets/leejunho.png'),
-            images: [require('../../../assets/peach.png'), require('../../../assets/mandarin.png')],
-        },
-    ];
+    const fetchPopularPosts = async () => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/popular`);
+            if (!response.ok) {
+                throw new Error('인기 게시글을 가져오는데 실패했습니다.');
+            }
+            const data = await response.json();
+            console.log('서버 응답 데이터:', JSON.stringify(data, null, 2));
+            setPopularPosts(data);
+        } catch (error) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 날짜 포맷팅 함수 수정
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        
+        try {
+            // 이미 포맷팅된 날짜 문자열인 경우 연도 제거하고 24시간 형식으로 변환
+            if (dateString.includes('년') && dateString.includes('월') && dateString.includes('일')) {
+                return dateString
+                    .replace(/\d{4}년\s/, '')
+                    .replace(/오전\s/, '')
+                    .replace(/오후\s/, (match) => {
+                        const hour = parseInt(dateString.match(/(\d+):/)[1]);
+                        return hour < 12 ? `${hour + 12}:` : `${hour}:`;
+                    })
+                    .replace(/:\d{2}$/, ''); // 초 단위 제거
+            }
+
+            // ISO 형식의 날짜인 경우
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                console.log('유효하지 않은 날짜:', dateString);
+                return '';
+            }
+            
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hour = date.getHours().toString().padStart(2, '0');
+            const minute = date.getMinutes().toString().padStart(2, '0');
+            
+            return `${month}월 ${day}일 ${hour}:${minute}`;
+        } catch (error) {
+            console.error('날짜 포맷팅 에러:', error);
+            return '';
+        }
+    };
+
+    // 이미지 렌더링 함수
+    const renderImages = (images) => {
+        if (!images || images.length === 0) return null;
+        if (images.length === 1) {
+            return (
+                <ImageWithLoading
+                    uri={images[0]}
+                    style={styles.singleImage}
+                    loadingStyle={{ width: 300, height: 300 }}
+                />
+            );
+        }
+        if (images.length === 2) {
+            return (
+                <View style={styles.row2}>
+                    <ImageWithLoading
+                        uri={images[0]}
+                        style={styles.multiImage}
+                        loadingStyle={{ width: 200, height: 200 }}
+                    />
+                    <ImageWithLoading
+                        uri={images[1]}
+                        style={styles.multiImage}
+                        loadingStyle={{ width: 200, height: 200 }}
+                    />
+                </View>
+            );
+        }
+        if (images.length === 3) {
+            return (
+                <View style={styles.row3}>
+                    <ImageWithLoading
+                        uri={images[0]}
+                        style={styles.leftLargeImage}
+                        loadingStyle={{ width: 236, height: 236 }}
+                    />
+                    <View style={styles.rightColumn}>
+                        <ImageWithLoading
+                            uri={images[1]}
+                            style={styles.rightSmallImage}
+                            loadingStyle={{ width: 114, height: 114 }}
+                        />
+                        <ImageWithLoading
+                            uri={images[2]}
+                            style={styles.rightSmallImage}
+                            loadingStyle={{ width: 114, height: 114 }}
+                        />
+                    </View>
+                </View>
+            );
+        }
+        // 4장 이상
+        return (
+            <>
+                <View style={styles.row4}>
+                    <ImageWithLoading
+                        uri={images[0]}
+                        style={styles.squadImage}
+                        loadingStyle={{ width: 180, height: 180 }}
+                    />
+                    <ImageWithLoading
+                        uri={images[1]}
+                        style={styles.squadImage}
+                        loadingStyle={{ width: 180, height: 180 }}
+                    />
+                </View>
+                <View style={styles.row4}>
+                    <ImageWithLoading
+                        uri={images[2]}
+                        style={styles.squadImage}
+                        loadingStyle={{ width: 180, height: 180 }}
+                    />
+                    <View>
+                        <ImageWithLoading
+                            uri={images[3]}
+                            style={styles.squadImage}
+                            loadingStyle={{ width: 180, height: 180 }}
+                        />
+                        {images.length > 4 && (
+                            <View style={styles.overlay}>
+                                <Text style={styles.overlayText}>+{images.length - 4}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </>
+        );
+    };
+
+    const renderPost = (post) => {
+        return (
+            <View key={post.id} style={styles.postBox}>
+                <View style={styles.postHeader}>
+                    <Image
+                        source={post.profileImage ? { uri: post.profileImage } : require('../../../assets/usericon.png')}
+                        style={styles.profileImg}
+                    />
+                    <View style={styles.userInfoContainer}>
+                        <Text style={styles.username}>[{post.region || '지역 미설정'}] {post.username}</Text>
+                        <Text style={styles.time}>{post.introduction || '소개 미설정'} · {formatDate(post.createdAt)}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => {
+                        Alert.alert(
+                            "게시글 신고",
+                            "이 게시글을 신고하시겠습니까?",
+                            [
+                                {
+                                    text: "아니요",
+                                    style: "cancel"
+                                },
+                                {
+                                    text: "예",
+                                    onPress: () => {
+                                        Alert.alert(
+                                            "신고 완료",
+                                            "게시글이 신고되었습니다.",
+                                            [{ text: "확인" }],
+                                            { cancelable: true }
+                                        );
+                                    }
+                                }
+                            ]
+                        );
+                    }}>
+                        <Image source={require('../../../assets/moreicon.png')} style={styles.moreBtn} />
+                    </TouchableOpacity>
+                </View>
+                <Text style={styles.postText}>{post.content}</Text>
+                {post.image_urls && post.image_urls.length > 0 && (
+                    <View style={styles.postImages}>
+                        {renderImages(post.image_urls)}
+                    </View>
+                )}
+                <View style={styles.iconRow}>
+                    <View style={styles.iconGroup}>
+                        <Image source={require('../../../assets/hearticon.png')} style={styles.icon} />
+                        <Text style={styles.iconText}>{post.likes}</Text>
+                    </View>
+                    <View style={styles.iconGroup}>
+                        <Image source={require('../../../assets/commenticon.png')} style={styles.icon} />
+                        <Text style={styles.iconText}>{post.commentCount}</Text>
+                    </View>
+                </View>
+                {post.best_comment_content && (
+                    <View style={styles.bestCommentPreview}>
+                        <View style={styles.commentHeader}>
+                            <Image
+                                source={post.best_comment_profile && post.best_comment_profile !== '프로필 미설정' ? { uri: post.best_comment_profile } : require('../../../assets/usericon.png')}
+                                style={styles.commentProfileImg}
+                            />
+                            <View style={styles.userInfoContainer}>
+                                <Text style={styles.commentUsername}>[{post.best_comment_region || '지역 미설정'}] {post.best_comment_user}</Text>
+                                <Text style={styles.commentInfo}>{post.best_comment_introduction || '소개 미설정'} · {post.best_comment_time ? formatDate(post.best_comment_time) : ''}</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => {
+                                Alert.alert(
+                                    "댓글 신고",
+                                    "이 댓글을 신고하시겠습니까?",
+                                    [
+                                        {
+                                            text: "아니요",
+                                            style: "cancel"
+                                        },
+                                        {
+                                            text: "예",
+                                            onPress: () => {
+                                                Alert.alert(
+                                                    "신고 완료",
+                                                    "댓글이 신고되었습니다.",
+                                                    [{ text: "확인" }],
+                                                    { cancelable: true }
+                                                );
+                                            }
+                                        }
+                                    ]
+                                );
+                            }}>
+                                <Image source={require('../../../assets/moreicon.png')} style={styles.moreBtn2} />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.bestCommentText}>{post.best_comment_content}</Text>
+                    </View>
+                )}
+            </View>
+        );
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-
             <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-
-            {/* ✅ 드로어는 항상 존재하되 조건부 style만 바꿈 */}
             <View
                 style={[
                     styles.drawerOverlay,
                     { display: isDrawerVisible ? 'flex' : 'none' },
                 ]}
             >
-                {/* 배경 클릭 시 닫기 */}
                 <TouchableOpacity
                     style={styles.drawerBackground}
                     onPress={closeDrawer}
                     activeOpacity={1}
                 />
 
-                {/* 드로어 슬라이드 메뉴 */}
                 <Animated.View
                     style={[
                         styles.drawerStatic,
@@ -131,7 +397,6 @@ const HomePage = () => {
                         <Image source={require('../../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
                     </TouchableOpacity>
 
-                    {/* drawerTitle, drawerItem 등은 그대로 유지 */}
                     <Text style={styles.drawerTitle}>정보</Text>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => {
                         router.push({
@@ -147,14 +412,12 @@ const HomePage = () => {
                         <Image source={require('../../../assets/profileicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>프로필</Text>
                     </TouchableOpacity>
-                    {/* 장터 */}
                     <Text style={styles.drawerTitle}>장터</Text>
                     <TouchableOpacity style={styles.drawerItem}>
                         <Image source={require('../../../assets/shopicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>장터</Text>
                     </TouchableOpacity>
 
-                    {/* 농사 정보 */}
                     <Text style={styles.drawerTitle}>농사 정보</Text>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage' })}>
                         <Image source={require('../../../assets/directdeposit2.png')} style={styles.drawerIcon} />
@@ -173,7 +436,6 @@ const HomePage = () => {
                         <Text style={styles.drawerText}>병해충</Text>
                     </TouchableOpacity>
 
-                    {/* 농사 게시판 */}
                     <Text style={styles.drawerTitle}>농사 게시판</Text>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('자유주제')}>
                         <Image source={require('../../../assets/freetopic2.png')} style={styles.drawerIcon} />
@@ -188,7 +450,6 @@ const HomePage = () => {
                         <Text style={styles.drawerText}>농사질문</Text>
                     </TouchableOpacity>
 
-                    {/* AI */}
                     <Text style={styles.drawerTitle}>AI</Text>
                     <TouchableOpacity style={styles.drawerItem}>
                         <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
@@ -197,15 +458,11 @@ const HomePage = () => {
                 </Animated.View>
             </View>
 
-
-            {/* ✅ 상단 검색 바 */}
             <View style={styles.searchBarContainer}>
-                {/* 햄버거 버튼 */}
                 <TouchableOpacity style={styles.menuIconWrapper} onPress={openDrawer}>
                     <FontAwesome name="bars" size={20} color="#555" />
                 </TouchableOpacity>
 
-                {/* 검색창 박스만 회색 배경 */}
                 <View style={styles.searchBox}>
                     <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
                     <TextInput
@@ -215,13 +472,11 @@ const HomePage = () => {
                     />
                 </View>
 
-                {/* 종 아이콘 */}
                 <TouchableOpacity style={styles.bellIconWrapper}>
                     <Image source={require('../../../assets/bellicon.png')} />
                 </TouchableOpacity>
             </View>
 
-            {/* 상단 메뉴 */}
             <View style={styles.menuContainer}>
                 <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사질문')}>
                     <Image source={require('../../../assets/farmingquestions4.png')} style={styles.menuIcon} />
@@ -235,88 +490,27 @@ const HomePage = () => {
                     <Image source={require('../../../assets/freetopic4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>자유주제</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage', params: {
-                    userData: route.params?.userData,
-                    phone: route.params?.phone,
-                    name: route.params?.name,
-                    region: route.params?.region
-                } })}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => router.push({
+                    pathname: '/Homepage/Home/directpaymentpage', params: {
+                        userData: route.params?.userData,
+                        phone: route.params?.phone,
+                        name: route.params?.name,
+                        region: route.params?.region
+                    }
+                })}>
                     <Image source={require('../../../assets/directdeposit4.png')} style={styles.menuIcon} />
                     <Text style={styles.menuText}>직불금계산</Text>
                 </TouchableOpacity>
             </View>
 
-            {/* 추천글 & 이웃글 탭 */}
             <View style={styles.tabContainer}>
                 <Text style={styles.activeTab}>인기글</Text>
             </View>
 
-            {/* 게시글 목록 */}
-            <FlatList
-                data={posts}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.post}>
-                        <View style={styles.postHeader}>
-                            <Image source={item.profileImage} style={styles.profileImage} />
-                            <View>
-                                <Text style={styles.username}>{item.username}</Text>
-                                <Text style={styles.postTime}>{item.time}</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.postText}>{item.text}</Text>
-                        <View style={styles.postImages}>
-                            {item.images.map((img, index) => (
-                                <Image key={index} source={img} style={styles.postImage} />
-                            ))}
-                        </View>
-                    </View>
-                )}
-            />
-            <FlatList
-                data={posts}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.post}>
-                        <View style={styles.postHeader}>
-                            <Image source={item.profileImage} style={styles.profileImage} />
-                            <View>
-                                <Text style={styles.username}>{item.username}</Text>
-                                <Text style={styles.postTime}>{item.time}</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.postText}>{item.text}</Text>
-                        <View style={styles.postImages}>
-                            {item.images.map((img, index) => (
-                                <Image key={index} source={img} style={styles.postImage} />
-                            ))}
-                        </View>
-                    </View>
-                )}
-            />
-            <FlatList
-                data={posts}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.post}>
-                        <View style={styles.postHeader}>
-                            <Image source={item.profileImage} style={styles.profileImage} />
-                            <View>
-                                <Text style={styles.username}>{item.username}</Text>
-                                <Text style={styles.postTime}>{item.time}</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.postText}>{item.text}</Text>
-                        <View style={styles.postImages}>
-                            {item.images.map((img, index) => (
-                                <Image key={index} source={img} style={styles.postImage} />
-                            ))}
-                        </View>
-                    </View>
-                )}
-            />
+            <ScrollView>
+                {popularPosts.map(post => renderPost(post))}
+            </ScrollView>
 
-            {/* ✅ 딤처리 배경 (글쓰기 토글 켜졌을 때만 보임) */}
             {isWriteToggleVisible && (
                 <TouchableOpacity
                     activeOpacity={1}
@@ -333,11 +527,10 @@ const HomePage = () => {
                 />
             )}
 
-            {/* ✅ 글쓰기 토글 메뉴 (말풍선 모양) */}
             {isWriteToggleVisible && (
                 <View style={{
                     position: 'absolute',
-                    bottom: 200, // ← X 버튼보다 위로 올라오게
+                    bottom: 200,
                     right: 20,
                     backgroundColor: 'white',
                     borderRadius: 15,
@@ -445,7 +638,6 @@ const HomePage = () => {
                 </View>
             )}
 
-            {/* ✅ 글쓰기 플로팅 버튼 */}
             <TouchableOpacity
                 style={[
                     styles.writeButton,
