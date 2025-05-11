@@ -232,16 +232,21 @@ export const styles = StyleSheet.create({
     color: '#fff',
   },
   tabContainer: {
-    flex: 0.7,
-    flexDirection: 'column',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   selectedTab: {
-    borderBottomWidth: 2,
     borderBottomColor: '#000',
   },
   tabText: {
@@ -250,7 +255,11 @@ export const styles = StyleSheet.create({
   },
   selectedTabText: {
     color: '#000',
-    fontWeight: 'bold',
+    fontWeight: '500',
+  },
+  tabContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
   },
   priceContainer: {
     flex: 1,
@@ -517,5 +526,56 @@ export const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 20,
+  },
+  auctionItem: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  auctionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  auctionVariety: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  auctionTime: {
+    fontSize: 14,
+    color: '#666',
+  },
+  auctionDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  auctionGrade: {
+    fontSize: 15,
+    color: '#444',
+    flex: 2,
+  },
+  auctionQuantity: {
+    fontSize: 15,
+    color: '#444',
+    flex: 1,
+    textAlign: 'center',
+  },
+  auctionPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    flex: 2,
+    textAlign: 'right',
   },
 }); 

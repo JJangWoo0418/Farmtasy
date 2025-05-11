@@ -19,7 +19,7 @@ export default function Layout() {
                 }}
             />
             <Stack.Screen 
-                name="FarmInfo/MarketPrice" 
+                name="FarmInfo/MarketPriceScreen" 
                 options={{
                     title: '작물시세',
                     headerBackTitle: '뒤로'

@@ -183,7 +183,7 @@ export default function Home() {
             <Text style={styles.menuText}>작물 상태</Text>
           </View>
         </TouchableOpacity>
-        <Link href="/FarmInfo/MarketPrice" asChild>
+        <Link href="/FarmInfo/MarketPriceScreen" asChild>
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuContent}>
               <Text style={styles.menuIcon}>📊</Text>
