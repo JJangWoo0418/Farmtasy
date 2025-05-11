@@ -169,6 +169,10 @@ export default StyleSheet.create({
         alignItems: 'center',
         marginRight: 15,
     },
+    iconContainer:{
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     icon: {
         width: 26,
         height: 26,

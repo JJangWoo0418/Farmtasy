@@ -1156,6 +1156,7 @@ app.get('/api/comment/user-posts', async (req, res) => {
 // 각 카테고리별 인기 게시글 가져오기
 app.get('/api/posts/popular', async (req, res) => {
     console.log('인기 게시글 요청 받음');
+    const { user_phone } = req.query;
     
     try {
         const categories = ['농사질문', '농사공부', '자유주제'];
@@ -1163,7 +1164,6 @@ app.get('/api/posts/popular', async (req, res) => {
 
         for (const category of categories) {
             console.log(`${category} 카테고리 게시글 조회 중...`);
-            
             const [posts] = await pool.query(`
                 SELECT 
                     p.post_id as id,
@@ -1177,6 +1177,8 @@ app.get('/api/posts/popular', async (req, res) => {
                     p.post_like as likes,
                     u.introduction,
                     u.profile_image as profileImage,
+                    CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
+                    CASE WHEN pb.id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
                     (SELECT COUNT(*) FROM Comment c WHERE c.post_id = p.post_id) as commentCount,
                     (
                         SELECT c2.comment_content
@@ -1298,10 +1300,12 @@ app.get('/api/posts/popular', async (req, res) => {
                     ) as best_comment_introduction
                 FROM post p
                 LEFT JOIN user u ON p.phone = u.phone
+                LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
+                LEFT JOIN post_bookmarks pb ON p.post_id = pb.post_id AND pb.user_phone = ?
                 WHERE p.post_category = ?
                 ORDER BY p.post_like DESC
                 LIMIT 1
-            `, [category]);
+            `, [user_phone || '', user_phone || '', category]);
 
             console.log(`${category} 카테고리 조회 결과:`, posts.length > 0 ? '게시글 있음' : '게시글 없음');
 
@@ -1331,7 +1335,9 @@ app.get('/api/posts/popular', async (req, res) => {
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                    })
+                    }),
+                    is_liked: post.is_liked === 1,
+                    is_bookmarked: post.is_bookmarked === 1
                 };
                 popularPosts.push(formattedPost);
             }
@@ -1366,10 +1372,10 @@ app.listen(PORT, '0.0.0.0', async () => {
         `);
         console.log('post 테이블 likes 컬럼 추가 완료');
 
-        // 서버 시작 시 테이블 확인
+    // 서버 시작 시 테이블 확인
         const [tables] = await pool.query("SHOW TABLES");
-        console.log('테이블 확인 결과:', tables);
-        tables.forEach(table => {
+            console.log('테이블 확인 결과:', tables);
+            tables.forEach(table => {
             console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);
         });
     } catch (err) {

@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert, Platform, ToastAndroid } from 'react-native';
 import styles from '../../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../../Navigator/BottomTabNavigator';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import API_CONFIG from '../../DB/api';
+import { Ionicons } from '@expo/vector-icons';
 
 // 이미지 로딩 컴포넌트
 const ImageWithLoading = ({ uri, style, loadingStyle }) => {
@@ -36,6 +37,10 @@ const HomePage = () => {
     const [popularPosts, setPopularPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [likedPosts, setLikedPosts] = useState({});
+    const [bookmarkedPosts, setBookmarkedPosts] = useState({});
+    const heartAnimationsRef = useRef({});
+    const bookmarkAnimationsRef = useRef({});
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
 
@@ -118,13 +123,24 @@ const HomePage = () => {
 
     const fetchPopularPosts = async () => {
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/popular`);
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/popular?user_phone=${phone}`);
             if (!response.ok) {
                 throw new Error('인기 게시글을 가져오는데 실패했습니다.');
             }
             const data = await response.json();
             console.log('서버 응답 데이터:', JSON.stringify(data, null, 2));
+            
+            // 북마크/좋아요 상태 초기화
+            const initialBookmarks = {};
+            const initialLikes = {};
+            data.forEach(post => {
+                initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
+                initialLikes[post.id] = post.is_liked === true || post.is_liked === 1;
+            });
+            
             setPopularPosts(data);
+            setBookmarkedPosts(initialBookmarks);
+            setLikedPosts(initialLikes);
         } catch (error) {
             setError(error.message);
         } finally {
@@ -135,7 +151,7 @@ const HomePage = () => {
     // 날짜 포맷팅 함수 수정
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        
+
         try {
             // 이미 포맷팅된 날짜 문자열인 경우 연도 제거하고 24시간 형식으로 변환
             if (dateString.includes('년') && dateString.includes('월') && dateString.includes('일')) {
@@ -155,12 +171,12 @@ const HomePage = () => {
                 console.log('유효하지 않은 날짜:', dateString);
                 return '';
             }
-            
+
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const day = date.getDate().toString().padStart(2, '0');
             const hour = date.getHours().toString().padStart(2, '0');
             const minute = date.getMinutes().toString().padStart(2, '0');
-            
+
             return `${month}월 ${day}일 ${hour}:${minute}`;
         } catch (error) {
             console.error('날짜 포맷팅 에러:', error);
@@ -257,7 +273,158 @@ const HomePage = () => {
         );
     };
 
+    // 게시글 데이터 fetch 시 북마크 상태도 함께 가져오기
+    useEffect(() => {
+        const fetchPosts = async () => {
+            setLoading(true);
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/popular?user_phone=${phone}`);
+                const data = await response.json();
+                setPosts(Array.isArray(data) ? data : []);
+                
+                // 북마크/좋아요 상태 초기화
+                const initialBookmarks = {};
+                const initialLikes = {};
+                (Array.isArray(data) ? data : []).forEach(post => {
+                    initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
+                    initialLikes[post.id] = post.is_liked === true || post.is_liked === 1;
+                });
+                setBookmarkedPosts(initialBookmarks);
+                setLikedPosts(initialLikes);
+            } catch (e) {
+                setPosts([]);
+                setBookmarkedPosts({});
+                setLikedPosts({});
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (phone) fetchPosts();
+    }, [phone]);
+
+    // 좋아요 핸들러 useCallback (북마크와 동일하게)
+    const handleLike = useCallback(async (postId, currentLike) => {
+        // 하트 애니메이션 동작
+        if (!heartAnimationsRef.current[postId]) {
+            heartAnimationsRef.current[postId] = new Animated.Value(1);
+        }
+        Animated.sequence([
+            Animated.timing(heartAnimationsRef.current[postId], {
+                toValue: 1.5,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.spring(heartAnimationsRef.current[postId], {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    postId,
+                    like: !currentLike,
+                    phone
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('좋아요 처리 실패');
+            }
+
+            // likedPosts만 즉시 갱신
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+            // posts의 likes, is_liked도 즉시 갱신
+            setPosts(prev =>
+                prev.map(post =>
+                    post.id === postId
+                        ? {
+                            ...post,
+                            is_liked: !currentLike,
+                            likes: post.likes + (!currentLike ? 1 : -1)
+                        }
+                        : post
+                )
+            );
+        } catch (error) {
+            // 에러 처리 (필요시)
+        }
+    }, [phone]);
+
+    // 북마크 애니메이션 및 상태 토글 useCallback
+    const handleBookmark = useCallback(async (postId) => {
+        if (!bookmarkAnimationsRef.current[postId]) {
+            bookmarkAnimationsRef.current[postId] = new Animated.Value(1);
+        }
+        Animated.sequence([
+            Animated.timing(bookmarkAnimationsRef.current[postId], {
+                toValue: 1.5,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.spring(bookmarkAnimationsRef.current[postId], {
+                toValue: 1,
+                friction: 3,
+                tension: 40,
+                useNativeDriver: true,
+            })
+        ]).start();
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post_bookmarks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    post_id: postId,
+                    user_phone: phone
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('북마크 처리 실패');
+            }
+
+            const result = await response.json();
+            setBookmarkedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+
+            // 알림
+            if (Platform.OS === 'android') {
+                ToastAndroid.show(
+                    result.is_bookmarked
+                        ? '북마크 리스트에 추가되었습니다.'
+                        : '북마크가 해제되었습니다.',
+                    ToastAndroid.SHORT
+                );
+            } else {
+                Alert.alert(
+                    result.is_bookmarked
+                        ? '북마크 리스트에 추가되었습니다.'
+                        : '북마크가 해제되었습니다.'
+                );
+            }
+        } catch (error) {
+            // 에러 처리 (필요시)
+        }
+    }, [phone]);
+
+    // 게시글 렌더링 함수 수정
     const renderPost = (post) => {
+        const isLiked = likedPosts[post.id] || post.is_liked;
+        const isBookmarked = bookmarkedPosts[post.id] || post.is_bookmarked;
+        const heartAnimation = heartAnimationsRef.current[post.id] || new Animated.Value(1);
+        const bookmarkAnimation = bookmarkAnimationsRef.current[post.id] || new Animated.Value(1);
+
         return (
             <View key={post.id} style={styles.postBox}>
                 <View style={styles.postHeader}>
@@ -302,13 +469,32 @@ const HomePage = () => {
                     </View>
                 )}
                 <View style={styles.iconRow}>
-                    <View style={styles.iconGroup}>
-                        <Image source={require('../../../assets/hearticon.png')} style={styles.icon} />
+                    <View style={[styles.iconGroup, styles.likeIconGroup]}>
+                        <TouchableOpacity onPress={() => handleLike(post.id, isLiked)}>
+                            <Animated.Image
+                                source={isLiked ? require('../../../assets/heartgreenicon.png') : require('../../../assets/hearticon.png')}
+                                style={[
+                                    styles.icon,
+                                    { transform: [{ scale: heartAnimation }] }
+                                ]}
+                            />
+                        </TouchableOpacity>
                         <Text style={styles.iconText}>{post.likes}</Text>
                     </View>
-                    <View style={styles.iconGroup}>
+                    <View style={styles.iconContainer}>
                         <Image source={require('../../../assets/commenticon.png')} style={styles.icon} />
-                        <Text style={styles.iconText}>{post.commentCount}</Text>
+                        <Text style={styles.iconText}>{post.commentCount || 0}</Text>
+                    </View>
+                    <View style={styles.iconGroup}>
+                        <TouchableOpacity onPress={() => handleBookmark(post.id)}>
+                            <Animated.Image
+                                source={isBookmarked ? require('../../../assets/bookmarkgreenicon.png') : require('../../../assets/bookmarkicon.png')}
+                                style={[
+                                    styles.icon3,
+                                    { transform: [{ scale: bookmarkAnimation }] }
+                                ]}
+                            />
+                        </TouchableOpacity>
                     </View>
                 </View>
                 {post.best_comment_content && (
@@ -492,10 +678,10 @@ const HomePage = () => {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={() => router.push({
                     pathname: '/Homepage/Home/directpaymentpage', params: {
-                        userData: route.params?.userData,
-                        phone: route.params?.phone,
-                        name: route.params?.name,
-                        region: route.params?.region
+                    userData: route.params?.userData,
+                    phone: route.params?.phone,
+                    name: route.params?.name,
+                    region: route.params?.region
                     }
                 })}>
                     <Image source={require('../../../assets/directdeposit4.png')} style={styles.menuIcon} />
