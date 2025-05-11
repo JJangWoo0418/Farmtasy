@@ -168,6 +168,7 @@ export default function MarketPriceScreen() {
   const [loadingDots, setLoadingDots] = useState(''); // 로딩 점 상태 추가
   const [expandedBox, setExpandedBox] = useState(null); // 전국시세 상세 토글 상태
   const [sortType, setSortType] = useState(null); // 정렬 타입 상태 추가
+  const [auctionPrevData, setAuctionPrevData] = useState([]); // 전국시세 전날 데이터 state 추가
 
   // 로딩 점 애니메이션 효과
   useEffect(() => {
@@ -258,6 +259,7 @@ export default function MarketPriceScreen() {
       try {
         // 실시간 경락 정보 (모든 도매시장 코드 반복)
         let auctionAll = [];
+        let auctionPrevAll = [];
         for (const market of marketCodes) {
           const auctionRows = await fetchAuctionPrice({
             date: formatDate(selectedDate),
@@ -267,8 +269,18 @@ export default function MarketPriceScreen() {
             small,
           });
           auctionAll = auctionAll.concat(auctionRows);
+          // 전날 데이터도 받아오기
+          const auctionPrevRows = await fetchAuctionPrice({
+            date: getPrevDate(selectedDate),
+            marketCode: market.CODEID,
+            large,
+            mid,
+            small,
+          });
+          auctionPrevAll = auctionPrevAll.concat(auctionPrevRows);
         }
         setAuctionData(auctionAll);
+        setAuctionPrevData(auctionPrevAll); // 새 state로 저장
         // 정산 가격 정보 (모든 도매시장 코드 반복)
         let settlementAll = [];
         for (const market of marketCodes) {
@@ -289,6 +301,13 @@ export default function MarketPriceScreen() {
     };
     fetchAll();
   }, [selectedList, selectedIndex, selectedDate, marketCodes]);
+
+  // 전날 날짜 구하기
+  function getPrevDate(date) {
+    const prev = new Date(date);
+    prev.setDate(prev.getDate() - 1);
+    return formatDate(prev);
+  }
 
   // 날짜 YYYYMMDD 포맷 함수
   function formatDate(date) {
@@ -706,7 +725,7 @@ export default function MarketPriceScreen() {
             const qty = item.QTY ? Number(item.QTY) + '개' : '-';
             // 규격/등급: kg 표기 소수점 1자리, kg 뒤에 띄우고 단위 분리
             let std = item.STD ? item.STD : '-';
-            // 예: 1.000kg상자 → 1kg 상자, 4.500kg상자 → 4.5kg 상자
+            // 예: 1.500kg상자 → 1.5kg 상자
             std = std.replace(/(\d+)(\.\d+)?kg([^\s]*)/, (m, n, d, unit) => {
               let v = d ? parseFloat(n + d) : parseInt(n);
               let kg = (d && parseFloat(d) !== 0) ? v.toFixed(1).replace(/\.0$/, '') + 'kg' : parseInt(v) + 'kg';
@@ -904,6 +923,34 @@ export default function MarketPriceScreen() {
                     const avgCost = specItems.length > 0 ? Math.round(specItems.reduce((sum, i) => sum + (Number(i.COST) || 0), 0) / specItems.length) : 0;
                     // 박스 클릭 시 상세 토글
                     const isExpanded = expandedBox === boxKey;
+
+                    // 전일대비 계산
+                    let diff = 0;
+                    let diffPercent = 0;
+                    if (auctionPrevData && auctionPrevData.length > 0) {
+                      // 전날 동일 도매사/규격/등급의 최고가 평균
+                      const prevItems = auctionPrevData.filter(row =>
+                        row.CMPNAME === cmp &&
+                        row.STD === maxItem.STD &&
+                        row.SMALLNAME === maxItem.SMALLNAME &&
+                        row.SANNAME === maxItem.SANNAME
+                      );
+                      // 디버깅용 콘솔
+                      console.log('[전국시세 전일대비 prevItems]', cmp, spec, prevItems);
+                      if (prevItems.length > 0) {
+                        const prevMax = Math.max(...prevItems.map(i => Number(i.COST) || 0));
+                        diff = maxItem.COST - prevMax;
+                        diffPercent = prevMax ? Math.round((diff / prevMax) * 100) : 0;
+                      }
+                    }
+
+                    // 도매시장명(지역명) 찾기
+                    let marketName = '-';
+                    if (marketCodes && marketCodes.length > 0 && maxItem.WHSALCD) {
+                      const foundMarket = marketCodes.find(m => m.CODEID === maxItem.WHSALCD);
+                      if (foundMarket && foundMarket.CODENAME) marketName = foundMarket.CODENAME;
+                    }
+
                     return (
                       <View key={boxKey} style={{ marginBottom: 18 }}>
                         <TouchableOpacity
@@ -925,7 +972,16 @@ export default function MarketPriceScreen() {
                           {/* 규격/등급, 최저가 */}
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
                             <Text style={{ fontSize: 15, color: '#444' }}>{spec}</Text>
-                            <Text style={{ color: '#0000FF', fontSize: 15 }}>최저 {minCost}</Text>
+                            <View style={{ alignItems: 'flex-end' }}>
+                              <Text style={{ color: '#0000FF', fontSize: 15 }}>최저 {minCost}</Text>
+                            </View>
+                          </View>
+                          {/* 전일대비와 지역명은 최저가 아래 한 줄씩 분리, 위치 바꿈 */}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                            <Text style={{ color: '#888', fontSize: 15 }}>{marketName}</Text>
+                            <Text style={{ color: diff === 0 ? '#888' : (diff < 0 ? '#0070f3' : '#FF0000'), fontSize: 15, textAlign: 'right' }}>
+                              {diff > 0 ? '+' : diff < 0 ? '' : ''}{diff.toLocaleString()}원({diffPercent > 0 ? '+' : diffPercent < 0 ? '' : ''}{diffPercent}%)
+                            </Text>
                           </View>
                         </TouchableOpacity>
                         {/* 상세 리스트: 박스가 확장된 경우만 표시 */}
