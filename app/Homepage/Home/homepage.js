@@ -128,7 +128,6 @@ const HomePage = () => {
                 throw new Error('인기 게시글을 가져오는데 실패했습니다.');
             }
             const data = await response.json();
-            console.log('서버 응답 데이터:', JSON.stringify(data, null, 2));
             
             // 북마크/좋아요 상태 초기화
             const initialBookmarks = {};
@@ -168,7 +167,6 @@ const HomePage = () => {
             // ISO 형식의 날짜인 경우
             const date = new Date(dateString);
             if (isNaN(date.getTime())) {
-                console.log('유효하지 않은 날짜:', dateString);
                 return '';
             }
 
@@ -179,7 +177,6 @@ const HomePage = () => {
 
             return `${month}월 ${day}일 ${hour}:${minute}`;
         } catch (error) {
-            console.error('날짜 포맷팅 에러:', error);
             return '';
         }
     };
@@ -302,7 +299,7 @@ const HomePage = () => {
         if (phone) fetchPosts();
     }, [phone]);
 
-    // 좋아요 핸들러 useCallback (북마크와 동일하게)
+    // 좋아요 핸들러 useCallback
     const handleLike = useCallback(async (postId, currentLike) => {
         // 하트 애니메이션 동작
         if (!heartAnimationsRef.current[postId]) {
@@ -323,6 +320,23 @@ const HomePage = () => {
         ]).start();
 
         try {
+            // 상태 즉시 업데이트
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+            setPopularPosts(prev =>
+                prev.map(post =>
+                    post.id === postId
+                        ? {
+                            ...post,
+                            is_liked: !currentLike,
+                            likes: post.likes + (!currentLike ? 1 : -1)
+                        }
+                        : post
+                )
+            );
+
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/post_like`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -334,26 +348,24 @@ const HomePage = () => {
             });
 
             if (!response.ok) {
+                // 실패 시 상태 되돌리기
+                setLikedPosts(prev => ({
+                    ...prev,
+                    [postId]: currentLike
+                }));
+                setPopularPosts(prev =>
+                    prev.map(post =>
+                        post.id === postId
+                            ? {
+                                ...post,
+                                is_liked: currentLike,
+                                likes: post.likes + (currentLike ? 1 : -1)
+                            }
+                            : post
+                    )
+                );
                 throw new Error('좋아요 처리 실패');
             }
-
-            // likedPosts만 즉시 갱신
-            setLikedPosts(prev => ({
-                ...prev,
-                [postId]: !prev[postId]
-            }));
-            // posts의 likes, is_liked도 즉시 갱신
-            setPosts(prev =>
-                prev.map(post =>
-                    post.id === postId
-                        ? {
-                            ...post,
-                            is_liked: !currentLike,
-                            likes: post.likes + (!currentLike ? 1 : -1)
-                        }
-                        : post
-                )
-            );
         } catch (error) {
             // 에러 처리 (필요시)
         }
@@ -379,6 +391,22 @@ const HomePage = () => {
         ]).start();
 
         try {
+            // 상태 즉시 업데이트
+            setBookmarkedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+            setPopularPosts(prev =>
+                prev.map(post =>
+                    post.id === postId
+                        ? {
+                            ...post,
+                            is_bookmarked: !post.is_bookmarked
+                        }
+                        : post
+                )
+            );
+
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/post_bookmarks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -389,15 +417,25 @@ const HomePage = () => {
             });
 
             if (!response.ok) {
+                // 실패 시 상태 되돌리기
+                setBookmarkedPosts(prev => ({
+                    ...prev,
+                    [postId]: !prev[postId]
+                }));
+                setPopularPosts(prev =>
+                    prev.map(post =>
+                        post.id === postId
+                            ? {
+                                ...post,
+                                is_bookmarked: !post.is_bookmarked
+                            }
+                            : post
+                    )
+                );
                 throw new Error('북마크 처리 실패');
             }
 
             const result = await response.json();
-            setBookmarkedPosts(prev => ({
-                ...prev,
-                [postId]: !prev[postId]
-            }));
-
             // 알림
             if (Platform.OS === 'android') {
                 ToastAndroid.show(

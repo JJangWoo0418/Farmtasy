@@ -1155,7 +1155,6 @@ app.get('/api/comment/user-posts', async (req, res) => {
 
 // 각 카테고리별 인기 게시글 가져오기
 app.get('/api/posts/popular', async (req, res) => {
-    console.log('인기 게시글 요청 받음');
     const { user_phone } = req.query;
     
     try {
@@ -1163,7 +1162,6 @@ app.get('/api/posts/popular', async (req, res) => {
         const popularPosts = [];
 
         for (const category of categories) {
-            console.log(`${category} 카테고리 게시글 조회 중...`);
             const [posts] = await pool.query(`
                 SELECT 
                     p.post_id as id,
@@ -1307,7 +1305,6 @@ app.get('/api/posts/popular', async (req, res) => {
                 LIMIT 1
             `, [user_phone || '', user_phone || '', category]);
 
-            console.log(`${category} 카테고리 조회 결과:`, posts.length > 0 ? '게시글 있음' : '게시글 없음');
 
             if (posts.length > 0) {
                 const post = posts[0];
