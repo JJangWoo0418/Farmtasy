@@ -1325,16 +1325,27 @@ app.get('/api/posts/popular', async (req, res) => {
                 // 날짜 포맷팅
                 const formattedPost = {
                     ...post,
+                    id: post.id,
+                    text: post.content,
+                    user: post.username,
+                    phone: post.phone,
+                    category: post.category,
+                    time: post.createdAt,
                     image_urls: imageUrls,
+                    region: post.region || '지역 미설정',
+                    introduction: post.introduction || '소개 미설정',
+                    likes: parseInt(post.likes) || 0,
+                    is_liked: post.is_liked === 1,
+                    is_bookmarked: post.is_bookmarked === 1,
+                    profile_image: post.profileImage || null,
+                    commentCount: parseInt(post.commentCount) || 0,
                     createdAt: new Date(post.createdAt).toLocaleString('ko-KR', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
-                    }),
-                    is_liked: post.is_liked === 1,
-                    is_bookmarked: post.is_bookmarked === 1
+                    })
                 };
                 popularPosts.push(formattedPost);
             }

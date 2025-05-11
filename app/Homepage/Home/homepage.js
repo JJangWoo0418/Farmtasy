@@ -129,15 +129,27 @@ const HomePage = () => {
             }
             const data = await response.json();
             
+            // 데이터 가공
+            const processedData = data.map(post => ({
+                ...post,
+                username: post.username || post.author_name,
+                profileImage: post.profileImage || post.author_profile,
+                region: post.region || post.author_region,
+                introduction: post.introduction || post.author_introduction,
+                createdAt: post.createdAt || post.created_at,
+                is_liked: post.is_liked === true || post.is_liked === 1,
+                is_bookmarked: post.is_bookmarked === true || post.is_bookmarked === 1
+            }));
+            
             // 북마크/좋아요 상태 초기화
             const initialBookmarks = {};
             const initialLikes = {};
-            data.forEach(post => {
-                initialBookmarks[post.id] = post.is_bookmarked === true || post.is_bookmarked === 1;
-                initialLikes[post.id] = post.is_liked === true || post.is_liked === 1;
+            processedData.forEach(post => {
+                initialBookmarks[post.id] = post.is_bookmarked;
+                initialLikes[post.id] = post.is_liked;
             });
             
-            setPopularPosts(data);
+            setPopularPosts(processedData);
             setBookmarkedPosts(initialBookmarks);
             setLikedPosts(initialLikes);
         } catch (error) {
@@ -154,14 +166,20 @@ const HomePage = () => {
         try {
             // 이미 포맷팅된 날짜 문자열인 경우 연도 제거하고 24시간 형식으로 변환
             if (dateString.includes('년') && dateString.includes('월') && dateString.includes('일')) {
+                const timeMatch = dateString.match(/(\d+):(\d+)/);
+                if (timeMatch) {
+                    const hour = parseInt(timeMatch[1]);
+                    const minute = timeMatch[2];
+                    return dateString
+                        .replace(/\d{4}년\s/, '')
+                        .replace(/오전\s/, '')
+                        .replace(/오후\s/, '')
+                        .replace(/\d+:\d+/, `${hour.toString().padStart(2, '0')}:${minute}`);
+                }
                 return dateString
                     .replace(/\d{4}년\s/, '')
                     .replace(/오전\s/, '')
-                    .replace(/오후\s/, (match) => {
-                        const hour = parseInt(dateString.match(/(\d+):/)[1]);
-                        return hour < 12 ? `${hour + 12}:` : `${hour}:`;
-                    })
-                    .replace(/:\d{2}$/, ''); // 초 단위 제거
+                    .replace(/오후\s/, '');
             }
 
             // ISO 형식의 날짜인 경우
@@ -456,25 +474,62 @@ const HomePage = () => {
         }
     }, [phone]);
 
-    // 게시글 렌더링 함수 수정
-    const renderPost = (post) => {
-        const isLiked = likedPosts[post.id] || post.is_liked;
-        const isBookmarked = bookmarkedPosts[post.id] || post.is_bookmarked;
-        const heartAnimation = heartAnimationsRef.current[post.id] || new Animated.Value(1);
-        const bookmarkAnimation = bookmarkAnimationsRef.current[post.id] || new Animated.Value(1);
+    // 게시글 렌더링 함수를 useCallback으로 최적화
+    const renderPost = useCallback((post) => {
+        if (!post) return null;
+
+        // 애니메이션 값 초기화
+        if (!heartAnimationsRef.current[post.id]) {
+            heartAnimationsRef.current[post.id] = new Animated.Value(1);
+        }
+        if (!bookmarkAnimationsRef.current[post.id]) {
+            bookmarkAnimationsRef.current[post.id] = new Animated.Value(1);
+        }
+
+        const isLiked = likedPosts[post.id] || (post.is_liked === true || post.is_liked === 1);
+        const isBookmarked = bookmarkedPosts[post.id] || (post.is_bookmarked === true || post.is_bookmarked === 1);
 
         return (
-            <View key={post.id} style={styles.postBox}>
+            <TouchableOpacity 
+                key={post.id} 
+                style={styles.postBox}
+                onPress={() => {
+                    navigation.push('Homepage/Post/postdetailpage', {
+                        post: {
+                            ...post,
+                            phone: post.phone,
+                            username: post.username,
+                            profileImage: post.profileImage,
+                            region: post.region,
+                            introduction: post.introduction,
+                            createdAt: post.createdAt
+                        },
+                        introduction: post.introduction || '소개 미설정',
+                        phone: route.params?.phone,
+                        name: route.params?.name,
+                        region: route.params?.region,
+                        profile: route.params?.userData,
+                        introduction: route.params?.introduction,
+                        author: {
+                            username: post.username,
+                            profileImage: post.profileImage,
+                            region: post.region,
+                            introduction: post.introduction
+                        }
+                    });
+                }}
+            >
                 <View style={styles.postHeader}>
                     <Image
                         source={post.profileImage ? { uri: post.profileImage } : require('../../../assets/usericon.png')}
                         style={styles.profileImg}
                     />
                     <View style={styles.userInfoContainer}>
-                        <Text style={styles.username}>[{post.region || '지역 미설정'}] {post.username}</Text>
+                        <Text style={styles.username}>[{post.region || '지역 미설정'}] {post.username || '사용자'}</Text>
                         <Text style={styles.time}>{post.introduction || '소개 미설정'} · {formatDate(post.createdAt)}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => {
+                    <TouchableOpacity onPress={(e) => {
+                        e.stopPropagation();
                         Alert.alert(
                             "게시글 신고",
                             "이 게시글을 신고하시겠습니까?",
@@ -500,7 +555,7 @@ const HomePage = () => {
                         <Image source={require('../../../assets/moreicon.png')} style={styles.moreBtn} />
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.postText}>{post.content}</Text>
+                <Text style={styles.postText}>{post.content || ''}</Text>
                 {post.image_urls && post.image_urls.length > 0 && (
                     <View style={styles.postImages}>
                         {renderImages(post.image_urls)}
@@ -508,28 +563,34 @@ const HomePage = () => {
                 )}
                 <View style={styles.iconRow}>
                     <View style={[styles.iconGroup, styles.likeIconGroup]}>
-                        <TouchableOpacity onPress={() => handleLike(post.id, isLiked)}>
+                        <TouchableOpacity onPress={(e) => {
+                            e.stopPropagation();
+                            handleLike(post.id, isLiked);
+                        }}>
                             <Animated.Image
                                 source={isLiked ? require('../../../assets/heartgreenicon.png') : require('../../../assets/hearticon.png')}
                                 style={[
                                     styles.icon,
-                                    { transform: [{ scale: heartAnimation }] }
+                                    { transform: [{ scale: heartAnimationsRef.current[post.id] }] }
                                 ]}
                             />
                         </TouchableOpacity>
-                        <Text style={styles.iconText}>{post.likes}</Text>
+                        <Text style={styles.iconText}>{post.likes || 0}</Text>
                     </View>
                     <View style={styles.iconContainer}>
                         <Image source={require('../../../assets/commenticon.png')} style={styles.icon} />
                         <Text style={styles.iconText}>{post.commentCount || 0}</Text>
                     </View>
                     <View style={styles.iconGroup}>
-                        <TouchableOpacity onPress={() => handleBookmark(post.id)}>
+                        <TouchableOpacity onPress={(e) => {
+                            e.stopPropagation();
+                            handleBookmark(post.id);
+                        }}>
                             <Animated.Image
                                 source={isBookmarked ? require('../../../assets/bookmarkgreenicon.png') : require('../../../assets/bookmarkicon.png')}
                                 style={[
                                     styles.icon3,
-                                    { transform: [{ scale: bookmarkAnimation }] }
+                                    { transform: [{ scale: bookmarkAnimationsRef.current[post.id] }] }
                                 ]}
                             />
                         </TouchableOpacity>
@@ -543,10 +604,11 @@ const HomePage = () => {
                                 style={styles.commentProfileImg}
                             />
                             <View style={styles.userInfoContainer}>
-                                <Text style={styles.commentUsername}>[{post.best_comment_region || '지역 미설정'}] {post.best_comment_user}</Text>
+                                <Text style={styles.commentUsername}>[{post.best_comment_region || '지역 미설정'}] {post.best_comment_user || '사용자'}</Text>
                                 <Text style={styles.commentInfo}>{post.best_comment_introduction || '소개 미설정'} · {post.best_comment_time ? formatDate(post.best_comment_time) : ''}</Text>
                             </View>
-                            <TouchableOpacity onPress={() => {
+                            <TouchableOpacity onPress={(e) => {
+                                e.stopPropagation();
                                 Alert.alert(
                                     "댓글 신고",
                                     "이 댓글을 신고하시겠습니까?",
@@ -575,9 +637,9 @@ const HomePage = () => {
                         <Text style={styles.bestCommentText}>{post.best_comment_content}</Text>
                     </View>
                 )}
-            </View>
+            </TouchableOpacity>
         );
-    };
+    }, [handleLike, handleBookmark, likedPosts, bookmarkedPosts, route.params, formatDate, navigation]);
 
     if (loading) {
         return (
@@ -591,6 +653,62 @@ const HomePage = () => {
         return (
             <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>{error}</Text>
+            </View>
+        );
+    }
+
+    if (!popularPosts || popularPosts.length === 0) {
+        return (
+            <View style={styles.container}>
+                <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+                <View style={styles.searchBarContainer}>
+                    <TouchableOpacity style={styles.menuIconWrapper} onPress={openDrawer}>
+                        <FontAwesome name="bars" size={20} color="#555" />
+                    </TouchableOpacity>
+                    <View style={styles.searchBox}>
+                        <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder=" 지금 필요한 농자재 검색"
+                            placeholderTextColor="#aaa"
+                        />
+                    </View>
+                    <TouchableOpacity style={styles.bellIconWrapper}>
+                        <Image source={require('../../../assets/bellicon.png')} />
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.menuContainer}>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사질문')}>
+                        <Image source={require('../../../assets/farmingquestions4.png')} style={styles.menuIcon} />
+                        <Text style={styles.menuText}>농사질문</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사공부')}>
+                        <Image source={require('../../../assets/studyfarming4.png')} style={styles.menuIcon} />
+                        <Text style={styles.menuText}>농사공부</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('자유주제')}>
+                        <Image source={require('../../../assets/freetopic4.png')} style={styles.menuIcon} />
+                        <Text style={styles.menuText}>자유주제</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => router.push({
+                        pathname: '/Homepage/Home/directpaymentpage', params: {
+                        userData: route.params?.userData,
+                        phone: route.params?.phone,
+                        name: route.params?.name,
+                        region: route.params?.region
+                        }
+                    })}>
+                        <Image source={require('../../../assets/directdeposit4.png')} style={styles.menuIcon} />
+                        <Text style={styles.menuText}>직불금계산</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.tabContainer}>
+                    <Text style={styles.activeTab}>인기글</Text>
+                </View>
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>아직 게시글이 없습니다.</Text>
+                </View>
+                <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />
             </View>
         );
     }
@@ -732,7 +850,7 @@ const HomePage = () => {
             </View>
 
             <ScrollView>
-                {popularPosts.map(post => renderPost(post))}
+                {popularPosts.map(post => post && renderPost(post))}
             </ScrollView>
 
             {isWriteToggleVisible && (
