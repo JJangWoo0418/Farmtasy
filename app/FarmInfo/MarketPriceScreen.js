@@ -166,6 +166,8 @@ export default function MarketPriceScreen() {
   const [settlementData, setSettlementData] = useState([]); // 정산 가격 정보
   const [loading, setLoading] = useState(false); // 로딩 상태
   const [loadingDots, setLoadingDots] = useState(''); // 로딩 점 상태 추가
+  const [expandedBox, setExpandedBox] = useState(null); // 전국시세 상세 토글 상태
+  const [sortType, setSortType] = useState(null); // 정렬 타입 상태 추가
 
   // 로딩 점 애니메이션 효과
   useEffect(() => {
@@ -198,6 +200,13 @@ export default function MarketPriceScreen() {
     loadSelectedList();
   }, []);
 
+  // 작물/품종이 존재하면 자동으로 첫 번째(0번) 인덱스를 선택
+  useEffect(() => {
+    if (selectedList.length > 0 && selectedIndex === null) {
+      setSelectedIndex(0);
+    }
+  }, [selectedList]);
+
   // 선택된 품종/작물 AsyncStorage에 저장
   useEffect(() => {
     const saveSelectedList = async () => {
@@ -222,7 +231,7 @@ export default function MarketPriceScreen() {
   // 사용자가 작물/품종을 추가하거나, 선택된 작물을 변경할 때 API 호출
   useEffect(() => {
     // 선택된 작물/품종이 없으면 중단
-    if (!selectedList.length || selectedIndex === null) return;
+    if (!selectedList.length || selectedIndex === null || !selectedList[selectedIndex]) return;
     const { crop, variety } = selectedList[selectedIndex];
     if (!crop || !variety) return;
 
@@ -350,8 +359,12 @@ export default function MarketPriceScreen() {
 
   // 작물/품종 삭제
   const handleDeleteCrop = (idx) => {
-    setSelectedList(selectedList.filter((_, i) => i !== idx));
-    if (selectedIndex === idx) setSelectedIndex(null);
+    const newList = selectedList.filter((_, i) => i !== idx);
+    setSelectedList(newList);
+    // 삭제된 인덱스가 선택된 인덱스와 같거나, 리스트가 비면 선택 해제
+    if (selectedIndex === idx || newList.length === 0) setSelectedIndex(null);
+    // 삭제 후 인덱스가 밀렸을 때도 선택 해제
+    else if (selectedIndex > idx) setSelectedIndex(selectedIndex - 1);
   };
 
   // 선택된 작물/품종 리스트 렌더링 (여러 개, 간격/선택 효과, x버튼)
@@ -459,61 +472,79 @@ export default function MarketPriceScreen() {
     const firstDay = new Date(year, month, 1).getDay();
     const lastDate = new Date(year, month + 1, 0).getDate();
     let days = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 0; i < firstDay; i++) days.push(null); // 첫째날 요일만큼 앞에 빈칸
     for (let d = 1; d <= lastDate; d++) days.push(d);
-    // 다음달 빈칸
-    while (days.length < 42) days.push(null); // 6주(42칸)로 고정
+    while (days.length % 7 !== 0) days.push(null); // 7의 배수로 맞춤
     const weeks = [];
-    for (let i = 0; i < 42; i += 7) weeks.push(days.slice(i, i + 7));
+    for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
     const today = new Date();
     return (
       <Modal visible={calendarModal} transparent animationType="fade" onRequestClose={() => setCalendarModal(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: 320 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <TouchableOpacity onPress={() => setSelectedDate(new Date(year, month - 1, 1))}><Text style={{ fontSize: 28 }}>◀</Text></TouchableOpacity>
-              <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{year}년 {month + 1}월</Text>
-              <TouchableOpacity onPress={() => setSelectedDate(new Date(year, month + 1, 1))}><Text style={{ fontSize: 28 }}>▶</Text></TouchableOpacity>
+          <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, width: 350, alignItems: 'center' }}>
+            {/* 상단 년월/이전/다음달 버튼 정렬: ◀은 일요일 위, ▶은 토요일 위 */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, width: '100%' }}>
+              <TouchableOpacity style={{ width: 44, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
+                const prevMonth = new Date(year, month - 1, selectedDate.getDate());
+                setSelectedDate(prevMonth);
+              }}>
+                <Text style={{ fontSize: 28, textAlign: 'center' }}>◀</Text>
+              </TouchableOpacity>
+              <Text style={{ flex: 1, fontSize: 26, fontWeight: 'bold', textAlign: 'center' }}>{year}년 {month + 1}월</Text>
+              <TouchableOpacity style={{ width: 44, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
+                const nextMonth = new Date(year, month + 1, selectedDate.getDate());
+                setSelectedDate(nextMonth);
+              }}>
+                <Text style={{ fontSize: 28, textAlign: 'center' }}>▶</Text>
+              </TouchableOpacity>
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-              {weekDays.map((w, i) => (
-                <Text key={i} style={{ color: i === 0 ? '#FF0000' : i === 6 ? '#0000FF' : '#222', fontWeight: 'bold', fontSize: 16, textAlign: 'center', flex: 1 }}>{w}</Text>
+            {/* 요일 헤더를 가운데로 정렬 */}
+            <View style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                {weekDays.map((w, i) => (
+                  <Text key={i} style={{ color: i === 0 ? '#FF0000' : i === 6 ? '#0000FF' : '#222', fontWeight: 'bold', fontSize: 20, textAlign: 'center', width: 44 }}>{w}</Text>
+                ))}
+              </View>
+            </View>
+            {/* 날짜 줄도 가운데로 정렬 */}
+            <View style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {weeks.map((week, wi) => (
+                <View key={wi} style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 4 }}>
+                  {week.map((d, di) => {
+                    if (d === null) {
+                      return <View key={di} style={{ width: 44, height: 44 }} />;
+                    }
+                    const dateObj = new Date(year, month, d);
+                    const isToday = dateObj.toDateString() === today.toDateString();
+                    const isSelected = dateObj.toDateString() === selectedDate.toDateString();
+                    return (
+                      <View key={di} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                        <TouchableOpacity
+                          style={{
+                            borderWidth: isToday ? 2 : 0,
+                            borderColor: isToday ? '#000' : 'transparent',
+                            backgroundColor: isSelected ? '#000' : 'transparent',
+                            borderRadius: 12,
+                            width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+                          }}
+                          onPress={() => { setSelectedDate(new Date(year, month, d)); setCalendarModal(false); }}
+                        >
+                          <Text style={{
+                            color: isSelected ? '#fff' : (di === 0 ? '#FF0000' : di === 6 ? '#0000FF' : '#222'),
+                            fontWeight: isSelected ? 'bold' : 'normal',
+                            fontSize: 22,
+                            textAlign: 'center'
+                          }}>{d}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
               ))}
             </View>
-            {weeks.map((week, wi) => (
-              <View key={wi} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                {week.map((d, di) => {
-                  if (d === null) {
-                    return <View key={di} style={{ width: 32, height: 32 }} />;
-                  }
-                  const dateObj = new Date(year, month, d);
-                  const isToday = dateObj.toDateString() === today.toDateString();
-                  const isSelected = dateObj.toDateString() === selectedDate.toDateString();
-                  return (
-                    <View key={di} style={{ flex: 1, alignItems: 'center' }}>
-                      <TouchableOpacity
-                        style={{
-                          borderWidth: isToday ? 2 : 0,
-                          borderColor: isToday ? '#000' : 'transparent',
-                          backgroundColor: isSelected ? '#000' : 'transparent',
-                          borderRadius: 8,
-                          width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
-                        }}
-                        onPress={() => setSelectedDate(new Date(year, month, d))}
-                      >
-                        <Text style={{
-                          color: isSelected ? '#fff' : (di === 0 ? '#FF0000' : di === 6 ? '#0000FF' : '#222'),
-                          fontWeight: isSelected ? 'bold' : 'normal',
-                          fontSize: 18
-                        }}>{d}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })}
-              </View>
-            ))}
-            <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#eee', borderRadius: 8, padding: 12 }} onPress={() => setCalendarModal(false)}>
-              <Text style={{ fontSize: 18, textAlign: 'center' }}>닫기</Text>
+            {/* 닫기 버튼 복구 */}
+            <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#eee', borderRadius: 8, padding: 12, width: '100%' }} onPress={() => setCalendarModal(false)}>
+              <Text style={{ fontSize: 22, textAlign: 'center' }}>닫기</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -533,13 +564,97 @@ export default function MarketPriceScreen() {
     </View>
   );
 
+  // 정렬 버튼 렌더링
+  const renderSortButtons = () => (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 8 }}>
+      <View style={{ flexDirection: 'row' }}>
+        {[
+          { label: '최고가순', value: 'high' },
+          { label: '최저가순', value: 'low' },
+          { label: '거래량 많은순', value: 'qtyHigh' },
+          { label: '거래량 적은순', value: 'qtyLow' },
+        ].map(btn => (
+          <TouchableOpacity
+            key={btn.value}
+            style={{
+              backgroundColor: sortType === btn.value ? '#222' : '#f0f0f0',
+              borderRadius: 16,
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              marginHorizontal: 4,
+            }}
+            onPress={() => setSortType(sortType === btn.value ? null : btn.value)}
+          >
+            <Text style={{ color: sortType === btn.value ? '#fff' : '#222', fontWeight: 'bold', fontSize: 15 }}>{btn.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </ScrollView>
+  );
+
+  // 경매내역 데이터 정렬
+  function getSortedAuctionData() {
+    if (!sortType) return auctionData;
+    let sorted = [...auctionData];
+    if (sortType === 'high') sorted.sort((a, b) => Number(b.COST) - Number(a.COST));
+    else if (sortType === 'low') sorted.sort((a, b) => Number(a.COST) - Number(b.COST));
+    else if (sortType === 'qtyHigh') sorted.sort((a, b) => Number(b.QTY) - Number(a.QTY));
+    else if (sortType === 'qtyLow') sorted.sort((a, b) => Number(a.QTY) - Number(b.QTY));
+    return sorted;
+  }
+
+  // 전국시세 도매사/규격/등급별 그룹핑 후 정렬
+  function getSortedGroupByCmp() {
+    // 도매사별 그룹핑
+    const groupByCmp = {};
+    auctionData.forEach(item => {
+      const cmp = item.CMPNAME || '-';
+      if (!groupByCmp[cmp]) groupByCmp[cmp] = [];
+      groupByCmp[cmp].push(item);
+    });
+    // 그룹핑 후 정렬
+    let entries = Object.entries(groupByCmp);
+    if (sortType === 'high') {
+      entries.sort(([, a], [, b]) => {
+        const maxA = Math.max(...a.map(i => Number(i.COST) || 0));
+        const maxB = Math.max(...b.map(i => Number(i.COST) || 0));
+        return maxB - maxA;
+      });
+    } else if (sortType === 'low') {
+      entries.sort(([, a], [, b]) => {
+        const minA = Math.min(...a.map(i => Number(i.COST) || 0));
+        const minB = Math.min(...b.map(i => Number(i.COST) || 0));
+        return minA - minB;
+      });
+    } else if (sortType === 'qtyHigh') {
+      entries.sort(([, a], [, b]) => {
+        const sumA = a.reduce((sum, i) => sum + (Number(i.QTY) || 0), 0);
+        const sumB = b.reduce((sum, i) => sum + (Number(i.QTY) || 0), 0);
+        return sumB - sumA;
+      });
+    } else if (sortType === 'qtyLow') {
+      entries.sort(([, a], [, b]) => {
+        const sumA = a.reduce((sum, i) => sum + (Number(i.QTY) || 0), 0);
+        const sumB = b.reduce((sum, i) => sum + (Number(i.QTY) || 0), 0);
+        return sumA - sumB;
+      });
+    }
+    return entries;
+  }
+
   // 경매내역 데이터 표시
   const renderAuctionData = () => {
+    // 선택된 품종명(품종만) 추출
+    let selectedVarietyName = '';
+    if (selectedList.length > 0 && selectedIndex !== null && selectedList[selectedIndex]) {
+      const { variety } = selectedList[selectedIndex];
+      selectedVarietyName = variety || '';
+    }
     // 로딩/빈값 안내
     if (loading) {
       return (
         <View style={{ alignItems: 'center', marginTop: 32 }}>
-          <Text style={{ color: '#888', fontSize: 16 }}>시세 불러오는 중{loadingDots}</Text>
+          <Text style={{ color: '#888', fontSize: 16 }}>{selectedVarietyName ? `${selectedVarietyName}의 시세를 불러오는 중${loadingDots}` : `시세를 불러오는 중${loadingDots}`}</Text>
         </View>
       );
     }
@@ -550,7 +665,6 @@ export default function MarketPriceScreen() {
         </View>
       );
     }
-
     // 헤더(가이드라인) 두 줄로, 시세값과 완전히 정렬/스타일 일치, 두 줄 사이 구분선 완전 제거
     const header = (
       <View style={{ backgroundColor: '#fff', zIndex: 10 }}>
@@ -573,9 +687,10 @@ export default function MarketPriceScreen() {
 
     return (
       <View style={{ flex: 1 }}>
-        {header}
+        <View style={{ paddingHorizontal: 16 }}>{header}</View>
+        <View style={{ paddingHorizontal: 16 }}>{renderSortButtons()}</View>
         <ScrollView style={{ flex: 1, padding: 16 }}>
-          {auctionData.map((item, index) => {
+          {getSortedAuctionData().map((item, index) => {
             // 시간 포맷팅 (24시간제 HH:MM)
             let time = '';
             if (item.SBIDTIME) {
@@ -591,9 +706,10 @@ export default function MarketPriceScreen() {
             const qty = item.QTY ? Number(item.QTY) + '개' : '-';
             // 규격/등급: kg 표기 소수점 1자리, kg 뒤에 띄우고 단위 분리
             let std = item.STD ? item.STD : '-';
-            std = std.replace(/(\d+\.\d{1,2})kg([^\s]*)/, (m, n, unit) => {
-              let v = parseFloat(n);
-              let kg = (v % 1 === 0) ? parseInt(v) + 'kg' : v.toFixed(1) + 'kg';
+            // 예: 1.000kg상자 → 1kg 상자, 4.500kg상자 → 4.5kg 상자
+            std = std.replace(/(\d+)(\.\d+)?kg([^\s]*)/, (m, n, d, unit) => {
+              let v = d ? parseFloat(n + d) : parseInt(n);
+              let kg = (d && parseFloat(d) !== 0) ? v.toFixed(1).replace(/\.0$/, '') + 'kg' : parseInt(v) + 'kg';
               return kg + (unit ? ' ' + unit : '');
             });
             // 품종
@@ -718,13 +834,15 @@ export default function MarketPriceScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 작물 추가 버튼 */}
-      <TouchableOpacity style={styles.addCropButton} onPress={openModal}>
-        <Text style={styles.addCropText}>+ 작물 추가</Text>
-      </TouchableOpacity>
+      {/* 작물 추가 버튼 위쪽에 패딩 추가 */}
+      <View style={{ paddingTop: 16, paddingHorizontal: 16 }}>
+        <TouchableOpacity style={styles.addCropButton} onPress={openModal}>
+          <Text style={styles.addCropText}>+ 작물 추가</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* 선택된 작물/품종 리스트 */}
-      {renderSelectedCrops()}
+      <View style={{ paddingHorizontal: 16 }}>{renderSelectedCrops()}</View>
 
       {/* 달력 */}
       {renderCalendar()}
@@ -739,9 +857,131 @@ export default function MarketPriceScreen() {
       ) : tab === '경매내역' ? (
         renderAuctionData()
       ) : (
-        <View style={{ alignItems: 'center', marginTop: 32 }}>
-          <Text style={{ color: '#888', fontSize: 16 }}>전국시세 준비중입니다.</Text>
-        </View>
+        loading ? (
+          <View style={{ alignItems: 'center', marginTop: 32 }}>
+            <Text style={{ color: '#888', fontSize: 16 }}>전국시세 불러오는 중{loadingDots}</Text>
+          </View>
+        ) : (
+          <>
+            {/* 로딩이 끝난 후에만 정렬 버튼 표시 */}
+            {auctionData.length > 0 && <View style={{ paddingHorizontal: 16 }}>{renderSortButtons()}</View>}
+            <ScrollView style={{ flex: 1, padding: 16 }}>
+              {/* 도매사별로 그룹핑 (정렬 반영) */}
+              {(() => {
+                // 정렬된 그룹핑 데이터 사용
+                return getSortedGroupByCmp().map(([cmp, items]) => {
+                  // 규격/등급별로 한 번 더 그룹핑
+                  const groupBySpec = {};
+                  items.forEach(item => {
+                    // settlementData에서 등급 매칭
+                    let grade = '-';
+                    if (settlementData && settlementData.length > 0) {
+                      const found = settlementData.find(row =>
+                        row.STD === item.STD &&
+                        row.SMALLNAME === item.SMALLNAME &&
+                        row.SANNAME === item.SANNAME &&
+                        row.CMPNAME === item.CMPNAME &&
+                        row.SALEDATE === item.SALEDATE
+                      );
+                      if (found && found.LVNAME) grade = found.LVNAME;
+                    }
+                    const specKey = (item.STD ? item.STD : '-') + ' / ' + grade;
+                    if (!groupBySpec[specKey]) groupBySpec[specKey] = [];
+                    groupBySpec[specKey].push(item);
+                  });
+                  return Object.entries(groupBySpec).map(([spec, specItems]) => {
+                    const boxKey = cmp + '|' + spec;
+                    // 최고가/최저가
+                    const maxItem = specItems.reduce((a, b) => (Number(a.COST) > Number(b.COST) ? a : b), specItems[0]);
+                    const minItem = specItems.reduce((a, b) => (Number(a.COST) < Number(b.COST) ? a : b), specItems[0]);
+                    const maxCost = maxItem.COST ? Number(maxItem.COST).toLocaleString() + '원' : '-';
+                    const minCost = minItem.COST ? Number(minItem.COST).toLocaleString() + '원' : '-';
+                    // 품종명
+                    const variety = maxItem.SMALLNAME || '-';
+                    // 총 물량
+                    const totalQty = specItems.reduce((sum, i) => sum + (Number(i.QTY) || 0), 0);
+                    // 평균가(검은색)
+                    const avgCost = specItems.length > 0 ? Math.round(specItems.reduce((sum, i) => sum + (Number(i.COST) || 0), 0) / specItems.length) : 0;
+                    // 박스 클릭 시 상세 토글
+                    const isExpanded = expandedBox === boxKey;
+                    return (
+                      <View key={boxKey} style={{ marginBottom: 18 }}>
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          onPress={() => setExpandedBox(isExpanded ? null : boxKey)}
+                          style={{ backgroundColor: '#f7f7f7', borderRadius: 10, padding: 14, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 2 }}
+                        >
+                          {/* 도매사명, 총 물량, 평균가 */}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                            <Text style={{ fontWeight: 'bold', fontSize: 17 }}>{cmp}</Text>
+                            <Text style={{ color: '#888', fontSize: 15 }}>총 {totalQty.toLocaleString()}개</Text>
+                            <Text style={{ color: '#000', fontSize: 15 }}>평균 {avgCost.toLocaleString()}원</Text>
+                          </View>
+                          {/* 품종명, 최고가 */}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                            <Text style={{ fontSize: 16, color: '#222', fontWeight: 'bold' }}>{variety}</Text>
+                            <Text style={{ color: '#FF0000', fontSize: 16, fontWeight: 'bold' }}>최고 {maxCost}</Text>
+                          </View>
+                          {/* 규격/등급, 최저가 */}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                            <Text style={{ fontSize: 15, color: '#444' }}>{spec}</Text>
+                            <Text style={{ color: '#0000FF', fontSize: 15 }}>최저 {minCost}</Text>
+                          </View>
+                        </TouchableOpacity>
+                        {/* 상세 리스트: 박스가 확장된 경우만 표시 */}
+                        {isExpanded && (
+                          <View style={{ backgroundColor: '#fff', borderRadius: 10, marginTop: 6, padding: 10 }}>
+                            {/* 헤더: 산지, 가격(정산가)만 표시 */}
+                            <View style={{ flexDirection: 'row', paddingBottom: 4, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 4 }}>
+                              <Text style={{ flex: 3, fontWeight: 'bold', fontSize: 15 }}>산지</Text>
+                              <Text style={{ flex: 2, fontWeight: 'bold', fontSize: 15 }}>가격(정산가)</Text>
+                            </View>
+                            {/* 상세 row: 산지, 가격(정산가)만 표시, 정렬 기준 적용 */}
+                            {(() => {
+                              // 정렬 기준 적용
+                              let sortedSpecItems = [...specItems];
+                              if (sortType === 'high') sortedSpecItems.sort((a, b) => Number(b.COST) - Number(a.COST));
+                              else if (sortType === 'low') sortedSpecItems.sort((a, b) => Number(a.COST) - Number(b.COST));
+                              else if (sortType === 'qtyHigh') sortedSpecItems.sort((a, b) => Number(b.QTY) - Number(a.QTY));
+                              else if (sortType === 'qtyLow') sortedSpecItems.sort((a, b) => Number(a.QTY) - Number(b.QTY));
+                              return sortedSpecItems.flatMap((row, i) => {
+                                // 산지: '시'까지 자르기
+                                let origin = row.SANNAME ? row.SANNAME : '-';
+                                const match = origin.match(/^(.*?시)/);
+                                if (match) origin = match[1];
+                                // 가격(정산가: settlementData에서 매칭, 없으면 COST)
+                                let price = '-';
+                                if (settlementData && settlementData.length > 0) {
+                                  const found = settlementData.find(srow =>
+                                    srow.STD === row.STD &&
+                                    srow.SMALLNAME === row.SMALLNAME &&
+                                    srow.SANNAME === row.SANNAME &&
+                                    srow.CMPNAME === row.CMPNAME &&
+                                    srow.SALEDATE === row.SALEDATE
+                                  );
+                                  if (found && found.COST) price = Number(found.COST).toLocaleString() + '원';
+                                }
+                                if (price === '-' && row.COST) price = Number(row.COST).toLocaleString() + '원';
+                                // QTY만큼 행 반복, 번호 없이 폰트 크게
+                                const qtyNum = Number(row.QTY) || 0;
+                                return Array.from({ length: qtyNum }, (_, idx) => (
+                                  <View key={i + '-' + idx} style={{ flexDirection: 'row', paddingVertical: 5, borderBottomWidth: (i === sortedSpecItems.length - 1 && idx === qtyNum - 1) ? 0 : 1, borderBottomColor: '#f0f0f0' }}>
+                                    <Text style={{ flex: 3, color: '#444', fontSize: 18 }}>{origin}</Text>
+                                    <Text style={{ flex: 2, color: '#FF0000', fontSize: 18 }}>{price}</Text>
+                                  </View>
+                                ));
+                              });
+                            })()}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  });
+                });
+              })()}
+            </ScrollView>
+          </>
+        )
       )}
 
       {/* Modal: 작물 추가 */}
