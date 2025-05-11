@@ -418,5 +418,10 @@ export default StyleSheet.create({
         fontSize: 17,
         color: '#000',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });
 

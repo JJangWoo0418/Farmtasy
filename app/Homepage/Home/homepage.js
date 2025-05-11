@@ -8,26 +8,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import API_CONFIG from '../../DB/api';
 import { Ionicons } from '@expo/vector-icons';
 
-// 이미지 로딩 컴포넌트
-const ImageWithLoading = ({ uri, style, loadingStyle }) => {
-    const [isLoading, setIsLoading] = useState(true);
-
-    return (
-        <View style={[style, isLoading && { backgroundColor: '#eee' }]}>
-            <Image
-                source={{ uri }}
-                style={[style, { position: 'absolute' }]}
-                onLoadEnd={() => setIsLoading(false)}
-            />
-            {isLoading && (
-                <View style={[loadingStyle, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <ActivityIndicator size="small" color="#999" />
-                </View>
-            )}
-        </View>
-    );
-};
-
 const HomePage = () => {
     const navigation = useNavigation();
     const [isDrawerVisible, setDrawerVisible] = useState(false);
@@ -128,7 +108,7 @@ const HomePage = () => {
                 throw new Error('인기 게시글을 가져오는데 실패했습니다.');
             }
             const data = await response.json();
-            
+
             // 데이터 가공
             const processedData = data.map(post => ({
                 ...post,
@@ -140,7 +120,7 @@ const HomePage = () => {
                 is_liked: post.is_liked === true || post.is_liked === 1,
                 is_bookmarked: post.is_bookmarked === true || post.is_bookmarked === 1
             }));
-            
+
             // 북마크/좋아요 상태 초기화
             const initialBookmarks = {};
             const initialLikes = {};
@@ -148,7 +128,7 @@ const HomePage = () => {
                 initialBookmarks[post.id] = post.is_bookmarked;
                 initialLikes[post.id] = post.is_liked;
             });
-            
+
             setPopularPosts(processedData);
             setBookmarkedPosts(initialBookmarks);
             setLikedPosts(initialLikes);
@@ -197,6 +177,39 @@ const HomePage = () => {
         } catch (error) {
             return '';
         }
+    };
+
+    // 이미지 로딩 컴포넌트
+    const ImageWithLoading = ({ uri, style, loadingStyle }) => {
+        const [loading, setLoading] = useState(true);
+
+        return (
+            <View style={[
+                style,
+                { justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }
+            ]}>
+                {loading && (
+                    <View style={[
+                        {
+                            position: 'absolute',
+                            backgroundColor: '#eee',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 9999
+                        },
+                        loadingStyle // 로딩 배경 크기/스타일
+                    ]}>
+                        <ActivityIndicator size="large" color="#22CC6B" />
+                    </View>
+                )}
+                <Image
+                    source={{ uri }}
+                    style={[style, { position: 'absolute' }]}
+                    onLoadEnd={() => setLoading(false)}
+                    resizeMode="cover"
+                />
+            </View>
+        );
     };
 
     // 이미지 렌더링 함수
@@ -296,7 +309,7 @@ const HomePage = () => {
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/popular?user_phone=${phone}`);
                 const data = await response.json();
                 setPosts(Array.isArray(data) ? data : []);
-                
+
                 // 북마크/좋아요 상태 초기화
                 const initialBookmarks = {};
                 const initialLikes = {};
@@ -490,8 +503,8 @@ const HomePage = () => {
         const isBookmarked = bookmarkedPosts[post.id] || (post.is_bookmarked === true || post.is_bookmarked === 1);
 
         return (
-            <TouchableOpacity 
-                key={post.id} 
+            <TouchableOpacity
+                key={post.id}
                 style={styles.postBox}
                 onPress={() => {
                     navigation.push('Homepage/Post/postdetailpage', {
@@ -644,7 +657,7 @@ const HomePage = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0000ff" />
+                <ActivityIndicator size="large" color="#22CC6B" />
             </View>
         );
     }
@@ -692,10 +705,10 @@ const HomePage = () => {
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.menuItem} onPress={() => router.push({
                         pathname: '/Homepage/Home/directpaymentpage', params: {
-                        userData: route.params?.userData,
-                        phone: route.params?.phone,
-                        name: route.params?.name,
-                        region: route.params?.region
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region
                         }
                     })}>
                         <Image source={require('../../../assets/directdeposit4.png')} style={styles.menuIcon} />
@@ -834,10 +847,10 @@ const HomePage = () => {
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={() => router.push({
                     pathname: '/Homepage/Home/directpaymentpage', params: {
-                    userData: route.params?.userData,
-                    phone: route.params?.phone,
-                    name: route.params?.name,
-                    region: route.params?.region
+                        userData: route.params?.userData,
+                        phone: route.params?.phone,
+                        name: route.params?.name,
+                        region: route.params?.region
                     }
                 })}>
                     <Image source={require('../../../assets/directdeposit4.png')} style={styles.menuIcon} />
@@ -1013,7 +1026,18 @@ const HomePage = () => {
                     </View>
                 )}
             </TouchableOpacity>
-            <BottomTabNavigator currentTab="홈" onTabPress={(tab) => console.log(tab)} />
+
+            <BottomTabNavigator
+                currentTab="홈"
+                onTabPress={(tab) => {
+                    if (tab === '질문하기') {
+                        navigation.navigate('Chatbot/questionpage'); // 네비게이터에 등록된 이름
+                    } else if (tab === '홈') {
+                        navigation.navigate('HomePage');
+                    }
+                    // 필요시 다른 탭도 추가
+                }}
+            />
         </View>
     );
 };
