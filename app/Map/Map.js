@@ -4,6 +4,9 @@ import MapView, { Polygon, Polyline, Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
 import * as Location from 'expo-location';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 // Geocoder 초기화 (API 키 확인)
 Geocoder.init('AIzaSyB7uysOUsyE_d6xdLLJx7YxC-Ux7giVNdc'); // 여기에 실제 API 키를 넣어주세요
@@ -11,6 +14,8 @@ Geocoder.init('AIzaSyB7uysOUsyE_d6xdLLJx7YxC-Ux7giVNdc'); // 여기에 실제 AP
 const locationIcon = '📍';  // 이미지 대신 이모지 사용
 
 const Map = () => {
+    const navigation = useNavigation();
+    const { farmName } = useLocalSearchParams();
     // 초기 region을 고정값으로 설정
     const [region, setRegion] = useState({
         latitude: 37.5665, // 서울 시청
@@ -591,6 +596,8 @@ const Map = () => {
                                 strokeColor="green"
                                 strokeWidth={3}
                                 fillColor="rgba(0, 255, 0, 0.1)"
+                                tappable={true}
+                                onPress={() => router.push({ pathname: 'Memo/farmedit', params: { farmName: area.name } })}
                             />
                             {area.coordinates.length > 0 && (
                                  <Marker
@@ -971,3 +978,7 @@ const styles = StyleSheet.create({
 });
 
 export default Map;
+
+
+
+
