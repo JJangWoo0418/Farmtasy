@@ -257,42 +257,46 @@ export default function MarketPriceScreen() {
       setAuctionData([]);
       setSettlementData([]);
       try {
-        // 실시간 경락 정보 (모든 도매시장 코드 반복)
-        let auctionAll = [];
-        let auctionPrevAll = [];
-        for (const market of marketCodes) {
-          const auctionRows = await fetchAuctionPrice({
+        // 실시간 경락 정보 (모든 도매시장 코드 병렬 처리)
+        const auctionPromises = marketCodes.map(market =>
+          fetchAuctionPrice({
             date: formatDate(selectedDate),
             marketCode: market.CODEID,
             large,
             mid,
             small,
-          });
-          auctionAll = auctionAll.concat(auctionRows);
-          // 전날 데이터도 받아오기
-          const auctionPrevRows = await fetchAuctionPrice({
+          })
+        );
+        const auctionPrevPromises = marketCodes.map(market =>
+          fetchAuctionPrice({
             date: getPrevDate(selectedDate),
             marketCode: market.CODEID,
             large,
             mid,
             small,
-          });
-          auctionPrevAll = auctionPrevAll.concat(auctionPrevRows);
-        }
+          })
+        );
+        // 병렬로 모두 요청
+        const [auctionAllResults, auctionPrevAllResults] = await Promise.all([
+          Promise.all(auctionPromises),
+          Promise.all(auctionPrevPromises)
+        ]);
+        const auctionAll = auctionAllResults.flat();
+        const auctionPrevAll = auctionPrevAllResults.flat();
         setAuctionData(auctionAll);
-        setAuctionPrevData(auctionPrevAll); // 새 state로 저장
-        // 정산 가격 정보 (모든 도매시장 코드 반복)
-        let settlementAll = [];
-        for (const market of marketCodes) {
-          const settlementRows = await fetchSettlementPrice({
+        setAuctionPrevData(auctionPrevAll);
+        // 정산 가격 정보도 병렬 처리
+        const settlementPromises = marketCodes.map(market =>
+          fetchSettlementPrice({
             date: formatDate(selectedDate),
             marketCode: market.CODEID,
             large,
             mid,
             small,
-          });
-          settlementAll = settlementAll.concat(settlementRows);
-        }
+          })
+        );
+        const settlementAllResults = await Promise.all(settlementPromises);
+        const settlementAll = settlementAllResults.flat();
         setSettlementData(settlementAll);
       } catch (e) {
         console.error('[API] 전체 연동 실패:', e);
