@@ -16,17 +16,35 @@ export default function FarmEdit() {
   // cropplus에서 돌아올 때 params로 값이 오면 추가
   useEffect(() => {
     if (params?.newCropName && params?.newCropImage) {
-      setCrops(prev => [
-        ...prev,
-        {
-          name: params.newCropName,
-          image: params.newCropImage,
-        }
-      ]);
+      if (params?.editIndex !== undefined) {
+        // 수정
+        setCrops(prev => prev.map((crop, idx) =>
+          idx === Number(params.editIndex)
+            ? { ...crop, name: params.newCropName, image: params.newCropImage }
+            : crop
+        ));
+      } else {
+        // 추가
+        setCrops(prev => [
+          ...prev,
+          {
+            name: params.newCropName,
+            image: params.newCropImage,
+          }
+        ]);
+      }
     }
-  }, [params?.newCropName, params?.newCropImage]);
+  }, [params?.newCropName, params?.newCropImage, params?.editIndex]);
 
-  const [image, setImage] = useState(null);
+  useEffect(() => {
+    if (params?.deleteCrop && params?.editIndex !== undefined) {
+      setCrops(prev => prev.filter((_, idx) => idx !== Number(params.editIndex)));
+    }
+  }, [params?.deleteCrop, params?.editIndex]);
+
+  const [image, setImage] = useState(params.image || null);
+  const [name, setName] = useState(params.name || '');
+  const editIndex = params.editIndex !== undefined ? Number(params.editIndex) : null;
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -67,12 +85,22 @@ export default function FarmEdit() {
       <FlatList
         data={crops}
         keyExtractor={(_, idx) => idx.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.cropCard}>
+        renderItem={({ item, index }) => (
+          <TouchableOpacity
+            style={styles.cropCard}
+            onPress={() => router.push({
+              pathname: '/Memo/memolist',
+              params: {
+                cropName: item.name,
+                cropImage: item.image,
+                cropIndex: index,
+              }
+            })}
+          >
             <Image source={{ uri: item.image }} style={styles.cropCardImage} />
             <Text style={styles.cropCardText}>{item.name}</Text>
             <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
-          </View>
+          </TouchableOpacity>
         )}
         ListFooterComponent={
           <TouchableOpacity style={styles.cropBox} onPress={() => router.push('/Memo/cropplus')}>
@@ -81,6 +109,22 @@ export default function FarmEdit() {
           </TouchableOpacity>
         }
       />
+
+      <TouchableOpacity
+        style={styles.confirmButton}
+        onPress={() => {
+          router.replace({
+            pathname: '/Memo/farmedit',
+            params: {
+              newCropName: name,
+              newCropImage: image,
+              editIndex: editIndex,
+            }
+          });
+        }}
+      >
+        <Text style={styles.confirmButtonText}>확인</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -187,5 +231,17 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: '#888',
+  },
+  confirmButton: {
+    backgroundColor: '#007bff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  confirmButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });
