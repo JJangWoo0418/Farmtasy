@@ -806,7 +806,7 @@ const HomePage = () => {
                     </TouchableOpacity>
 
                     <Text style={styles.drawerTitle}>AI</Text>
-                    <TouchableOpacity style={styles.drawerItem}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Chatbot/questionpage' })}>
                         <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>질문하기</Text>
                     </TouchableOpacity>
