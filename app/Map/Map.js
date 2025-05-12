@@ -325,7 +325,10 @@ const Map = () => {
         }
     };
 
-    const handleQrScanPress = () => console.log('QR 스캔 버튼 클릭됨');
+    const handleQrScanPress = () => {
+        router.push('Map/qrscan');
+    };
+
     const handleWeatherPress = () => console.log('날씨 버튼 클릭됨');
 
     const handleSearch = async () => {
@@ -978,7 +981,3 @@ const styles = StyleSheet.create({
 });
 
 export default Map;
-
-
-
-

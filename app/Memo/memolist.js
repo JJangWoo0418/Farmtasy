@@ -1,13 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function MemoList() {
-  const { cropName, cropImage } = useLocalSearchParams();
+  const params = useLocalSearchParams();
   const router = useRouter();
 
   // 관리작물 리스트 (초기에는 빈 배열)
   const [managedCrops, setManagedCrops] = useState([]);
+
+  // 새로운 작물 정보가 전달되면 리스트에 추가
+  useEffect(() => {
+    if (params.newMemoName && params.newMemoImage) {
+      const newCrop = {
+        name: params.newMemoName,
+        image: params.newMemoImage,
+        qrCode: params.newMemoQR,
+      };
+      
+      if (params.editIndex !== undefined) {
+        // 수정인 경우
+        const newCrops = [...managedCrops];
+        newCrops[params.editIndex] = newCrop;
+        setManagedCrops(newCrops);
+      } else {
+        // 새로운 작물 추가인 경우
+        setManagedCrops([...managedCrops, newCrop]);
+      }
+    }
+  }, [params]);
+
+  // 작물 삭제 처리
+  useEffect(() => {
+    if (params.deleteMemo && params.editIndex !== undefined) {
+      const newCrops = managedCrops.filter((_, index) => index !== parseInt(params.editIndex));
+      setManagedCrops(newCrops);
+    }
+  }, [params]);
 
   return (
     <View style={styles.container}>
@@ -23,12 +52,23 @@ export default function MemoList() {
       <FlatList
         data={managedCrops}
         keyExtractor={(_, idx) => idx.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.cropCard}>
+        renderItem={({ item, index }) => (
+          <TouchableOpacity 
+            style={styles.cropCard}
+            onPress={() => router.push({
+              pathname: '/Memo/memoplus',
+              params: {
+                name: item.name,
+                image: item.image,
+                qrValue: item.qrCode,
+                editIndex: index
+              }
+            })}
+          >
             <Image source={{ uri: item.image }} style={styles.cropCardImage} />
             <Text style={styles.cropCardText}>{item.name}</Text>
             <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
-          </View>
+          </TouchableOpacity>
         )}
         ListFooterComponent={
           <TouchableOpacity
