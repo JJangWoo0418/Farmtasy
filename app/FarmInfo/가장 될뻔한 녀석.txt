@@ -1,0 +1,1999 @@
+// app/Components/Css/FarmInfo/WeatherAPI.js
+import axios from 'axios';
+import { WEATHER_API_KEY_PORTAL, WEATHER_API_KEY_KMA } from '../../API/apikey';
+import { XMLParser } from 'fast-xml-parser';
+
+// XML 파서 설정
+const parser = new XMLParser();
+
+// 공통 API 요청 함수
+const fetchAPI = async (url, params, useKmaKey = false) => {
+  try {
+    const finalParams = {
+      ...params,
+      ...(url.includes('data.go.kr')
+        ? { serviceKey: WEATHER_API_KEY_PORTAL }
+        : { authKey: WEATHER_API_KEY_KMA }),
+    };
+
+    const response = await axios.get(url, { params: finalParams });
+    const xml = response.data;
+    console.log('[LOG] 날씨 API 원 응답:', xml);
+    const json = parser.parse(xml);
+    return json;
+  } catch (error) {
+    console.error('[ERROR] 기상청 API 요청 오류:', error);
+    return null;
+  }
+};
+
+// 통합 호출 함수
+export const fetchWeather = async (type, params) => {
+  switch (type) {
+    case 'ultraNcst':
+      return await fetchUltraSrtNcst(params);
+    case 'ultraFcst':
+      return await fetchUltraSrtFcst(params);
+    case 'vilageFcst':
+      return await fetchVilageFcst(params);
+    case 'midLandFcst':
+      return await fetchMidLandFcst(params);
+    case 'midTa':
+      return await fetchMidTa(params);
+    case 'warning':
+      return await fetchWarningNow();
+    case 'typhoon':
+      return await fetchTyphoon(params);
+    case 'latlon': {
+      const { lat, lon } = params || {};
+      if (lat === undefined || lon === undefined) {
+        console.error('[ERROR] 격자 변환 파라미터 누락');
+        return null;
+      }
+      return await convertLatLonToGrid({ lat, lon });
+    }
+    default:
+      console.error('[ERROR] 알 수 없는 요청 유형:', type);
+      return null;
+  }
+};
+
+// 초단기실황조회
+export const fetchUltraSrtNcst = async ({ nx, ny, base_date, base_time }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst', {
+    pageNo: 1,
+    numOfRows: 1000,
+    dataType: 'XML',
+    base_date,
+    base_time,
+    nx,
+    ny,
+  });
+};
+
+// 초단기예보조회
+export const fetchUltraSrtFcst = async ({ nx, ny, base_date, base_time }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
+    pageNo: 1,
+    numOfRows: 1000,
+    dataType: 'XML',
+    base_date,
+    base_time,
+    nx,
+    ny,
+  });
+};
+
+// 단기예보조회
+export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst', {
+    pageNo: 1,
+    numOfRows: 1000,
+    dataType: 'XML',
+    base_date,
+    base_time,
+    nx,
+    ny,
+  });
+};
+
+// 중기육상예보
+export const fetchMidLandFcst = async ({ regId, tmFc }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
+    dataType: 'XML',
+    regId,
+    tmFc,
+  });
+};
+
+// 중기기온예보
+export const fetchMidTa = async ({ regId, tmFc }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+    dataType: 'XML',
+    regId,
+    tmFc,
+  });
+};
+
+// 기상특보
+export const fetchWarningNow = async () => {
+  return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/wrn_now_data.php', {
+    fe: 'f',
+  }, true);
+};
+
+// 태풍정보
+export const fetchTyphoon = async ({ YY, typ, seq, mode }) => {
+  return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/typ_data.php', {
+    YY,
+    typ,
+    seq,
+    mode,
+  }, true);
+};
+
+// 위경도 → 격자변환
+export const convertLatLonToGrid = async ({ lat, lon }) => {
+  try {
+    console.log('[LOG] 모드: latlon');
+    console.log('[LOG] 격자 변환 요청 좌표:', { lat, lon });
+
+    const response = await axios.get('https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-dfs_xy_lonlat', {
+      params: {
+        lat,
+        lon,
+        authKey: WEATHER_API_KEY_KMA,
+      },
+    });
+
+    const text = response.data;
+    const match = text.match(/\s+(\d+\.\d+),\s+(\d+\.\d+),\s+(\d+),\s+(\d+)/);
+
+    if (match) {
+      const result = {
+        lon: parseFloat(match[1]),
+        lat: parseFloat(match[2]),
+        x: parseInt(match[3]),
+        y: parseInt(match[4]),
+      };
+      console.log('[LOG] 격자 정보:', result);
+      return result;
+    } else {
+      console.error('[ERROR] 격자 정보 없음.');
+      return null;
+    }
+  } catch (error) {
+    console.error('[ERROR] 격자 변환 요청 오류:', error);
+    return null;
+  }
+};
+
+가장 될뻔한 코드 Weather.js
+
+// app/FarmInfo/index.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, ScrollView } from 'react-native';
+import styles from '../Components/Css/FarmInfo/index.js';
+import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
+import { getBaseDateTime } from '../Components/Utils/timeUtils';
+import * as Location from 'expo-location'; // Expo Location API 사용
+
+const FARM_COORDS = {
+  latitude: 36.953862288,
+  longitude: 127.681782599,
+  //우리집 음성
+};
+
+export default function FarmInfo() {
+  const [mode, setMode] = useState('farm');
+  const [weatherData, setWeatherData] = useState(null);
+  const [weeklyData, setWeeklyData] = useState(null);
+  const [warningData, setWarningData] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const loadWeather = async () => {
+    setLoading(true);
+    let coords = FARM_COORDS;
+    console.log('[공통] 현재 설정된 농장 좌표:', coords);
+
+    if (mode === 'current') {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.error('[공통] 위치 권한 거부됨');
+          setLoading(false);
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({});
+        coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        console.log('[공통] 현재 위치 좌표:', coords);
+      } catch (error) {
+        console.error('[공통] 현재 위치 가져오기 실패:', error);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const { base_date, base_time } = getBaseDateTime();
+    console.log('[공통] 기준 날짜 및 시간:', base_date, base_time);
+
+    const grid = await fetchWeather('latlon', {
+      lat: coords.latitude,
+      lon: coords.longitude,
+    });
+    console.log('[격자변환] 결과:', grid);
+    if (!grid || !grid.x || !grid.y) {
+      setLoading(false);
+      return;
+    }
+
+    console.log('[시간대별 날씨] 요청 좌표:', grid.x, grid.y);
+    const forecast = await fetchWeather('ultraFcst', {
+      nx: grid.x,
+      ny: grid.y,
+      base_date,
+      base_time,
+    });
+    console.log('[시간대별 날씨] 응답:', forecast);
+
+    const midForecast = grid.midLandId && grid.tmFc ? await fetchWeather('midLandFcst', {
+      regId: grid.midLandId,
+      tmFc: grid.tmFc,
+    }) : null;
+    console.log('[주간 날씨] 응답:', midForecast);
+
+    const warning = await fetchWeather('warning');
+    console.log('[기상 특보] 응답:', warning);
+
+    if (forecast) setWeatherData(forecast);
+    if (midForecast) setWeeklyData(midForecast);
+    if (typeof warning === 'string') setWarningData(warning);
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWeather();
+  }, [mode]);
+
+  const getEmojiForPty = (value) => {
+    switch (value) {
+      case '0': return '☀ ';
+      case '1': return '🌧 ';
+      case '2': return '🌦 ';
+      case '3': return '❄ ';
+      case '4': return '🌨 ';
+      default: return '☁ ';
+    }
+  };
+
+  const getEmojiForSky = (value) => {
+    switch (value) {
+      case '1': return '☀ ';
+      case '3': return '⛅ ';
+      case '4': return '☁ ';
+      default: return '☁ ';
+    }
+  };
+
+  const renderForecast = () => {
+    const msg = weatherData?.response?.header?.resultMsg;
+    const code = weatherData?.response?.header?.resultCode;
+    if (msg !== 'NORMAL_SERVICE') return <Text style={styles.errorText}>에러: {msg} (코드 {code})</Text>;
+
+    const items = weatherData?.response?.body?.items?.item || [];
+    const categories = ['PTY', 'RN1', 'SKY', 'T1H', 'REH'];
+    const grouped = {};
+
+    for (const item of items) {
+      if (!categories.includes(item.category)) continue;
+      if (!grouped[item.fcstTime]) grouped[item.fcstTime] = {};
+      grouped[item.fcstTime][item.category] = item.fcstValue;
+    }
+
+    console.log('[시간대별 날씨] 그룹화된 데이터:', grouped);
+
+    return Object.entries(grouped).map(([time, data], idx) => {
+      const pty = data['PTY'];
+      const rn1 = data['RN1'];
+      const sky = data['SKY'];
+      const t1h = data['T1H'];
+      const reh = data['REH'];
+      const emoji = pty !== '0' ? getEmojiForPty(pty) : getEmojiForSky(sky);
+      const rainInfo = (pty !== '0' && rn1 !== '강수없음') ? `${rn1} ` : '';
+      const temp = t1h ? `${t1h} ℃ ` : '';
+      const humidity = reh ? `${reh}%` : '';
+      const hour = `${String(time).padStart(4, '0').slice(0, 2)}시`;
+
+      return (
+        <View key={idx} style={styles.row}>
+          <Text style={styles.time}>{hour}</Text>
+          <Text style={styles.value}>{emoji}</Text>
+          <Text style={styles.value}>{rainInfo}</Text>
+          <Text style={styles.value}>{temp}</Text>
+          <Text style={styles.value}>{humidity}</Text>
+        </View>
+      );
+    });
+  };
+
+  const renderWeekly = () => {
+    const items = weeklyData?.response?.body?.items?.item || [];
+    const filtered = items.filter(item => item.wfAm && item.wfPm);
+    console.log('[주간 날씨] 필터링된 데이터:', filtered);
+    if (filtered.length === 0) return <Text style={styles.noWarning}>주간 예보 데이터 없음</Text>;
+
+    const getEmoji = (text) => {
+      if (text.includes('맑')) return '☀';
+      if (text.includes('구름많')) return '⛅';
+      if (text.includes('흐림')) return '☁';
+      if (text.includes('비')) return '🌧';
+      if (text.includes('눈')) return '❄';
+      return '❓';
+    };
+
+    return filtered.map((item, idx) => (
+      <View key={idx} style={styles.row}>
+        <Text style={styles.time}>{item.fcstDate}</Text>
+        <Text style={styles.value}>{getEmoji(item.wfAm)} / {getEmoji(item.wfPm)}</Text>
+        <Text style={styles.value}>{item.wfAm} / {item.wfPm}</Text>
+      </View>
+    ));
+  };
+
+  const renderWarning = () => {
+    const lines = typeof warningData === 'string'
+      ? warningData.split('\n').filter(line => line.startsWith('L'))
+      : [];
+    console.log('[기상 특보] 파싱된 특보 라인:', lines);
+    if (lines.length === 0) return <Text style={styles.noWarning}>현재 발효 중인 특보가 없습니다.</Text>;
+    return lines.map((line, idx) => <Text key={idx} style={styles.warningLine}>{line}</Text>);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.tabContainer}>
+        <Button title="내 농장 날씨" onPress={() => setMode('farm')} />
+        <Button title="현 위치 날씨" onPress={() => setMode('current')} />
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[시간대별 날씨]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderForecast()
+        )}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[주간 날씨]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderWeekly()
+        )}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[기상 특보]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderWarning()
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+4월 13일
+-세이브 본- 
+// app/FarmInfo/index.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, ScrollView } from 'react-native';
+import styles from '../Components/Css/FarmInfo/index.js';
+import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
+import { getBaseDateTime } from '../Components/Utils/timeUtils';
+import { getMidLandRegId } from '../Components/Utils/regionMapper';
+import * as Location from 'expo-location';
+
+const FARM_COORDS = {
+  latitude: 36.953862288,
+  longitude: 127.681782599,
+};
+
+export default function FarmInfo() {
+  const [mode, setMode] = useState('farm');
+  const [weatherData, setWeatherData] = useState(null);
+  const [weeklyData, setWeeklyData] = useState(null);
+  const [warningData, setWarningData] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const loadWeather = async () => {
+    setLoading(true);
+    let coords = FARM_COORDS;
+    console.log('[공통] 현재 설정된 농장 좌표:', coords);
+
+    if (mode === 'current') {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.error('[공통] 위치 권한 거부됨');
+          setLoading(false);
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({});
+        coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        console.log('[공통] 현재 위치 좌표:', coords);
+      } catch (error) {
+        console.error('[공통] 현재 위치 가져오기 실패:', error);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const baseDate = new Date(now);
+
+    if (currentHour < 6) {
+      baseDate.setDate(baseDate.getDate() - 1);
+    }
+
+    const yyyy = baseDate.getFullYear();
+    const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(baseDate.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}${mm}${dd}`;
+    const tmFc = currentHour < 6 || currentHour >= 18 ? `${dateStr}1800` : `${dateStr}0600`;
+
+    const { base_date, base_time } = getBaseDateTime();
+    console.log('[공통] 기준 날짜 및 시간:', base_date, base_time);
+
+    const grid = await fetchWeather('latlon', {
+      lat: coords.latitude,
+      lon: coords.longitude,
+    });
+    console.log('[격자변환] 결과:', grid);
+    if (!grid || !grid.x || !grid.y) {
+      setLoading(false);
+      return;
+    }
+
+    console.log('[시간대별 날씨] 요청 좌표:', grid.x, grid.y);
+    const forecast = await fetchWeather('ultraFcst', {
+      nx: grid.x,
+      ny: grid.y,
+      base_date,
+      base_time,
+    });
+    console.log('[시간대별 날씨] 응답:', forecast);
+
+    const regId = getMidLandRegId(coords.latitude, coords.longitude);
+    const midForecast = await fetchWeather('midLandFcst', { regId, tmFc });
+    console.log('[주간 날씨] 요청 파라미터:', { regId, tmFc });
+    console.log('[주간 날씨] 응답:', midForecast);
+
+    const warning = await fetchWeather('warning');
+    console.log('[기상 특보] 응답:', warning);
+
+    if (forecast) setWeatherData(forecast);
+    if (
+      midForecast?.response?.header?.resultCode === '00' &&
+      Array.isArray(midForecast?.response?.body?.items?.item)
+    ) {
+      const items = midForecast.response.body.items.item;
+      const validItems = items.filter(item => item.wfAm || item.wfPm);
+      setWeeklyData({ response: { body: { items: { item: validItems } } } });
+    } else {
+      console.warn('[주간 날씨] 유효하지 않은 응답 또는 데이터 없음:', midForecast);
+    }
+    if (typeof warning === 'string') setWarningData(warning);
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWeather();
+  }, [mode]);
+
+  const getEmojiForPty = (value) => {
+    switch (value) {
+      case '0': return '☀ ';
+      case '1': return '🌧 ';
+      case '2': return '🌦 ';
+      case '3': return '❄ ';
+      case '4': return '🌨 ';
+      default: return '☁ ';
+    }
+  };
+
+  const getEmojiForSky = (value) => {
+    switch (value) {
+      case '1': return '☀ ';
+      case '3': return '⛅ ';
+      case '4': return '☁ ';
+      default: return '☁ ';
+    }
+  };
+
+  const renderForecast = () => {
+    const msg = weatherData?.response?.header?.resultMsg;
+    const code = weatherData?.response?.header?.resultCode;
+    if (msg !== 'NORMAL_SERVICE') return <Text style={styles.errorText}>에러: {msg} (코드 {code})</Text>;
+
+    const items = weatherData?.response?.body?.items?.item || [];
+    const categories = ['PTY', 'RN1', 'SKY', 'T1H', 'REH'];
+    const grouped = {};
+
+    for (const item of items) {
+      if (!categories.includes(item.category)) continue;
+      if (!grouped[item.fcstTime]) grouped[item.fcstTime] = {};
+      grouped[item.fcstTime][item.category] = item.fcstValue;
+    }
+
+    console.log('[시간대별 날씨] 그룹화된 데이터:', grouped);
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const sortedTimes = Object.keys(grouped).sort((a, b) => {
+      const aHour = parseInt(a);
+      const bHour = parseInt(b);
+      const offsetA = (aHour + 24 - currentHour) % 24;
+      const offsetB = (bHour + 24 - currentHour) % 24;
+      return offsetA - offsetB;
+    });
+
+    return (
+      <ScrollView style={{ maxHeight: 600 }} nestedScrollEnabled={true}>
+        {sortedTimes.map((time, idx) => {
+          const data = grouped[time] || {};
+          const pty = data['PTY'];
+          const rn1 = data['RN1'];
+          const sky = data['SKY'];
+          const t1h = data.hasOwnProperty('T1H') ? ` ${data['T1H']} ℃ ` : ' - ';
+          const reh = data.hasOwnProperty('REH') ? `${data['REH']}% ` : ' - ';
+          const emoji = pty !== '0' ? getEmojiForPty(pty) : getEmojiForSky(sky);
+          const rainInfo = rn1 ? (pty !== '0 ' && rn1 !== '강수없음 ' ? `${rn1}` : '강수없음 ') : '강수없음 ';
+          const hour = `${String(time).padStart(4, '0').slice(0, 2)} 시`;
+
+          return (
+            <View key={idx} style={styles.row}>
+              <Text style={styles.time}>{hour}</Text>
+              <Text style={styles.value}>{emoji}</Text>
+              <Text style={styles.value}>{rainInfo}</Text>
+              <Text style={styles.value}>{t1h}</Text>
+              <Text style={styles.value}>{reh}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    );
+  };
+
+  const renderWeekly = () => {
+    const items = weeklyData?.response?.body?.items?.item || [];
+    console.log('[주간 날씨] 원시 데이터:', items);
+    if (items.length === 0) return <Text style={styles.noWarning}>주간 예보 데이터 없음</Text>;
+
+    const getEmoji = (text) => {
+      if (text.includes('맑')) return '☀ ';
+      if (text.includes('구름많')) return '⛅ ';
+      if (text.includes('흐림')) return '☁ ';
+      if (text.includes('비')) return '🌧 ';
+      if (text.includes('눈')) return '❄ ';
+      return '❓';
+    };
+
+    return items.map((item, idx) => (
+      <View key={idx} style={styles.row}>
+        <Text style={styles.time}>{item.fcstDate}</Text>
+        <Text style={styles.value}>{getEmoji(item.wfAm)} / {getEmoji(item.wfPm)}</Text>
+        <Text style={styles.value}>{item.wfAm} / {item.wfPm}</Text>
+      </View>
+    ));
+  };
+
+  const renderWarning = () => {
+    const lines = typeof warningData === 'string'
+      ? warningData.split('\n').filter(line => line.startsWith('L'))
+      : [];
+    console.log('[기상 특보] 파싱된 특보 라인:', lines);
+    if (lines.length === 0) return <Text style={styles.noWarning}>현재 발효 중인 특보가 없습니다.</Text>;
+    return lines.map((line, idx) => <Text key={idx} style={styles.warningLine}>{line}</Text>);
+  };
+
+  return (
+    <ScrollView style={styles.container} nestedScrollEnabled={true}>
+      <View style={styles.tabContainer}>
+        <Button title="내 농장 날씨" onPress={() => setMode('farm')} />
+        <Button title="현 위치 날씨" onPress={() => setMode('current')} />
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[시간대별 날씨]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderForecast()
+        )}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[주간 날씨]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderWeekly()
+        )}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[기상 특보]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderWarning()
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+
+-------- timeUtils.js 세이브본 ---------
+// app/Components/Utils/timeUtils.js
+export const getBaseDateTime = () => {
+    const now = new Date();
+  
+    // 기상청 API는 매 정시 기준, 40분 후부터 데이터를 제공함
+    // 예: 12:40 이후 → base_time은 12:00
+    let baseDate = now;
+    let baseTime = new Date(now.getTime() - 60 * 60 * 1000); // 1시간 전
+  
+    const y = baseDate.getFullYear();
+    const m = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const d = String(baseDate.getDate()).padStart(2, '0');
+    const h = String(baseTime.getHours()).padStart(2, '0');
+    const min = baseTime.getMinutes();
+  
+    const base_date = `${y}${m}${d}`;
+    const base_time = `${h}00`;
+  
+    return { base_date, base_time };
+  };
+  
+
+
+
+
+
+  ----------------------------------
+
+  4월 14일 01시01분 기준 되는 코드
+
+  WeatherAPI.js
+// app/Components/Css/FarmInfo/WeatherAPI.js
+
+import axios from 'axios';
+import { WEATHER_API_KEY_PORTAL, WEATHER_API_KEY_KMA } from '../../API/apikey';
+import { XMLParser } from 'fast-xml-parser';
+
+// fast-xml-parser 설정
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '',
+  isArray: (name) => name === 'item',
+});
+
+// 공통 API 요청 함수
+const fetchAPI = async (url, params) => {
+  try {
+    const response = await axios.get(url, { params });
+    const xml = response.data;
+    console.log('[LOG] 날씨 API 원 응답:', xml);
+    return parser.parse(xml);
+  } catch (error) {
+    console.error('[ERROR] 기상청 API 요청 오류:', error);
+    return null;
+  }
+};
+
+// fallback 날짜 구하기 함수 (어제 날짜)
+const getFallbackDate = (baseDate) => {
+  const date = new Date(baseDate.slice(0, 4), baseDate.slice(4, 6) - 1, baseDate.slice(6, 8));
+  date.setDate(date.getDate() - 1);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}${mm}${dd}`;
+};
+
+// 통합 호출 함수
+export const fetchWeather = async (type, params) => {
+  switch (type) {
+    case 'ultraNcst':
+      return await fetchUltraSrtNcst(params);
+    case 'ultraFcst':
+      return await fetchUltraSrtFcst(params);
+    case 'vilageFcst':
+      return await fetchVilageFcst(params);
+    case 'midLandFcst':
+      return await fetchMidLandFcst(params);
+    case 'midTa':
+      return await fetchMidTa(params);
+    case 'warning':
+      return await fetchWarningNow();
+    case 'typhoon':
+      return await fetchTyphoon(params);
+    case 'latlon':
+      return await convertLatLonToGrid(params);
+    default:
+      console.error('[ERROR] 알 수 없는 요청 유형:', type);
+      return null;
+  }
+};
+
+// 초단기실황조회
+export const fetchUltraSrtNcst = async ({ nx, ny, base_date, base_time }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    pageNo: 1,
+    numOfRows: 1000,
+    dataType: 'XML',
+    base_date,
+    base_time,
+    nx,
+    ny,
+  });
+};
+
+// 초단기예보조회 (fallback 적용)
+export const fetchUltraSrtFcst = async (params) => {
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    pageNo: 1,
+    numOfRows: 1000,
+    dataType: 'XML',
+    ...params,
+  });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 초단기예보 NO_DATA fallback 적용');
+    const fallbackDate = getFallbackDate(params.base_date);
+    return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst', {
+      ...params,
+      base_date: fallbackDate,
+      serviceKey: WEATHER_API_KEY_PORTAL,
+      pageNo: 1,
+      numOfRows: 1000,
+      dataType: 'XML',
+    });
+  }
+
+  return res;
+};
+
+// 단기예보조회
+export const fetchVilageFcst = async ({ nx, ny, base_date, base_time }) => {
+  return await fetchAPI('https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    pageNo: 1,
+    numOfRows: 1000,
+    dataType: 'XML',
+    base_date,
+    base_time,
+    nx,
+    ny,
+  });
+};
+
+// 중기육상예보 (fallback 적용)
+export const fetchMidLandFcst = async ({ regId, tmFc }) => {
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    dataType: 'XML',
+    regId,
+    tmFc,
+  });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 중기육상예보 NO_DATA fallback 적용');
+    const fallbackDate = getFallbackDate(tmFc.slice(0, 8)) + tmFc.slice(8);
+    return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst', {
+      serviceKey: WEATHER_API_KEY_PORTAL,
+      dataType: 'XML',
+      regId,
+      tmFc: fallbackDate,
+    });
+  }
+
+  return res;
+};
+
+// 중기기온예보 (fallback 적용)
+export const fetchMidTa = async ({ regId, tmFc }) => {
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    dataType: 'XML',
+    regId,
+    tmFc,
+  });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 중기기온예보 NO_DATA fallback 적용');
+    const fallbackDate = getFallbackDate(tmFc.slice(0, 8)) + tmFc.slice(8);
+    return await fetchAPI('https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa', {
+      serviceKey: WEATHER_API_KEY_PORTAL,
+      dataType: 'XML',
+      regId,
+      tmFc: fallbackDate,
+    });
+  }
+
+  return res;
+};
+
+// 기상특보 조회 (fallback 적용)
+export const fetchWarningNow = async () => {
+  const res = await fetchAPI('https://apis.data.go.kr/1360000/WthrWrnInfoService/getWthrWrnList', {
+    serviceKey: WEATHER_API_KEY_PORTAL,
+    dataType: 'XML',
+    pageNo: 1,
+    numOfRows: 100,
+  });
+
+  const code = res?.response?.header?.resultCode;
+  if (code === '03' || !res?.response?.body?.items?.item?.length) {
+    console.warn('[WARN] 기상특보 NO_DATA fallback 적용 - 이전 날 기준 요청 없음');
+    return null;
+  }
+
+  return res;
+};
+
+// 태풍정보
+export const fetchTyphoon = async ({ YY, typ, seq, mode }) => {
+  return await fetchAPI('https://apihub.kma.go.kr/api/typ01/url/typ_data.php', {
+    authKey: WEATHER_API_KEY_KMA,
+    YY,
+    typ,
+    seq,
+    mode,
+  });
+};
+
+// 위경도 → 격자변환
+export const convertLatLonToGrid = async ({ lat, lon }) => {
+  try {
+    console.log('[LOG] 모드: latlon');
+    console.log('[LOG] 격자 변환 요청 좌표:', { lat, lon });
+
+    const response = await axios.get('https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-dfs_xy_lonlat', {
+      params: {
+        lat,
+        lon,
+        authKey: WEATHER_API_KEY_KMA,
+      },
+    });
+
+    const text = response.data;
+    const match = text.match(/\s+(\d+\.\d+),\s+(\d+\.\d+),\s+(\d+),\s+(\d+)/);
+
+    if (match) {
+      const result = {
+        lon: parseFloat(match[1]),
+        lat: parseFloat(match[2]),
+        x: parseInt(match[3]),
+        y: parseInt(match[4]),
+      };
+      console.log('[LOG] 격자 정보:', result);
+      return result;
+    } else {
+      console.error('[ERROR] 격자 정보 없음.');
+      return null;
+    }
+  } catch (error) {
+    console.error('[ERROR] 격자 변환 요청 오류:', error.response || error.message);
+    return null;
+  }
+};
+
+
+
+
+-----------
+index.js
+// app/FarmInfo/index.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, ScrollView } from 'react-native';
+import styles from '../Components/Css/FarmInfo/index.js';
+import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
+import { getBaseDateTime } from '../Components/Utils/timeUtils';
+import { getMidLandRegId } from '../Components/Utils/regionMapper';
+import * as Location from 'expo-location';
+
+const FARM_COORDS = {
+  latitude: 36.953862288,
+  longitude: 127.681782599,
+};
+
+export default function FarmInfo() {
+  const [mode, setMode] = useState('farm');
+  const [weatherData, setWeatherData] = useState(null);
+  const [weeklyData, setWeeklyData] = useState(null);
+  const [warningData, setWarningData] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const loadWeather = async () => {
+    setLoading(true);
+    let coords = FARM_COORDS;
+    console.log('[공통] 현재 설정된 농장 좌표:', coords);
+
+    if (mode === 'current') {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.error('[공통] 위치 권한 거부됨');
+          setLoading(false);
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({});
+        coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        console.log('[공통] 현재 위치 좌표:', coords);
+      } catch (error) {
+        console.error('[공통] 현재 위치 가져오기 실패:', error);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const baseDate = new Date(now);
+
+    if (currentHour < 6) {
+      baseDate.setDate(baseDate.getDate() - 1);
+    }
+
+    const yyyy = baseDate.getFullYear();
+    const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(baseDate.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}${mm}${dd}`;
+    const tmFc = currentHour < 6 || currentHour >= 18 ? `${dateStr}1800` : `${dateStr}0600`;
+
+    const { base_date, base_time } = getBaseDateTime();
+    console.log('[공통] 기준 날짜 및 시간:', base_date, base_time);
+
+    const grid = await fetchWeather('latlon', {
+      lat: coords.latitude,
+      lon: coords.longitude,
+    });
+    console.log('[격자변환] 결과:', grid);
+    if (!grid || !grid.x || !grid.y) {
+      setLoading(false);
+      return;
+    }
+
+    console.log('[시간대별 날씨] 요청 좌표:', grid.x, grid.y);
+    const forecast = await fetchWeather('ultraFcst', {
+      nx: grid.x,
+      ny: grid.y,
+      base_date,
+      base_time,
+    });
+    console.log('[시간대별 날씨] 응답:', forecast);
+
+    const regId = getMidLandRegId(coords.latitude, coords.longitude);
+    const midForecast = await fetchWeather('midLandFcst', { regId, tmFc });
+    console.log('[주간 날씨] 요청 파라미터:', { regId, tmFc });
+    console.log('[주간 날씨] 응답:', midForecast);
+
+    const warning = await fetchWeather('warning');
+    console.log('[기상 특보] 응답:', warning);
+
+    if (forecast) setWeatherData(forecast);
+
+    // ✅ 주간 날씨 파싱 로직 개선 (중요)
+    const itemRaw = midForecast?.response?.body?.items?.item;
+    const itemArray = itemRaw
+      ? Array.isArray(itemRaw)
+        ? itemRaw
+        : [itemRaw]
+      : [];
+
+    const filteredItems = itemArray.filter(
+      (item) => item.wfAm || item.wfPm
+    );
+
+    if (
+      midForecast?.response?.header?.resultCode === '00' &&
+      filteredItems.length > 0
+    ) {
+      setWeeklyData({
+        response: { body: { items: { item: filteredItems } } },
+      });
+    } else {
+      console.warn('[주간 날씨] 유효하지 않은 응답 또는 데이터 없음:', midForecast);
+    }
+
+    if (typeof warning === 'string') setWarningData(warning);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWeather();
+  }, [mode]);
+
+  const getEmojiForPty = (value) => {
+    switch (value) {
+      case '0': return '☀ ';
+      case '1': return '🌧 ';
+      case '2': return '🌦 ';
+      case '3': return '❄ ';
+      case '4': return '🌨 ';
+      default: return '☁ ';
+    }
+  };
+
+  const getEmojiForSky = (value) => {
+    switch (value) {
+      case '1': return '☀ ';
+      case '3': return '⛅ ';
+      case '4': return '☁ ';
+      default: return '☁ ';
+    }
+  };
+
+  const renderForecast = () => {
+    const msg = weatherData?.response?.header?.resultMsg;
+    const code = weatherData?.response?.header?.resultCode;
+    if (msg !== 'NORMAL_SERVICE') return <Text style={styles.errorText}>에러: {msg} (코드 {code})</Text>;
+
+    const items = weatherData?.response?.body?.items?.item || [];
+    const categories = ['PTY', 'RN1', 'SKY', 'T1H', 'REH'];
+    const grouped = {};
+
+    for (const item of items) {
+      if (!categories.includes(item.category)) continue;
+      if (!grouped[item.fcstTime]) grouped[item.fcstTime] = {};
+      grouped[item.fcstTime][item.category] = item.fcstValue;
+    }
+
+    console.log('[시간대별 날씨] 그룹화된 데이터:', grouped);
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const sortedTimes = Object.keys(grouped).sort((a, b) => {
+      const aHour = parseInt(a);
+      const bHour = parseInt(b);
+      const offsetA = (aHour + 24 - currentHour) % 24;
+      const offsetB = (bHour + 24 - currentHour) % 24;
+      return offsetA - offsetB;
+    });
+
+    return (
+      <ScrollView style={{ maxHeight: 600 }} nestedScrollEnabled={true}>
+        {sortedTimes.map((time, idx) => {
+          const data = grouped[time] || {};
+          const pty = data['PTY'];
+          const rn1 = data['RN1'];
+          const sky = data['SKY'];
+          const t1h = data.hasOwnProperty('T1H') ? ` ${data['T1H']} ℃ ` : ' - ';
+          const reh = data.hasOwnProperty('REH') ? `${data['REH']}% ` : ' - ';
+          const emoji = pty !== '0' ? getEmojiForPty(pty) : getEmojiForSky(sky);
+          const rainInfo = rn1 ? (pty !== '0 ' && rn1 !== '강수없음 ' ? `${rn1}` : '강수없음 ') : '강수없음 ';
+          const hour = `${String(time).padStart(4, '0').slice(0, 2)} 시`;
+
+          return (
+            <View key={idx} style={styles.row}>
+              <Text style={styles.time}>{hour}</Text>
+              <Text style={styles.value}>{emoji}</Text>
+              <Text style={styles.value}>{rainInfo}</Text>
+              <Text style={styles.value}>{t1h}</Text>
+              <Text style={styles.value}>{reh}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    );
+  };
+
+  const renderWeekly = () => {
+    const items = weeklyData?.response?.body?.items?.item || [];
+    console.log('[주간 날씨] 원시 데이터:', items);
+    if (items.length === 0) return <Text style={styles.noWarning}>주간 예보 데이터 없음</Text>;
+
+    const getEmoji = (text) => {
+      if (text.includes('맑')) return '☀ ';
+      if (text.includes('구름많')) return '⛅ ';
+      if (text.includes('흐림')) return '☁ ';
+      if (text.includes('비')) return '🌧 ';
+      if (text.includes('눈')) return '❄ ';
+      return '❓';
+    };
+
+    return items.map((item, idx) => (
+      <View key={idx} style={styles.row}>
+        <Text style={styles.time}>{item.fcstDate || `Day ${idx + 1}`}</Text>
+        <Text style={styles.value}>{getEmoji(item.wfAm)} / {getEmoji(item.wfPm)}</Text>
+        <Text style={styles.value}>{item.wfAm} / {item.wfPm}</Text>
+      </View>
+    ));
+  };
+
+  const renderWarning = () => {
+    const lines = typeof warningData === 'string'
+      ? warningData.split('\n').filter(line => line.startsWith('L'))
+      : [];
+    console.log('[기상 특보] 파싱된 특보 라인:', lines);
+    if (lines.length === 0) return <Text style={styles.noWarning}>현재 발효 중인 특보가 없습니다.</Text>;
+    return lines.map((line, idx) => <Text key={idx} style={styles.warningLine}>{line}</Text>);
+  };
+
+  return (
+    <ScrollView style={styles.container} nestedScrollEnabled={true}>
+      <View style={styles.tabContainer}>
+        <Button title="내 농장 날씨" onPress={() => setMode('farm')} />
+        <Button title="현 위치 날씨" onPress={() => setMode('current')} />
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[시간대별 날씨]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderForecast()
+        )}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[주간 날씨]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderWeekly()
+        )}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[기상 특보]</Text>
+        {loading ? (
+          <Text style={styles.loading}>로딩중...</Text>
+        ) : (
+          renderWarning()
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+
+
+----------------
+timeUtils.js
+
+// app/Components/Utils/timeUtils.js
+export const getBaseDateTime = () => {
+  const now = new Date();
+
+  // 기상청 API는 매 정시 기준, 40분 후부터 데이터를 제공함
+  // 예: 12:40 이후 → base_time은 12:00
+  let baseDate = now;
+  let baseTime = new Date(now.getTime() - 60 * 60 * 1000); // 1시간 전
+
+  const y = baseDate.getFullYear();
+  const m = String(baseDate.getMonth() + 1).padStart(2, '0');
+  const d = String(baseDate.getDate()).padStart(2, '0');
+  const h = String(baseTime.getHours()).padStart(2, '0');
+  const min = baseTime.getMinutes();
+
+  const base_date = `${y}${m}${d}`;
+  const base_time = `${h}00`;
+
+  return { base_date, base_time };
+};
+
+
+
+--------------------------
+index.js
+
+// app/FarmInfo/index.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, ScrollView } from 'react-native';
+import styles from '../Components/Css/FarmInfo/index.js';
+import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
+import { getBaseDateTime } from '../Components/Utils/timeUtils';
+import { getMidLandRegId } from '../Components/Utils/regionMapper';
+import * as Location from 'expo-location';
+
+const FARM_COORDS = {
+  latitude: 36.953862288,
+  longitude: 127.681782599,
+};
+
+export default function FarmInfo() {
+  const [mode, setMode] = useState('farm');
+  const [weatherData, setWeatherData] = useState(null);
+  const [weeklyData, setWeeklyData] = useState(null);
+  const [warningData, setWarningData] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const loadWeather = async () => {
+    setLoading(true);
+    let coords = FARM_COORDS;
+    console.log('[공통] 현재 설정된 농장 좌표:', coords);
+
+    if (mode === 'current') {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.error('[공통] 위치 권한 거부됨');
+          setLoading(false);
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({});
+        coords = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        console.log('[공통] 현재 위치 좌표:', coords);
+      } catch (error) {
+        console.error('[공통] 현재 위치 가져오기 실패:', error);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const baseDate = new Date(now);
+    if (currentHour < 6) baseDate.setDate(baseDate.getDate() - 1);
+
+    const yyyy = baseDate.getFullYear();
+    const mm = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(baseDate.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}${mm}${dd}`;
+    const tmFc = currentHour < 6 || currentHour >= 18 ? `${dateStr}1800` : `${dateStr}0600`;
+
+    const { base_date, base_time } = getBaseDateTime();
+    console.log('[공통] 기준 날짜 및 시간:', base_date, base_time);
+
+    const grid = await fetchWeather('latlon', {
+      lat: coords.latitude,
+      lon: coords.longitude,
+    });
+    console.log('[격자변환] 결과:', grid);
+    if (!grid || !grid.x || !grid.y) {
+      setLoading(false);
+      return;
+    }
+
+    console.log('[시간대별 날씨] 요청 좌표:', grid.x, grid.y);
+    const forecast = await fetchWeather('ultraFcst', {
+      nx: grid.x,
+      ny: grid.y,
+      base_date,
+      base_time,
+    });
+    console.log('[시간대별 날씨] 응답:', forecast);
+
+    const regId = getMidLandRegId(coords.latitude, coords.longitude);
+    const midForecast = await fetchWeather('midLandFcst', { regId, tmFc });
+    console.log('[주간 날씨] 요청 파라미터:', { regId, tmFc });
+    console.log('[주간 날씨] 응답:', midForecast);
+
+    const warning = await fetchWeather('warning');
+    console.log('[기상 특보] 응답:', warning);
+
+    if (forecast) setWeatherData(forecast);
+
+    const itemRaw = midForecast?.response?.body?.items?.item;
+    const itemArray = Array.isArray(itemRaw) ? itemRaw : itemRaw ? [itemRaw] : [];
+
+    const hasValidForecast = (item) => {
+      const keys = Object.keys(item || {});
+      return keys.some((key) => /^wf[4-9](Am|Pm)?$/.test(key) || key === 'wf10');
+    };
+
+    const filteredItems = itemArray.filter((item) => hasValidForecast(item));
+    console.log('[주간 날씨] 응답 원본 item:', itemArray);
+    console.log('[주간 날씨] 필터링된 item:', filteredItems);
+
+    if (filteredItems.length > 0) {
+      setWeeklyData(filteredItems[0]);
+      console.log('[주간 날씨] 최종 파싱된 데이터:', filteredItems[0]);
+    } else {
+      console.warn('[주간 날씨] 유효하지 않은 응답 또는 데이터 없음:', midForecast);
+      setWeeklyData(null);
+    }
+
+    if (typeof warning === 'string') setWarningData(warning);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadWeather();
+  }, [mode]);
+
+  const getEmojiForPty = (value) => {
+    switch (value) {
+      case '0': return '☀ ';
+      case '1': return '🌧 ';
+      case '2': return '🌦 ';
+      case '3': return '❄ ';
+      case '4': return '🌨 ';
+      default: return '☀ ';
+    }
+  };
+
+  const getEmojiForSky = (value) => {
+    switch (value) {
+      case '1': return '☀ ';
+      case '3': return '⛅ ';
+      case '4': return '☁ ';
+      default: return '☀ ';
+    }
+  };
+
+  const renderForecast = () => {
+    const msg = weatherData?.response?.header?.resultMsg;
+    const code = weatherData?.response?.header?.resultCode;
+    if (msg !== 'NORMAL_SERVICE') return <Text style={styles.errorText}>에러: {msg} (코드 {code})</Text>;
+
+    const items = weatherData?.response?.body?.items?.item || [];
+    const categories = ['PTY', 'RN1', 'SKY', 'T1H', 'REH'];
+    const grouped = {};
+
+    for (const item of items) {
+      if (!categories.includes(item.category)) continue;
+      if (!grouped[item.fcstTime]) grouped[item.fcstTime] = {};
+      grouped[item.fcstTime][item.category] = item.fcstValue;
+    }
+
+    console.log('[시간대별 날씨] 그룹화된 데이터:', grouped);
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const sortedTimes = Object.keys(grouped).sort((a, b) => {
+      const aHour = parseInt(a);
+      const bHour = parseInt(b);
+      const offsetA = (aHour + 24 - currentHour) % 24;
+      const offsetB = (bHour + 24 - currentHour) % 24;
+      return offsetA - offsetB;
+    });
+
+    return (
+      <ScrollView style={{ maxHeight: 600 }} nestedScrollEnabled={true}>
+        {sortedTimes.map((time, idx) => {
+          const data = grouped[time] || {};
+          const pty = data['PTY'];
+          const rn1 = data['RN1'];
+          const sky = data['SKY'];
+          const t1h = data.hasOwnProperty('T1H') ? ` ${data['T1H']} ℃ ` : ' - ';
+          const reh = data.hasOwnProperty('REH') ? `${data['REH']}% ` : ' - ';
+          const emoji = pty !== '0' ? getEmojiForPty(pty) : getEmojiForSky(sky);
+          const rainInfo = rn1 ? (pty !== '0 ' && rn1 !== '강수없음 ' ? `${rn1}` : '강수없음 ') : '강수없음 ';
+          const hour = `${String(time).padStart(4, '0').slice(0, 2)} 시`;
+
+          return (
+            <View key={idx} style={styles.row}>
+              <Text style={styles.time}>{hour}</Text>
+              <Text style={styles.value}>{emoji}</Text>
+              <Text style={styles.value}>{rainInfo}</Text>
+              <Text style={styles.value}>{t1h}</Text>
+              <Text style={styles.value}>{reh}</Text>
+            </View>
+          );
+        })}
+      </ScrollView>
+    );
+  };
+
+  const renderWeekly = () => {
+    try {
+      if (!weeklyData) {
+        return <Text style={styles.noWarning}>주간 날씨 데이터 없음</Text>;
+      }
+
+      const getEmoji = (text) => {
+        if (!text) return '❓';
+        if (text.includes('맑')) return '☀ ';
+        if (text.includes('구름많')) return '⛅ ';
+        if (text.includes('흐림')) return '☁ ';
+        if (text.includes('비')) return '🌧 ';
+        if (text.includes('눈')) return '❄ ';
+        return '❓';
+      };
+
+      const dayList = [
+        { am: 'wf4Am', pm: 'wf4Pm' },
+        { am: 'wf5Am', pm: 'wf5Pm' },
+        { am: 'wf6Am', pm: 'wf6Pm' },
+        { am: 'wf7Am', pm: 'wf7Pm' },
+        { am: 'wf8', pm: null },
+        { am: 'wf9', pm: null },
+        { am: 'wf10', pm: null },
+      ];
+
+      const today = new Date();
+      const weeklyDates = Array.from({ length: dayList.length }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() + i + 3);
+        return `${d.getMonth() + 1}/${d.getDate()}`;
+      });
+
+      return (
+        <ScrollView style={{ maxHeight: 400 }} nestedScrollEnabled={true}>
+          {dayList.map((field, idx) => {
+            const amText = weeklyData[field.am];
+            const pmText = field.pm ? weeklyData[field.pm] : null;
+            const emoji = `${getEmoji(amText)}${pmText ? '/ ' + getEmoji(pmText) : ''}`;
+            const desc = `${amText || ''}${pmText ? ' / ' + pmText : ''}`;
+            return (
+              <View key={idx} style={styles.row}>
+                <Text style={styles.time}>{weeklyDates[idx]}</Text>
+                <Text style={styles.value}>{emoji}</Text>
+                <Text style={styles.value}>{desc}</Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      );
+    } catch (e) {
+      console.warn('[주간 날씨] 렌더 중 오류 발생:', e);
+      return <Text style={styles.noWarning}>주간 날씨 데이터 없음</Text>;
+    }
+  };
+  
+
+  const renderWarning = () => {
+    const lines = typeof warningData === 'string'
+      ? warningData.split('\n').filter(line => line.startsWith('L'))
+      : [];
+    console.log('[기상 특보] 파싱된 특보 라인:', lines);
+    if (lines.length === 0) return <Text style={styles.noWarning}>현재 발효 중인 특보가 없습니다.</Text>;
+    return lines.map((line, idx) => <Text key={idx} style={styles.warningLine}>{line}</Text>);
+  };
+
+  return (
+    <ScrollView style={styles.container} nestedScrollEnabled={true}>
+      <View style={styles.tabContainer}>
+        <Button title="내 농장 날씨" onPress={() => setMode('farm')} />
+        <Button title="현 위치 날씨" onPress={() => setMode('current')} />
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[시간대별 날씨]</Text>
+        {loading ? <Text style={styles.loading}>로딩중...</Text> : renderForecast()}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[주간 날씨]</Text>
+        {loading ? <Text style={styles.loading}>로딩중...</Text> : renderWeekly()}
+      </View>
+
+      <View style={styles.weatherBox}>
+        <Text style={styles.sectionTitle}>[기상 특보]</Text>
+        {loading ? <Text style={styles.loading}>로딩중...</Text> : renderWarning()}
+      </View>
+    </ScrollView>
+  );
+}
+
+==========================
+import { XMLParser } from 'fast-xml-parser';
+import * as XLSX from 'xlsx';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
+import itemCodeData from '../Components/Utils/item_code_data.json';
+import { MARKET_API_KEY } from '../Components/API/apikey';
+import axios from 'axios';
+
+// 실제 API URL 설정
+const BASE_URL = 'http://211.237.50.150:7080/openapi';
+const API_BASE_URL = BASE_URL; // axios용 추가
+
+// XML을 JSON으로 변환하는 유틸리티 함수
+const parseXmlToJson = async (xmlString) => {
+  try {
+    const parser = new XMLParser();
+    const result = parser.parse(xmlString);
+    return result;
+  } catch (error) {
+    console.error('[ERROR] XML 파싱 오류:', error);
+    throw error;
+  }
+};
+
+// Grid ID 상수 정의
+const GRID_IDS = {
+  MARKET_CODE: 'Grid_20240625000000000661_1',    // 도매시장 코드
+  GRADE_CODE: 'Grid_20240626000000000663_1',     // 등급 코드
+  ORIGIN_CODE: 'Grid_20240626000000000667_1',    // 산지 코드
+  ITEM_CODE: 'Grid_20240626000000000668_1',      // 품목 코드
+  SETTLEMENT_PRICE: 'Grid_20240625000000000653_1', // 도매시장 정산가격 정보
+  REALTIME_PRICE: 'Grid_20240625000000000654_1'  // 도매시장 실시간 경락 정보
+};
+
+// 디버그용: JSON 데이터 확인
+console.log('[DEBUG] 로드된 JSON 데이터 샘플:', 
+  Array.isArray(itemCodeData) ? itemCodeData.slice(0, 2) : '데이터 형식 오류');
+
+// 선택된 itemCode, varietyCode 기반으로 cmpcd 찾는 함수 수정
+const findCmpcd = (itemCode, varietyCode) => {
+  const normalizedItemCode = String(itemCode).padStart(2, '0');
+  const normalizedVarietyCode = String(varietyCode).padStart(2, '0');
+  const matched = itemCodeData.find(item => 
+    item.itemCode === normalizedItemCode &&
+    item.varietyCode === normalizedVarietyCode
+  );
+  console.log('[DEBUG] findCmpcd 검색:', { normalizedItemCode, normalizedVarietyCode, matched });
+  return matched?.cmpcd || null;
+};
+
+// 일별 시세 조회 함수
+export const getDailyPrice = async ({ large, mid, small, whsalcd, saledate }) => {
+  try {
+    // cmpcd 자동 추출 시도
+    const cmpcd = findCmpcd(mid, small); // mid = itemCode, small = varietyCode
+
+    // 1. 필수 파라미터 누락 검사
+    if (!cmpcd || !large || !mid || !small || !whsalcd || !saledate) {
+      console.warn('[경고] 필수 파라미터 누락:', { cmpcd, large, mid, small, whsalcd, saledate });
+      throw new Error('필수 파라미터가 누락되었습니다.');
+    }
+
+    // 2. 문자열 안전 처리
+    const queryParams = {
+      AUCNGDE: String(saledate).trim(),
+      WHSALCD: String(whsalcd).trim(),
+      LARGE: String(large).trim(),
+      MID: String(mid).trim(),
+      SMALL: String(small).trim(),
+      CMPCD: String(cmpcd).trim()
+    };
+
+    // 3. 요청 URL 생성
+    const url = new URL(`${API_BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.SETTLEMENT_PRICE}/1/100`);
+    Object.entries(queryParams).forEach(([key, val]) => url.searchParams.append(key, val));
+    console.log('[DEBUG] 시세 조회 URL:', url.toString());
+
+    // 4. API 호출
+    const response = await axios.get(url.toString());
+    console.log('[DEBUG] 시세 조회 응답 상태:', response.status);
+
+    // 5. XML 파싱
+    const parsed = new XMLParser({ ignoreAttributes: false }).parse(response.data);
+    console.log('[DEBUG] 파싱된 전체 구조:', JSON.stringify(parsed, null, 2));
+
+    // 6. 에러 응답 처리
+    const result = parsed?.[GRID_IDS.SETTLEMENT_PRICE]?.result;
+    if (!result || result.code !== 'INFO-000') {
+      throw new Error(`API 응답이 올바르지 않습니다. (${result?.message || '알 수 없음'})`);
+    }
+
+    // 7. 실제 시세 데이터 반환
+    const rows = parsed[GRID_IDS.SETTLEMENT_PRICE]?.row || [];
+    return Array.isArray(rows) ? rows : [rows];
+
+  } catch (error) {
+    console.error('[ERROR] 시세 데이터 로드 실패:', error);
+    return null;
+  }
+};
+
+
+
+const MarketPriceService = {
+  getDailyPrice,
+  // 품종별 일일 시세 조회
+  async getVarietyPrice(cropCode, varietyCode) {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.GRADE_CODE}/1/100?prdlstCd=${cropCode}`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('[DEBUG] 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlData = await response.text();
+      console.log('[DEBUG] XML 응답:', xmlData);
+      
+      const jsonData = await parseXmlToJson(xmlData);
+      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
+      
+      if (!jsonData || !jsonData[GRID_IDS.GRADE_CODE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.GRADE_CODE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      return gridData.row;
+    } catch (error) {
+      console.error('품종별 시세 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 시세 비교 (과거 vs 현재)
+  async comparePrices(cropCode, startDate, endDate) {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.GRADE_CODE}/1/100?startDate=${startDate}&endDate=${endDate}&prdlstCd=${cropCode}`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.text();
+      return data;
+    } catch (error) {
+      console.error('시세 비교 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 지역별 시세 조회
+  async getRegionalPrices({ saledate, whsalcd, large, mid, small, cmpcd }) {
+    // 필수 파라미터 체크
+    if (!saledate || !whsalcd) {
+      console.error('필수 파라미터 누락:', { saledate, whsalcd });
+      return null;
+    }
+
+    let url = `${BASE_URL}/${MARKET_API_KEY}/xml/Grid_0000001/1/100?SALEDATE=${saledate}&WHSALCD=${whsalcd}`;
+    
+    // 선택 파라미터 추가
+    if (large) url += `&LARGE=${large}`;
+    if (mid) url += `&MID=${mid}`;
+    if (small) url += `&SMALL=${small}`;
+    if (cmpcd) url += `&CMPCD=${cmpcd}`;
+
+    console.log('전국 시세 API 요청 URL:', url);
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const xmlData = await response.text();
+      const jsonData = await parseXmlToJson(xmlData);
+      
+      if (!jsonData || !jsonData[GRID_IDS.SETTLEMENT_PRICE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.SETTLEMENT_PRICE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      return gridData.row.map(item => ({
+        AUCNGDE: item.AUCNGDE,
+        MRKTNM: item.MARKETNAME || item.MRKTNM,
+        ITEM_NAME: item.ITEMNAME || item.ITEM_NAME,
+        AVGPRI: item.AVGP || item.AVGPRI,
+        MAXPRC: item.MAXP || item.MAXPRC,
+        MINPRC: item.MINP || item.MINPRC,
+        AUCTQY: item.VOLUME || item.AUCTQY
+      }));
+    } catch (error) {
+      console.error('전국 시세 조회 실패:', error);
+      return null;
+    }
+  },
+
+  // 도매시장 코드 조회
+  async getMarketCodes() {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.MARKET_CODE}/1/100`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('[DEBUG] 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlData = await response.text();
+      console.log('[DEBUG] XML 응답:', xmlData);
+      
+      const jsonData = await parseXmlToJson(xmlData);
+      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
+      
+      if (!jsonData || !jsonData[GRID_IDS.MARKET_CODE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.MARKET_CODE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      return gridData.row;
+    } catch (error) {
+      console.error('도매시장 코드 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 품목 코드 조회 (JSON 데이터 사용)
+  async getItemCodes(searchKeyword = '') {
+    try {
+      console.log('[DEBUG] 품목 코드 조회 시작');
+      console.log('[DEBUG] 사용자 선택 품목:', searchKeyword);
+      console.log('[DEBUG] 전체 데이터 개수:', itemCodeData.length);
+      
+      // 데이터 구조 분석
+      const categories = new Set();
+      itemCodeData.forEach(item => {
+        categories.add(`${item.categoryCode}:${item.categoryName}`);
+      });
+      console.log('[DEBUG] 전체 카테고리 목록:', Array.from(categories));
+      
+      // 과일류와 채소류 카테고리 정의
+      const fruitCategories = ['6:과실류', '8:과일과채류'];
+      const vegetableCategories = [
+        '9:과채류',
+        '10:엽경채류',
+        '11:근채류',
+        '12:조미채소류',
+        '13:양채류',
+        '14:산채류'
+      ];
+      
+      console.log('[DEBUG] 사용할 카테고리:', {
+        과일: fruitCategories,
+        채소: vegetableCategories
+      });
+
+      // 과일류와 채소류로 분류
+      const categorizedItems = {
+        fruits: itemCodeData.filter(item => 
+          fruitCategories.includes(`${item.categoryCode}:${item.categoryName}`)
+        ),
+        vegetables: itemCodeData.filter(item => 
+          vegetableCategories.includes(`${item.categoryCode}:${item.categoryName}`)
+        )
+      };
+      
+      // 검색어가 없는 경우 전체 데이터 반환
+      if (!searchKeyword || typeof searchKeyword !== 'string') {
+        return categorizedItems;
+        }
+
+      // 검색어가 있는 경우 필터링
+          const keyword = searchKeyword.toLowerCase();
+      const filteredData = {
+        fruits: categorizedItems.fruits.filter(item => 
+          (item.itemName || '').toLowerCase().includes(keyword) ||
+          (item.varietyName || '').toLowerCase().includes(keyword)
+        ),
+        vegetables: categorizedItems.vegetables.filter(item => 
+          (item.itemName || '').toLowerCase().includes(keyword) ||
+          (item.varietyName || '').toLowerCase().includes(keyword)
+        )
+      };
+      
+      console.log('[DEBUG] 검색어:', keyword);
+      console.log('[DEBUG] 검색 결과:', {
+        fruits: filteredData.fruits.map(item => ({
+          categoryName: item.categoryName,
+          itemName: item.itemName,
+          varietyName: item.varietyName
+        })),
+        vegetables: filteredData.vegetables.map(item => ({
+          categoryName: item.categoryName,
+          itemName: item.itemName,
+          varietyName: item.varietyName
+        }))
+      });
+
+      return filteredData;
+    } catch (error) {
+      console.error('[ERROR] 품목 코드 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 등급 코드 조회
+  async getGradeCodes() {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.GRADE_CODE}/1/100`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('[DEBUG] 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlData = await response.text();
+      console.log('[DEBUG] XML 응답:', xmlData);
+      
+      const jsonData = await parseXmlToJson(xmlData);
+      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
+      
+      if (!jsonData || !jsonData[GRID_IDS.GRADE_CODE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.GRADE_CODE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      return gridData.row;
+    } catch (error) {
+      console.error('등급 코드 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 산지 코드 조회
+  async getOriginCodes() {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.ORIGIN_CODE}/1/100`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('[DEBUG] 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlData = await response.text();
+      console.log('[DEBUG] XML 응답:', xmlData);
+      
+      const jsonData = await parseXmlToJson(xmlData);
+      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
+      
+      if (!jsonData || !jsonData[GRID_IDS.ORIGIN_CODE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.ORIGIN_CODE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      return gridData.row;
+    } catch (error) {
+      console.error('산지 코드 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 도매시장 정산 가격 조회
+  async getSettlementPrices(marketCode, itemCode, date) {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.SETTLEMENT_PRICE}/1/100?AUCNGDE=${date}`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('[DEBUG] 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlData = await response.text();
+      console.log('[DEBUG] XML 응답:', xmlData);
+      
+      const jsonData = await parseXmlToJson(xmlData);
+      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
+      
+      if (!jsonData || !jsonData[GRID_IDS.SETTLEMENT_PRICE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.SETTLEMENT_PRICE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      // 평균가, 최고가, 최저가, 거래량 계산
+      const prices = gridData.row.map(item => ({
+        marketName: item.MARKETNAME,
+        itemName: item.ITEMNAME,
+        avgPrice: parseInt(item.AVGP),
+        maxPrice: parseInt(item.MAXP),
+        minPrice: parseInt(item.MINP),
+        volume: parseInt(item.VOLUME)
+      }));
+      
+      return prices;
+    } catch (error) {
+      console.error('도매시장 정산 가격 조회 오류:', error);
+      throw error;
+    }
+  },
+
+  // 도매시장 실시간 경락 정보 조회
+  async getRealTimePrices(marketCode, itemCode, date) {
+    try {
+      const url = `${BASE_URL}/${MARKET_API_KEY}/xml/${GRID_IDS.REALTIME_PRICE}/1/100?AUCNGDE=${date}`;
+      console.log('[DEBUG] 요청 URL:', url);
+      
+      const response = await fetch(url);
+      console.log('[DEBUG] 응답 상태:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const xmlData = await response.text();
+      console.log('[DEBUG] XML 응답:', xmlData);
+      
+      const jsonData = await parseXmlToJson(xmlData);
+      console.log('[DEBUG] 파싱된 JSON:', JSON.stringify(jsonData, null, 2));
+      
+      if (!jsonData || !jsonData[GRID_IDS.REALTIME_PRICE]) {
+        throw new Error('API 응답이 비어있습니다.');
+      }
+      
+      const gridData = jsonData[GRID_IDS.REALTIME_PRICE];
+      
+      if (!gridData.row || !Array.isArray(gridData.row)) {
+        throw new Error('API 응답에 유효한 데이터가 없습니다.');
+      }
+      
+      // 시간대별 낙찰가 정보 정리
+      const prices = gridData.row.map(item => ({
+        marketName: item.MARKETNAME,
+        itemName: item.ITEMNAME,
+        time: item.TIME,
+        price: parseInt(item.PRICE),
+        grade: item.GRADE
+      }));
+      
+      return prices;
+    } catch (error) {
+      console.error('도매시장 실시간 경락 정보 조회 오류:', error);
+      throw error;
+    }
+  }
+};
+
+export default MarketPriceService;
+
+api응답이 올바르지 않음, 날짜의 시세를 받아올 수 없음, item_code_data.json에 cmpcd파일 추가함
+
+
+
+
+
+

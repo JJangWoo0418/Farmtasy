@@ -5,6 +5,14 @@
       "expo-router"
     ],
     "name": "Farmtasy-app",
-    "slug": "Farmtasy-app"
+    "slug": "Farmtasy-app",
+    "android": {
+      "permissions": ["ACCESS_FINE_LOCATION"]
+    },
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to display weather information."
+      }
+    }
   }
 }

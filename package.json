@@ -44,7 +44,18 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
     "react-native-toast-message": "^2.3.0",
-    "react-native-web": "0.20.0"
+    "react-native-web": "0.20.0",
+    "@expo/vector-icons": "^14.1.0",
+    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-community/datetimepicker": "^8.3.0",
+    "@rgrove/parse-xml": "^4.2.0",
+    "expo-location": "~18.1.4",
+    "fast-xml-parser": "^4.2.4",
+    "react-native-geolocation-service": "^5.3.1",
+    "react-native-xml2js": "^1.0.3",
+    "xlsx": "^0.18.5",
+    "xml-js": "^1.6.11",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
