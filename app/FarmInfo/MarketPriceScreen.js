@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal, TextInput, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, TextInput, ScrollView, Image } from 'react-native';
+import { useState, useEffect } from 'react';
 import { styles } from '../Components/Css/FarmInfo/MarketPriceStyle';
 import itemCodeData from '../Components/Utils/item_code_data.json';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { MARKET_API_KEY } from '../Components/API/apikey';
 import { XMLParser } from 'fast-xml-parser';
+import { router } from 'expo-router';
 
 // 인기작물 TOP21 (이모지 포함)
 const popularCrops = [
@@ -857,6 +858,12 @@ export default function MarketPriceScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+        </TouchableOpacity>
+        <Text style={styles.title}>작물 시세</Text>
+      </View>
       {/* 작물 추가 버튼 위쪽에 패딩 추가 */}
       <View style={{ paddingTop: 16, paddingHorizontal: 16 }}>
         <TouchableOpacity style={styles.addCropButton} onPress={openModal}>

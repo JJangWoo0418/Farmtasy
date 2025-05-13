@@ -1035,8 +1035,12 @@ const HomePage = () => {
                     } else if (tab === '홈') {
                         navigation.navigate('HomePage');
                     }
-                    // 필요시 다른 탭도 추가
-                }}
+                    else if (tab === '정보') {
+                        navigation.navigate('FarmInfo/farminfo');
+                        // 필요시 다른 탭도 추가
+                    }
+                }
+                }
             />
         </View>
     );

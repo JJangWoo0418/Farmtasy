@@ -1,6 +1,7 @@
 // app/FarmInfo/index.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Button, ScrollView, TouchableOpacity, Image, navigation } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/FarmInfo/index.js';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
@@ -8,14 +9,15 @@ import { getBaseDateTime } from '../Components/Utils/timeUtils';
 import { getMidLandRegId } from '../Components/Utils/regionMapper';
 import * as Location from 'expo-location';
 import { getHistoricalTemperature } from '../Components/Utils/weatherUtils';
-import { useWeather } from '../context/WeatherContext';
+import { useWeather, WeatherProvider } from '../context/WeatherContext';
+import { router } from 'expo-router';
 
 const FARM_COORDS = {
   latitude: 36.953862288,
   longitude: 127.681782599,
 };
 
-export default function FarmInfo() {
+const FarmInfoContent = () => {
   const {
     weatherData,
     shortTermData,
@@ -804,6 +806,12 @@ export default function FarmInfo() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+                                <TouchableOpacity onPress={() => router.back()}>
+                                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                                </TouchableOpacity>
+                                <Text style={styles.title}>날씨</Text>
+                            </View>
       <View style={styles.navigationContainer}>
         <TouchableOpacity 
           style={[styles.navButton, mode === 'farm' ? styles.navButtonActive : styles.navButtonInactive]}
@@ -901,5 +909,13 @@ export default function FarmInfo() {
         )}
     </ScrollView>
     </View>
+  );
+};
+
+export default function FarmInfo() {
+  return (
+    <WeatherProvider>
+      <FarmInfoContent />
+    </WeatherProvider>
   );
 }
