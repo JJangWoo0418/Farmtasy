@@ -1015,6 +1015,7 @@ const HomePage = () => {
                 {isWriteToggleVisible ? (
                     <Image
                         source={require('../../../assets/Xicon.png')}
+                        style={{ width: 60, height: 60, resizeMode: 'contain' }}
                     />
                 ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>

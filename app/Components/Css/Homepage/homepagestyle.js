@@ -61,9 +61,11 @@ export default StyleSheet.create({
     paperpencilIcon: {
         width: 17,
         height: 17,
+        resizeMode: 'contain'
     },
     menuText: {
         fontSize: 15,
+        fontWeight: 'bold',
     },
     tabContainer: {
         flexDirection: 'row',
