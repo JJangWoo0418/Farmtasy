@@ -93,7 +93,7 @@ const Intro = () => {
                     />
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate('Login/login')}>
+                <TouchableOpacity onPress={() => navigation.navigate('Map/Map')}>
                     <Text style={styles.phoneText}>휴대전화번호로 시작</Text>
                 </TouchableOpacity>
             </View>
