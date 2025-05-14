@@ -46,7 +46,7 @@ const DirectPaymentPage2 = () => {
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 10 }}>
             {/* 상단 헤더 */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push({ pathname: '/Homepage/homepage', params: {
+                <TouchableOpacity onPress={() => router.push({ pathname: '/Homepage/Home/homepage', params: {
                     userData,
                     phone,
                     name,

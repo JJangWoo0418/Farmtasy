@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../Components/Css/Market/marketuploadstyle';
+import { useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 
 const categories = [
 { label: '농수산물 팔기', icon: require('../../assets/fruit.png') },
@@ -74,7 +76,7 @@ return (
     <View style={styles.container}>
         {/* 상단 네비게이션 */}
         <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>글쓰기</Text>

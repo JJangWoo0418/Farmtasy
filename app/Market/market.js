@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Market/marketstyle';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import { FontAwesome } from '@expo/vector-icons';
-
+import { router, useLocalSearchParams } from 'expo-router';
 const categories = [
     { label: '제초용품', icon: require('../../assets/weedicon2.png') },
     { label: '농자재', icon: require('../../assets/toolicon2.png') },
@@ -41,6 +41,8 @@ const Market = () => {
     const navigation = useNavigation();
     const [isDrawerVisible, setDrawerVisible] = useState(false);
     const [isWriteToggleVisible, setWriteToggleVisible] = useState(false);
+    const route = useRoute();
+    const { userData, phone, name, region } = useLocalSearchParams();
 
     return (
         <View style={styles.container}>
@@ -142,7 +144,7 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
                                     category: '농사질문',
                                     icon: require('../../assets/farmingquestions2.png'),
@@ -406,20 +408,48 @@ const Market = () => {
                     </View>
                 )}
             </TouchableOpacity>
-            <BottomTabNavigator currentTab="장터" onTabPress={(tab) => {
-                if (tab === '질문하기') {
-                    navigation.navigate('Chatbot/questionpage'); // 네비게이터에 등록된 이름
-                } else if (tab === '홈') {
-                    navigation.navigate('Homepage/Home/homepage');
-                } else if (tab === '정보') {
-                    navigation.navigate('FarmInfo/farminfo');
-                    // 필요시 다른 탭도 추가
-                } else if (tab === '장터') {
-                    navigation.navigate('Market/market');
-                    // 필요시 다른 탭도 추가
+            <BottomTabNavigator
+                currentTab="장터"
+                onTabPress={(tab) => {
+                    if (tab === '질문하기') {
+                        router.push({ pathname: '/Chatbot/questionpage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    } else if (tab === '홈') {
+                        router.push({ pathname: '/Homepage/Home/homepage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '정보') {
+                        router.push({ pathname: '/FarmInfo/farminfo', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                        // 필요시 다른 탭도 추가
+                    }
+                    else if (tab === '장터') {
+                        router.push({ pathname: '/Market/market', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
                 }
-            }
-            } />
+                }
+            />
         </View>
     );
 };

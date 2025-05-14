@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import { Link } from 'expo-router';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
@@ -8,6 +8,8 @@ import { getBaseDateTime } from '../Components/Utils/timeUtils';
 import { getMidLandRegId } from '../Components/Utils/regionMapper';
 import { useWeather } from '../context/WeatherContext';
 import { WeatherProvider } from '../context/WeatherContext';
+import { router, useLocalSearchParams} from 'expo-router';
+
 
 const FARM_COORDS = {
     latitude: 36.953862288,
@@ -25,6 +27,9 @@ const FarmInfoContent = () => {
         isLoading,
         setIsLoading
     } = useWeather();
+    const route = useRoute();
+    const { userData, phone, name, region } = useLocalSearchParams();
+
 
     return (
         <View style={styles.container}>
@@ -54,18 +59,48 @@ const FarmInfoContent = () => {
                 </View>
             </ScrollView>
 
-            <BottomTabNavigator currentTab="정보" onTabPress={(tab) => {
-                if (tab === '질문하기') {
-                    navigation.navigate('Chatbot/questionpage'); // 네비게이터에 등록된 이름
-                } else if (tab === '홈') {
-                    navigation.navigate('Homepage/Home/homepage');
+            <BottomTabNavigator
+                currentTab="정보"
+                onTabPress={(tab) => {
+                    if (tab === '질문하기') {
+                        router.push({ pathname: '/Chatbot/questionpage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    } else if (tab === '홈') {
+                        router.push({ pathname: '/Homepage/Home/homepage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '정보') {
+                        router.push({ pathname: '/FarmInfo/farminfo', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                        // 필요시 다른 탭도 추가
+                    }
+                    else if (tab === '장터') {
+                        router.push({ pathname: '/Market/market', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
                 }
-                else if (tab === '정보') {
-                    navigation.navigate('FarmInfo/farminfo');
-                    // 필요시 다른 탭도 추가
                 }
-            }
-            } />
+            />
         </View>
     );
 };

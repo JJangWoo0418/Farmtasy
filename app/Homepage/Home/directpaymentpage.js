@@ -21,10 +21,6 @@ const DirectPaymentPage = () => {
     const [landType, setLandType] = useState('논');
     const [regionType, setRegionType] = useState('진흥지역');
     const { userData, phone, name, region } = useLocalSearchParams();
-
-    console.log('유저이름:', name);
-    console.log('지역:', region);
-
     const isButtonActive = area.trim().length > 0 && !isNaN(Number(area));
 
     return (
@@ -35,7 +31,7 @@ const DirectPaymentPage = () => {
             >
                 <View style={styles.container}>
                     <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <TouchableOpacity onPress={() => router.back()}>
                             <Image source={require('../../../assets/gobackicon.png')} style={styles.backIcon} />
                         </TouchableOpacity>
                         <Text style={styles.title}>면적 직불금 계산기</Text>
@@ -103,7 +99,7 @@ const DirectPaymentPage = () => {
                             isButtonActive
                                 ? () =>
                                     router.push({
-                                        pathname: 'Homepage/directpaymentpage2', params: {
+                                        pathname: 'Homepage/Home/directpaymentpage2', params: {
                                             area,
                                             landType,
                                             regionType,

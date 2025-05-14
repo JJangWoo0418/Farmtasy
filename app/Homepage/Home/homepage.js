@@ -1032,16 +1032,40 @@ const HomePage = () => {
                 currentTab="홈"
                 onTabPress={(tab) => {
                     if (tab === '질문하기') {
-                        navigation.navigate('Chatbot/questionpage'); // 네비게이터에 등록된 이름
+                        router.push({ pathname: '/Chatbot/questionpage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
                     } else if (tab === '홈') {
-                        navigation.navigate('HomePage');
+                        router.push({ pathname: '/Homepage/Home/homepage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
                     }
                     else if (tab === '정보') {
-                        navigation.navigate('FarmInfo/farminfo');
+                        router.push({ pathname: '/FarmInfo/farminfo', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
                         // 필요시 다른 탭도 추가
                     }
                     else if (tab === '장터') {
-                        navigation.navigate('Market/market');
+                        router.push({ pathname: '/Market/market', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
                     }
                 }
                 }
