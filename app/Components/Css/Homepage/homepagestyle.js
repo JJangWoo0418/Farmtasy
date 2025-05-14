@@ -13,7 +13,6 @@ export default StyleSheet.create({
         left: 0,
         right: 0,
         zIndex: 99,
-
     },
     searchBar: {
         flexDirection: 'row',

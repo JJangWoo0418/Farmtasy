@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard} from 'react-native';
 import MapView, { Polygon, Polyline, Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
 import * as Location from 'expo-location';
-import { useNavigation } from '@react-navigation/native';
-import { router } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { router, useLocalSearchParams } from 'expo-router';
+import BottomTabNavigator from '../Navigator/BottomTabNavigator';
+
+
 
 // Geocoder 초기화 (API 키 확인)
 Geocoder.init('AIzaSyB7uysOUsyE_d6xdLLJx7YxC-Ux7giVNdc'); // 여기에 실제 API 키를 넣어주세요
@@ -42,6 +44,8 @@ const Map = () => {
     const addButtonOffsetY = useRef(new Animated.Value(0)).current; // Add Crop button offset animation value
     const [userLocation, setUserLocation] = useState(null);
     const [locationError, setLocationError] = useState(null);
+    const route = useRoute();
+    const { userData, phone, name} = useLocalSearchParams();
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -732,6 +736,57 @@ const Map = () => {
                     <Text style={styles.errorText}>{locationError}</Text>
                 </View>
             )}
+            <BottomTabNavigator
+                currentTab="내 농장"
+                onTabPress={(tab) => {
+                    if (tab === '질문하기') {
+                        router.push({ pathname: '/Chatbot/questionpage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    } else if (tab === '홈') {
+                        router.push({ pathname: '/Homepage/Home/homepage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '정보') {
+                        router.push({ pathname: '/FarmInfo/farminfo', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                        // 필요시 다른 탭도 추가
+                    }
+                    else if (tab === '장터') {
+                        router.push({ pathname: '/Market/market', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '내 농장') {
+                        router.push({ pathname: '/Map/Map', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                }
+                }
+            />
         </View>
     );
 };
@@ -739,6 +794,13 @@ const Map = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#fff',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99,
     },
     map: {
         flex: 1,
@@ -789,7 +851,7 @@ const styles = StyleSheet.create({
     },
     drawerContainer: {
         position: 'absolute',
-        bottom: 30,
+        bottom: 130,
         right: -140, // Adjust as needed based on content width
         flexDirection: 'row',
         alignItems: 'center',
@@ -870,7 +932,7 @@ const styles = StyleSheet.create({
     // --- 중앙 주소 표시 스타일 --- (위치 변경, zIndex 조정)
     centerAddressTouchable: {
          position: 'absolute',
-         bottom: 110,
+         bottom: 143,
          alignSelf: 'center',
          zIndex: 6,
      },
@@ -908,7 +970,7 @@ const styles = StyleSheet.create({
     // },
     addCropButtonContainer: {
         position: 'absolute',
-        bottom: 40,
+        bottom: 140,
         alignSelf: 'center',
         zIndex: 6,
     },
@@ -931,7 +993,7 @@ const styles = StyleSheet.create({
     },
     locationButton: {
         position: 'absolute',
-        bottom: 16,
+        bottom: 138,
         left: 16,
         backgroundColor: '#2196F3',
         borderRadius: 30,

@@ -447,6 +447,15 @@ const Market = () => {
                             introduction: route.params?.introduction
                         } });
                     }
+                    else if (tab === '내 농장') {
+                        router.push({ pathname: '/Map/Map', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
                 }
                 }
             />

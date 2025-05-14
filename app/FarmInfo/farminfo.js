@@ -98,6 +98,15 @@ const FarmInfoContent = () => {
                             introduction: route.params?.introduction
                         } });
                     }
+                    else if (tab === '내 농장') {
+                        router.push({ pathname: '/Map/Map', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
                 }
                 }
             />
@@ -117,6 +126,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99,
     },
     header: {
         flexDirection: 'row',
@@ -124,6 +139,7 @@ const styles = StyleSheet.create({
         padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        marginTop: 50,
     },
     backIcon: {
         width: 24,
