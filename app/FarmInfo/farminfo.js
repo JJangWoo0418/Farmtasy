@@ -8,6 +8,7 @@ import { getBaseDateTime } from '../Components/Utils/timeUtils';
 import { getMidLandRegId } from '../Components/Utils/regionMapper';
 import { useWeather } from '../context/WeatherContext';
 import { WeatherProvider } from '../context/WeatherContext';
+import Weather from './Weather';
 
 const FARM_COORDS = {
     latitude: 36.953862288,
@@ -17,13 +18,11 @@ const FARM_COORDS = {
 const FarmInfoContent = () => {
     const navigation = useNavigation();
     const {
-        setWeatherData,
-        setShortTermData,
-        setWeeklyData,
-        setLocationName,
-        setBaseTimeInfo,
         isLoading,
-        setIsLoading
+        weatherData,
+        shortTermData,
+        weeklyData,
+        locationName
     } = useWeather();
 
     return (
@@ -34,7 +33,7 @@ const FarmInfoContent = () => {
 
             <ScrollView style={styles.content}>
                 <View style={styles.section}>
-                    <Link href="/FarmInfo" asChild>
+                    <Link href="/FarmInfo/Weather" asChild>
                         <TouchableOpacity style={styles.menuItem}>
                             <View style={styles.menuContent}>
                                 <Text style={styles.menuIcon}>☀️</Text>
@@ -44,12 +43,16 @@ const FarmInfoContent = () => {
                         </TouchableOpacity>
                     </Link>
                     <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('FarmInfo/MarketPriceScreen')}>
-                        <Image source={require('../../assets/quoteicon2.png')} style={styles.menuIcon} />
-                        <Text style={styles.menuText}>작물 시세</Text>
+                        <View style={styles.menuContent}>
+                            <Text style={styles.menuIcon}>📊</Text>
+                            <Text style={styles.menuText}>작물 시세</Text>
+                        </View>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem}>
-                        <Image source={require('../../assets/bugicon2.png')} style={styles.menuIcon} />
-                        <Text style={styles.menuText}>병해충</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('FarmInfo/Pests')}>
+                        <View style={styles.menuContent}>
+                            <Text style={styles.menuIcon}>🐜</Text>
+                            <Text style={styles.menuText}>병해충</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
@@ -84,52 +87,62 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     header: {
-        flexDirection: 'row',
         alignItems: 'center',
         padding: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
     },
-    backIcon: {
-        width: 24,
-        height: 24,
-        marginRight: 10,
-    },
     headerTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        marginLeft: 145,
-
+        textAlign: 'center',
+        fontFamily: 'System',
     },
     content: {
         flex: 1,
+        paddingHorizontal: 16,
+        paddingTop: 20,
     },
     section: {
-        padding: 15,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+        marginTop: 16,
     },
     menuItem: {
-        flexDirection: 'row',
         alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        justifyContent: 'center',
+        marginBottom: 0,
+        marginRight: 0,
+        shadowColor: undefined,
+        shadowOffset: undefined,
+        shadowOpacity: undefined,
+        shadowRadius: undefined,
+        elevation: undefined,
+        minWidth: undefined,
+        minHeight: undefined,
+        alignSelf: 'center',
+        backgroundColor: undefined,
+        borderRadius: undefined,
+        paddingVertical: 0,
+        paddingHorizontal: 0,
+    },
+    menuContent: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     menuIcon: {
-        width: 24,
-        height: 24,
-        marginRight: 15,
+        fontSize: 36,
+        marginRight: 0,
+        marginBottom: 6,
+        textAlign: 'center',
     },
     menuText: {
         fontSize: 16,
-    },
-    menuContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        fontWeight: '500',
+        color: '#222',
+        textAlign: 'center',
     },
     loadingText: {
         marginLeft: 10,

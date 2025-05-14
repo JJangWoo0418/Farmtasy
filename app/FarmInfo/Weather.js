@@ -1,4 +1,4 @@
-// app/FarmInfo/index.js
+// app/FarmInfo/Weather.js
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, ScrollView, TouchableOpacity, Image, navigation } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -17,7 +17,7 @@ const FARM_COORDS = {
   longitude: 127.681782599,
 };
 
-const FarmInfoContent = () => {
+const WeatherContent = () => {
   const {
     weatherData,
     shortTermData,
@@ -912,10 +912,10 @@ const FarmInfoContent = () => {
   );
 };
 
-export default function FarmInfo() {
+export default function Weather() {
   return (
     <WeatherProvider>
-      <FarmInfoContent />
+      <WeatherContent />
     </WeatherProvider>
   );
 }
