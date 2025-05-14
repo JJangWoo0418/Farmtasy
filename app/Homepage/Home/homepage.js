@@ -1039,6 +1039,9 @@ const HomePage = () => {
                         navigation.navigate('FarmInfo/farminfo');
                         // 필요시 다른 탭도 추가
                     }
+                    else if (tab === '장터') {
+                        navigation.navigate('Market/market');
+                    }
                 }
                 }
             />
