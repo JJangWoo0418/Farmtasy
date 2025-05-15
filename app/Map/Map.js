@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard } from 'react-native';
 import MapView, { Polygon, Polyline, Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
+import API_CONFIG from '../DB/api';
 
 
 
@@ -45,7 +46,7 @@ const Map = () => {
     const [userLocation, setUserLocation] = useState(null);
     const [locationError, setLocationError] = useState(null);
     const route = useRoute();
-    const { userData, phone, name} = useLocalSearchParams();
+    const { userData, phone, name } = useLocalSearchParams();
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -53,20 +54,17 @@ const Map = () => {
 
     // --- 지도 중앙 주소 가져오기 함수 ---
     const fetchCenterAddress = async (latitude, longitude) => {
-        if (isDrawingMode) return; // 그리기 모드에서는 주소 가져오지 않음
-        console.log('[fetchCenterAddress] Fetching address for:', latitude, longitude); // 로그 추가
+        if (isDrawingMode) return;
         setIsFetchingAddress(true);
         try {
             const response = await Geocoder.from(latitude, longitude);
-            console.log('[fetchCenterAddress] Geocoder response:', response.status); // 로그 추가
-            // 여러 주소 형식 중 적절한 것 선택 (예: 도로명 또는 지번)
-            const formattedAddress = response.results[0]?.formatted_address || '주소를 찾을 수 없습니다.';
-             // 너무 길면 잘라서 표시 (선택적)
+            const formattedAddress = response.results[0]?.formatted_address || '';
             const shortAddress = formattedAddress.split(' ').slice(1).join(' ');
             setCenterAddress(shortAddress || formattedAddress);
+            console.log('[fetchCenterAddress] 주소 변환 성공:', shortAddress || formattedAddress);
         } catch (error) {
-            console.error('[fetchCenterAddress] Error fetching center address:', error); // 상세 오류 로그
-            setCenterAddress('주소 로딩 실패'); // 오류 시 메시지 표시
+            console.error('[fetchCenterAddress] 주소 변환 실패:', error?.message || error);
+            setCenterAddress('');
         } finally {
             setIsFetchingAddress(false);
         }
@@ -117,7 +115,7 @@ const Map = () => {
         }
         // 작물 추가 모드가 아닐 때도 region은 업데이트 (선택 사항)
         else if (!isDrawingMode) {
-             setRegion(newRegion);
+            setRegion(newRegion);
         }
     };
 
@@ -141,11 +139,41 @@ const Map = () => {
 
     // --- 컴포넌트 마운트 시 초기 작업 ---
     useEffect(() => {
-        // 컴포넌트 언마운트 시 debounce 취소만 수행
+        // 사용자의 농장 정보 불러오기
+        const fetchUserFarms = async () => {
+            try {
+                console.log('사용자 농장 정보 요청:', phone);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('불러온 농장 정보:', data);
+                    // 농장 정보를 지도에 표시할 형식으로 변환
+                    const formattedFarms = data.map(farm => ({
+                        id: farm.farm_id,
+                        name: farm.farm_name,
+                        coordinates: Array.isArray(farm.coordinates) && farm.coordinates.length > 0
+                            ? farm.coordinates
+                            : [{ latitude: farm.latitude, longitude: farm.longitude }]
+                    }));
+                    setFarmAreas(formattedFarms);
+                } else {
+                    console.error('농장 정보 불러오기 실패:', data.error);
+                }
+            } catch (error) {
+                console.error('농장 정보 요청 중 오류:', error);
+            }
+        };
+
+        if (phone) {
+            fetchUserFarms();
+        }
+
+        // 컴포넌트 언마운트 시 debounce 취소
         return () => {
             debouncedFetchCenterAddress.cancel();
         };
-    }, []); // 의존성 배열 비움
+    }, [phone]); // phone이 변경될 때마다 실행
     // -----------------------------------------------------------
 
     // 메뉴 토글 함수 수정 (버튼 위치 애니메이션 타겟 조정)
@@ -212,55 +240,81 @@ const Map = () => {
         }
     };
 
-    const promptForAreaName = (areaId = null, currentCoordinates) => {
-        const isModifying = areaId !== null;
-        const currentArea = isModifying ? farmAreas.find(a => a.id === areaId) : null;
-        const title = isModifying ? '농장 이름 수정' : '농장 이름 설정';
-        const message = '농장의 이름을 입력하세요:';
-        const defaultName = isModifying ? currentArea?.name : '';
-
-        const saveArea = (name) => {
-            if (!name) {
-                Alert.alert("오류", "농장 이름은 비워둘 수 없습니다.");
-                setIsDrawingMode(true);
-                return;
-            }
-            if (isModifying) {
-                setFarmAreas(prevAreas =>
-                    prevAreas.map(area =>
-                        area.id === areaId ? { ...area, name: name, coordinates: currentCoordinates } : area
-                    )
-                );
-                console.log('Area Modified:', { id: areaId, name, coordinates: currentCoordinates });
-            } else {
-                const newAreaId = Date.now();
-                const newArea = { id: newAreaId, name: name, coordinates: currentCoordinates };
-                setFarmAreas(prevAreas => [...prevAreas, newArea]);
-                console.log('New Area Saved:', newArea);
-            }
-            setIsDrawingMode(false);
-            setDrawnPath([]);
-            setModifyingAreaId(null);
+    const promptForAreaName = (currentCoordinates) => {
+        // 이름 입력 모달 또는 Alert.prompt 등으로 이름을 받는다고 가정
+        const askNameAndSave = (name) => {
+            saveFarmArea(name, currentCoordinates);
         };
 
         if (Platform.OS === 'ios') {
-            Alert.prompt(title, message,
+            Alert.prompt(
+                '농장 이름 설정',
+                '농장의 이름을 입력하세요:',
                 [
-                    { text: '취소', style: 'cancel', onPress: () => {
-                        console.log('Name input cancelled');
-                     } },
-                    { text: '확인', onPress: (name) => saveArea(name) },
+                    { text: '취소', style: 'cancel' },
+                    { text: '저장', onPress: askNameAndSave },
                 ],
                 'plain-text',
-                defaultName
+                ''
             );
         } else {
-            const tempName = isModifying ? `${currentArea?.name} (수정됨)` : `임시 농장 ${farmAreas.length + 1}`;
+            // Android: 커스텀 모달 구현 필요. 임시로 기본 이름 사용
+            const tempName = `임시 농장 ${farmAreas.length + 1}`;
             Alert.alert(
-                "알림 (Android)",
+                '알림 (Android)',
                 `이름 입력 기능은 커스텀 모달 구현이 필요합니다. 임시 이름 "${tempName}"으로 저장합니다.`,
-                [{ text: "확인", onPress: () => saveArea(tempName) }]
+                [{ text: '확인', onPress: () => askNameAndSave(tempName) }]
             );
+        }
+    };
+
+    const saveFarmArea = async (name, coordinates) => {
+        if (!name || name.trim().length === 0) {
+            Alert.alert('오류', '농장 이름을 입력하세요.');
+            return;
+        }
+        if (!coordinates || coordinates.length < 3) {
+            Alert.alert('오류', '영역을 3개 이상 점으로 그려주세요.');
+            return;
+        }
+
+        // 중심 좌표 계산
+        const lat = coordinates.reduce((sum, c) => sum + c.latitude, 0) / coordinates.length;
+        const lng = coordinates.reduce((sum, c) => sum + c.longitude, 0) / coordinates.length;
+
+        const farmData = {
+            user_phone: phone,
+            farm_name: name,
+            latitude: Number(lat.toFixed(7)),
+            longitude: Number(lng.toFixed(7)),
+            coordinates: coordinates // 드래그로 그린 영역 좌표 추가
+        };
+
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(farmData)
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || '농장 정보 저장에 실패했습니다.');
+            }
+
+            // 성공 시 지도에 반영
+            setFarmAreas(prev => [...prev, { 
+                id: data.farm_id, 
+                name, 
+                coordinates: coordinates // 드래그로 그린 영역 좌표 사용
+            }]);
+            Alert.alert('성공', '농장이 등록되었습니다.');
+        } catch (error) {
+            Alert.alert('오류', error.message || '농장 정보 저장에 실패했습니다.');
+        } finally {
+            setIsDrawingMode(false);
+            setDrawnPath([]);
+            setModifyingAreaId(null);
         }
     };
 
@@ -297,12 +351,14 @@ const Map = () => {
             Alert.alert("영역 설정", "농장 토지영역을 설정하시겠습니까? 지도를 드래그하여 영역을 그리세요.",
                 [
                     { text: "취소", style: "cancel" },
-                    { text: "예", onPress: () => {
-                        setIsDrawingMode(true);
-                        setDrawnPath([]);
-                        setModifyingAreaId(null);
-                        console.log('Drawing Mode Activated (Create)');
-                    } }
+                    {
+                        text: "예", onPress: () => {
+                            setIsDrawingMode(true);
+                            setDrawnPath([]);
+                            setModifyingAreaId(null);
+                            console.log('Drawing Mode Activated (Create)');
+                        }
+                    }
                 ]
             );
         } else {
@@ -311,19 +367,23 @@ const Map = () => {
             Alert.alert(title, message,
                 [
                     { text: modifyingAreaId ? "계속 수정" : "계속 그리기", style: "cancel" },
-                    { text: "취소", onPress: () => {
-                        setIsDrawingMode(false);
-                        setDrawnPath([]);
-                        setModifyingAreaId(null);
-                        console.log('Drawing/Modifying Cancelled');
-                     }, style: "destructive" },
-                    { text: "완료", onPress: () => {
-                        if (drawnPath.length < 3) {
-                            Alert.alert("오류", "영역을 형성하려면 최소 3개 이상의 점을 그려야 합니다.");
-                            return;
+                    {
+                        text: "취소", onPress: () => {
+                            setIsDrawingMode(false);
+                            setDrawnPath([]);
+                            setModifyingAreaId(null);
+                            console.log('Drawing/Modifying Cancelled');
+                        }, style: "destructive"
+                    },
+                    {
+                        text: "완료", onPress: () => {
+                            if (drawnPath.length < 3) {
+                                Alert.alert("오류", "영역을 형성하려면 최소 3개 이상의 점을 그려야 합니다.");
+                                return;
+                            }
+                            promptForAreaName(drawnPath);
                         }
-                        promptForAreaName(modifyingAreaId, [...drawnPath]);
-                     } }
+                    }
                 ]
             );
         }
@@ -423,13 +483,13 @@ const Map = () => {
             // Android: Alert.prompt 미지원 -> 임시 이름 사용 또는 커스텀 모달 필요
             // 우선 간단하게 임시 이름으로 저장하고 수정 유도
             if (isModifying) {
-                 // Android 이름 수정은 Alert.prompt 대안 필요 (여기서는 간단히 로그만 남김)
-                 Alert.alert("알림 (Android)", "이름 수정 기능은 커스텀 구현이 필요합니다.");
-                 console.log("Android - Attempted to modify name for crop:", cropId);
+                // Android 이름 수정은 Alert.prompt 대안 필요 (여기서는 간단히 로그만 남김)
+                Alert.alert("알림 (Android)", "이름 수정 기능은 커스텀 구현이 필요합니다.");
+                console.log("Android - Attempted to modify name for crop:", cropId);
 
             } else {
                 const tempName = `작물 ${managedCrops.length + 1}`;
-                 Alert.alert(
+                Alert.alert(
                     "알림 (Android)",
                     `이름 입력 기능은 커스텀 모달 구현이 필요합니다. 임시 이름 "${tempName}"으로 저장합니다. '이름 수정' 메뉴를 이용해 변경해주세요.`,
                     [{ text: "확인", onPress: () => saveCrop(tempName) }]
@@ -438,49 +498,49 @@ const Map = () => {
         }
     };
 
-     // 작물 정보 저장
-     const saveCrop = (name) => {
-         const newCrop = {
-             id: Date.now(), // 간단한 고유 ID 생성
-             name: name,
-             latitude: region.latitude,
-             longitude: region.longitude,
-         };
-         setManagedCrops(prevCrops => [...prevCrops, newCrop]);
-         console.log('New Crop Saved:', newCrop);
-         Alert.alert("저장 완료", `"${name}" 작물이 현재 위치에 추가되었습니다.`);
-     };
+    // 작물 정보 저장
+    const saveCrop = (name) => {
+        const newCrop = {
+            id: Date.now(), // 간단한 고유 ID 생성
+            name: name,
+            latitude: region.latitude,
+            longitude: region.longitude,
+        };
+        setManagedCrops(prevCrops => [...prevCrops, newCrop]);
+        console.log('New Crop Saved:', newCrop);
+        Alert.alert("저장 완료", `"${name}" 작물이 현재 위치에 추가되었습니다.`);
+    };
 
     // 작물 핀 터치 핸들러
     const handleCropPress = (crop) => {
-         Alert.alert(
-             `작물: ${crop.name}`,
-             "작업을 선택하세요.",
-             [
-                 { text: "취소", style: "cancel" },
-                 { text: "관리", onPress: () => manageCrop(crop.id), style: "default" },
-                 { text: "위치 수정", onPress: () => startModifyCropLocation(crop.id), style: "default" },
-                 { text: "이름 수정", onPress: () => promptForCropName(crop.id, crop.name), style: "default" },
-                 { text: "삭제", onPress: () => deleteCrop(crop.id), style: "destructive" },
-             ]
-         );
-     };
+        Alert.alert(
+            `작물: ${crop.name}`,
+            "작업을 선택하세요.",
+            [
+                { text: "취소", style: "cancel" },
+                { text: "관리", onPress: () => manageCrop(crop.id), style: "default" },
+                { text: "위치 수정", onPress: () => startModifyCropLocation(crop.id), style: "default" },
+                { text: "이름 수정", onPress: () => promptForCropName(crop.id, crop.name), style: "default" },
+                { text: "삭제", onPress: () => deleteCrop(crop.id), style: "destructive" },
+            ]
+        );
+    };
 
-     // 작물 관리 (임시)
-     const manageCrop = (cropId) => {
-         console.log("Manage Crop:", cropId);
-         Alert.alert("관리", "작물 관리 기능은 아직 구현되지 않았습니다.");
-     };
+    // 작물 관리 (임시)
+    const manageCrop = (cropId) => {
+        console.log("Manage Crop:", cropId);
+        Alert.alert("관리", "작물 관리 기능은 아직 구현되지 않았습니다.");
+    };
 
-     // 작물 위치 수정 시작 (임시)
-     const startModifyCropLocation = (cropId) => {
-         console.log("Start Modify Crop Location:", cropId);
-         Alert.alert("위치 수정", "작물 위치 수정 기능은 아직 구현되지 않았습니다.");
-         // TODO: 위치 수정 모드 구현 필요
-     };
+    // 작물 위치 수정 시작 (임시)
+    const startModifyCropLocation = (cropId) => {
+        console.log("Start Modify Crop Location:", cropId);
+        Alert.alert("위치 수정", "작물 위치 수정 기능은 아직 구현되지 않았습니다.");
+        // TODO: 위치 수정 모드 구현 필요
+    };
 
-     // 작물 삭제
-     const deleteCrop = (cropId) => {
+    // 작물 삭제
+    const deleteCrop = (cropId) => {
         Alert.alert(
             "작물 삭제",
             "정말로 이 작물을 삭제하시겠습니까?",
@@ -496,7 +556,7 @@ const Map = () => {
                 },
             ]
         );
-     };
+    };
 
     // GPS 위치 권한 요청 및 위치 추적 설정
     useEffect(() => {
@@ -511,7 +571,7 @@ const Map = () => {
                 // 현재 위치 가져오기
                 const location = await Location.getCurrentPositionAsync({});
                 const { latitude, longitude } = location.coords;
-                
+
                 setUserLocation({
                     latitude,
                     longitude,
@@ -607,15 +667,15 @@ const Map = () => {
                                 onPress={() => router.push({ pathname: 'Memo/farmedit', params: { farmName: area.name } })}
                             />
                             {area.coordinates.length > 0 && (
-                                 <Marker
-                                     coordinate={area.coordinates[0]}
-                                     anchor={{ x: 0.5, y: 1 }}
-                                     onPress={() => handleAreaPress(area.id)}
-                                 >
-                                     <View style={styles.areaNameContainer}>
-                                         <Text style={styles.areaNameText}>{area.name}</Text>
-                                     </View>
-                                 </Marker>
+                                <Marker
+                                    coordinate={area.coordinates[0]}
+                                    anchor={{ x: 0.5, y: 1 }}
+                                    onPress={() => handleAreaPress(area.id)}
+                                >
+                                    <View style={styles.areaNameContainer}>
+                                        <Text style={styles.areaNameText}>{area.name}</Text>
+                                    </View>
+                                </Marker>
                             )}
                         </React.Fragment>
                     ))}
@@ -692,7 +752,7 @@ const Map = () => {
 
             {/* 하단 버튼 또는 주소 표시 (작물 추가 모드에 따라 분기) */}
             {!isDrawingMode && (
-                 <>
+                <>
                     {!isAddingCropMode ? (
                         // 초기 상태: 작물 추가 버튼 (Animated.View 추가 및 스타일 수정)
                         <Animated.View style={[
@@ -740,49 +800,59 @@ const Map = () => {
                 currentTab="내 농장"
                 onTabPress={(tab) => {
                     if (tab === '질문하기') {
-                        router.push({ pathname: '/Chatbot/questionpage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Chatbot/questionpage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     } else if (tab === '홈') {
-                        router.push({ pathname: '/Homepage/Home/homepage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Homepage/Home/homepage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '정보') {
-                        router.push({ pathname: '/FarmInfo/farminfo', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/FarmInfo/farminfo', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                         // 필요시 다른 탭도 추가
                     }
                     else if (tab === '장터') {
-                        router.push({ pathname: '/Market/market', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Market/market', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '내 농장') {
-                        router.push({ pathname: '/Map/Map', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Map/Map', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                 }
                 }
@@ -895,17 +965,22 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     areaNameContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 10,
-        borderColor: 'green',
-        borderWidth: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 15,
+        borderColor: '#2ECC71',
+        borderWidth: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     areaNameText: {
-        color: 'black',
+        color: '#2ECC71',
         fontWeight: 'bold',
-        fontSize: 12,
+        fontSize: 14,
     },
     loadingContainer: {
         flex: 1,
@@ -931,11 +1006,11 @@ const styles = StyleSheet.create({
 
     // --- 중앙 주소 표시 스타일 --- (위치 변경, zIndex 조정)
     centerAddressTouchable: {
-         position: 'absolute',
-         bottom: 143,
-         alignSelf: 'center',
-         zIndex: 6,
-     },
+        position: 'absolute',
+        bottom: 143,
+        alignSelf: 'center',
+        zIndex: 6,
+    },
     centerAddressContainer: {
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
         paddingHorizontal: 15,
@@ -1004,8 +1079,8 @@ const styles = StyleSheet.create({
         elevation: 5,
         shadowColor: '#000',
         shadowOffset: {
-          width: 0,
-          height: 2,
+            width: 0,
+            height: 2,
         },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,

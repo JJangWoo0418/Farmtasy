@@ -1351,7 +1351,6 @@ app.get('/api/posts/popular', async (req, res) => {
             }
         }
 
-        console.log('전송할 데이터:', popularPosts);
         res.json(popularPosts);
     } catch (error) {
         console.error('인기 게시글을 가져오는데 실패했습니다:', error);
@@ -1359,6 +1358,83 @@ app.get('/api/posts/popular', async (req, res) => {
             error: '서버 오류가 발생했습니다.',
             details: error.message 
         });
+    }
+});
+
+// 농장 정보 저장(생성) API
+app.post('/api/farm', async (req, res) => {
+    console.log('POST /api/farm 호출됨');
+    console.log('요청 바디:', req.body);
+    
+    const { user_phone, farm_name, latitude, longitude, coordinates } = req.body;
+
+    try {
+        // 필수값 체크
+        if (!user_phone || !farm_name || !latitude || !longitude || !coordinates) {
+            console.log('필수값 누락:', { user_phone, farm_name, latitude, longitude, coordinates });
+            return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
+        }
+
+        // coordinates를 JSON 문자열로 변환
+        const coordinatesJson = JSON.stringify(coordinates);
+
+        // 쿼리 및 파라미터 로그
+        const query = `INSERT INTO farm (user_phone, farm_name, latitude, longitude, coordinates) VALUES (?, ?, ?, ?, ?)`;
+        const params = [user_phone, farm_name, latitude, longitude, coordinatesJson];
+        console.log('쿼리:', query);
+        console.log('파라미터:', params);
+
+        // DB에 저장
+        const [result] = await pool.query(query, params);
+        console.log('DB 저장 결과:', result);
+
+        res.status(201).json({
+            message: '농장이 성공적으로 등록되었습니다.',
+            farm_id: result.insertId
+        });
+    } catch (error) {
+        console.error('Error saving farm:', error);
+        console.error('SQL Message:', error?.sqlMessage);
+        console.error('Error Code:', error?.code);
+        res.status(500).json({ error: '농장 정보 저장에 실패했습니다.' });
+    }
+});
+
+// 모든 농장 정보 조회 (테스트용)
+app.get('/api/farm', async (req, res) => {
+    console.log('GET /api/farm 호출됨');
+    const { user_phone } = req.query;
+    try {
+        let query = 'SELECT * FROM farm';
+        let params = [];
+        if (user_phone) {
+            query += ' WHERE user_phone = ?';
+            params.push(user_phone);
+        }
+        const [rows] = await pool.query(query, params);
+
+        // coordinates를 항상 배열로 파싱해서 반환
+        const farms = rows.map(farm => {
+            let coordinates = [];
+            try {
+                if (Array.isArray(farm.coordinates)) {
+                    coordinates = farm.coordinates;
+                } else if (typeof farm.coordinates === 'string') {
+                    coordinates = JSON.parse(farm.coordinates);
+                }
+            } catch (e) {
+                coordinates = [];
+            }
+            return {
+                ...farm,
+                coordinates
+            };
+        });
+
+        res.json(farms);
+    } catch (error) {
+        console.error('Error fetching farms:', error);
+        res.status(500).json({ error: '농장 정보 조회에 실패했습니다.' });
     }
 });
 
@@ -1373,6 +1449,13 @@ app.listen(PORT, '0.0.0.0', async () => {
     console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
 
     try {
+        // farm 테이블에 coordinates 컬럼 추가
+        await pool.query(`
+            ALTER TABLE farm 
+            ADD COLUMN IF NOT EXISTS coordinates JSON
+        `);
+        console.log('farm 테이블 coordinates 컬럼 추가 완료');
+
         // post 테이블에 likes 컬럼 추가
         await pool.query(`
             ALTER TABLE post 
@@ -1380,13 +1463,13 @@ app.listen(PORT, '0.0.0.0', async () => {
         `);
         console.log('post 테이블 likes 컬럼 추가 완료');
 
-    // 서버 시작 시 테이블 확인
+        // 서버 시작 시 테이블 확인
         const [tables] = await pool.query("SHOW TABLES");
-            console.log('테이블 확인 결과:', tables);
-            tables.forEach(table => {
+        console.log('테이블 확인 결과:', tables);
+        tables.forEach(table => {
             console.log(`${table.Tables_in_farmtasy_db} 테이블 확인 완료`);
         });
     } catch (err) {
-        console.error('테이블 설정 중 오류 발생:', err);
+        console.error('테이블 수정 중 오류:', err);
     }
 });

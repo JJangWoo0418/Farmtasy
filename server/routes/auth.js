@@ -21,14 +21,12 @@ async function initDatabase() {
     let connection;
     try {
         connection = await pool.getConnection();
-        console.log('데이터베이스 연결 성공');
 
         // 테이블 존재 여부 확인
         const [tables] = await connection.query(
             "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME IN ('user', 'verification')",
             [process.env.DB_NAME]
         );
-        console.log('테이블 확인 결과:', tables);
 
         // user 테이블 생성
         await connection.query(`
@@ -43,7 +41,6 @@ async function initDatabase() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log('user 테이블 확인 완료');
 
         // verification 테이블 생성
         await connection.query(`
@@ -60,7 +57,6 @@ async function initDatabase() {
 
         // 현재 데이터 확인
         const [users] = await connection.query('SELECT * FROM user');
-        console.log('현재 user 테이블 데이터:', users);
 
     } catch (error) {
         console.error('데이터베이스 초기화 중 오류:', error);
