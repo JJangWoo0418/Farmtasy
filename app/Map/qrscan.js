@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import QRCodeScanner from 'react-native-qrcode-scanner';
 import { useRouter } from 'expo-router';
 
 export default function QRScan() {
@@ -9,19 +9,19 @@ export default function QRScan() {
   const router = useRouter();
 
   useEffect(() => {
-    const getBarCodeScannerPermissions = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
+    const getCameraPermissions = async () => {
+      const { status } = await QRCodeScanner.requestCameraPermission();
       setHasPermission(status === 'granted');
     };
 
-    getBarCodeScannerPermissions();
+    getCameraPermissions();
   }, []);
 
-  const handleBarCodeScanned = ({ type, data }) => {
+  const onSuccess = (e) => {
     setScanned(true);
     Alert.alert(
       "QR 코드 스캔 완료",
-      `스캔된 데이터: ${data}`,
+      `스캔된 데이터: ${e.data}`,
       [
         {
           text: "다시 스캔",
@@ -67,24 +67,28 @@ export default function QRScan() {
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.scannerContainer}>
-        <BarCodeScanner
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-          style={styles.scanner}
-        />
-        {scanned && (
-          <TouchableOpacity
-            style={styles.scanAgainButton}
-            onPress={() => setScanned(false)}
-          >
-            <Text style={styles.scanAgainText}>다시 스캔하기</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.overlay}>
-        <View style={styles.scanArea} />
-      </View>
+      <QRCodeScanner
+        onRead={onSuccess}
+        reactivate={!scanned}
+        reactivateTimeout={2000}
+        containerStyle={styles.scannerContainer}
+        cameraStyle={styles.scanner}
+        topContent={
+          <View style={styles.overlay}>
+            <View style={styles.scanArea} />
+          </View>
+        }
+        bottomContent={
+          scanned && (
+            <TouchableOpacity
+              style={styles.scanAgainButton}
+              onPress={() => setScanned(false)}
+            >
+              <Text style={styles.scanAgainText}>다시 스캔하기</Text>
+            </TouchableOpacity>
+          )
+        }
+      />
     </View>
   );
 }
@@ -113,13 +117,12 @@ const styles = StyleSheet.create({
   },
   scannerContainer: {
     flex: 1,
-    position: 'relative',
   },
   scanner: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -132,13 +135,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   scanAgainButton: {
-    position: 'absolute',
-    bottom: 50,
-    alignSelf: 'center',
     backgroundColor: '#22CC6B',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
+    marginBottom: 50,
   },
   scanAgainText: {
     color: '#fff',
