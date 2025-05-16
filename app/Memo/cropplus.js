@@ -121,14 +121,53 @@ export default function CropPlus() {
   }, [params?.deleteCrop, params?.editIndex]);
 
   // 확인 버튼 클릭 시
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   const handleConfirm = async () => {
     if (!farmId) {
-      Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
+      setErrorMessage('농장 정보를 찾을 수 없습니다.');
+      setErrorModalVisible(true);
       return;
     }
-
-    if (!name || !selectedCrop || !area || !plantDate || !harvestDate || !amount || !image) {
-      Alert.alert('오류', '모든 필드를 입력해주세요.');
+    if (!name) {
+      setErrorMessage('이름을 입력해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (!selectedCrop) {
+      setErrorMessage('작물을 선택해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (!area) {
+      setErrorMessage('재배 면적을 입력해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (parseFloat(area) >= 100000) {
+      setErrorMessage('재배 면적은 99,999 이하로 입력해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (!plantDate) {
+      setErrorMessage('정식 시기를 입력해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (!harvestDate) {
+      setErrorMessage('수확 시기를 입력해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (!amount) {
+      setErrorMessage('수확량을 입력해주세요.');
+      setErrorModalVisible(true);
+      return;
+    }
+    if (parseFloat(amount) >= 10000000) {
+      setErrorMessage('수확량은 9,999,999Kg 이하로 입력해주세요.');
+      setErrorModalVisible(true);
       return;
     }
 
@@ -168,8 +207,8 @@ export default function CropPlus() {
         }
       });
     } catch (error) {
-      console.error('작물 정보 저장 중 오류:', error);
-      Alert.alert('오류', '작물 정보 저장 중 오류가 발생했습니다.');
+      setErrorMessage('작물 정보 저장 중 오류가 발생했습니다.');
+      setErrorModalVisible(true);
     }
   };
 
@@ -245,6 +284,7 @@ export default function CropPlus() {
           value={name}
           onChangeText={setName}
           placeholder="작물 이름을 입력하세요"
+          placeholderTextColor="#888888"
         />
 
         {/* 작물 선택 버튼 */}
@@ -275,6 +315,7 @@ export default function CropPlus() {
           onChangeText={setArea}
           placeholder="예: 10000"
           keyboardType="numeric"
+          placeholderTextColor="#888888"
         />
         <Text style={styles.subText}>최대 99,999평까지 입력이 가능해요</Text>
 
@@ -286,6 +327,7 @@ export default function CropPlus() {
             value={plantDate}
             placeholder="YYYY.MM.DD"
             editable={false}
+            placeholderTextColor="#888888"
           />
           <TouchableOpacity onPress={() => setPlantDatePickerVisible(true)}>
             <Image source={require('../../assets/calendaricon.png')} style={styles.calendarIcon} />
@@ -309,6 +351,7 @@ export default function CropPlus() {
             value={harvestDate}
             placeholder="YYYY.MM.DD"
             editable={false}
+            placeholderTextColor="#888888"
           />
           <TouchableOpacity onPress={() => setHarvestDatePickerVisible(true)}>
             <Image source={require('../../assets/calendaricon.png')} style={styles.calendarIcon} />
@@ -333,6 +376,7 @@ export default function CropPlus() {
             onChangeText={setAmount}
             placeholder="예: 10,000"
             keyboardType="numeric"
+            placeholderTextColor="#888888"
           />
           <Text style={styles.unit}>Kg</Text>
         </View>
@@ -349,7 +393,7 @@ export default function CropPlus() {
         {/* 작물 선택 모달 */}
         <Modal
           visible={isCropModalVisible}
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           onRequestClose={() => setIsCropModalVisible(false)}
         >
@@ -395,6 +439,26 @@ export default function CropPlus() {
             </View>
           </View>
         </Modal>
+
+        {/* 입력 오류 모달 */}
+        <Modal
+          visible={errorModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setErrorModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.errorModalContent}>
+              <Text style={styles.errorModalText}>{errorMessage}</Text>
+              <TouchableOpacity
+                style={styles.errorModalButton}
+                onPress={() => setErrorModalVisible(false)}
+              >
+                <Text style={styles.errorModalButtonText}>닫기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -425,35 +489,36 @@ const styles = StyleSheet.create({
   },
   image: { width: '100%', height: '100%' },
   imagePlaceholder: { color: '#aaa', fontSize: 16 },
-  label: { fontWeight: 'bold', fontSize: 15, marginTop: 8, marginBottom: 4 },
+  label: { fontWeight: 'bold', fontSize: 20, marginTop: 8, marginBottom: 4 },
   input: {
-    backgroundColor: '#f7f7f7',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
     marginBottom: 4,
-    borderWidth: 1,
-    borderColor: '#eee',
+    borderWidth: 3,
+    borderColor: '#ABABAB',
+    marginTop: 10
   },
   subText: { color: '#aaa', fontSize: 12, marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  calendarIcon: { width: 28, height: 28, marginLeft: 8, resizeMode: 'contain' },
+  calendarIcon: { width: 28, height: 28, marginLeft: 8, resizeMode: 'contain' , marginTop: 3},
   unit: { fontSize: 15, color: '#888', marginLeft: 8 },
   confirmButton: {
     backgroundColor: '#22CC6B',
     borderRadius: 8,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 30,
   },
-  confirmButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  confirmButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 20 },
   cropSelectButton: {
     backgroundColor: '#22CC6B',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 8,
+    marginTop: 10,
   },
   cropSelectButtonText: {
     color: '#fff',
@@ -560,5 +625,32 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 28,
+    alignItems: 'center',
+    width: 260,
+    alignSelf: 'center',
+    elevation: 10,
+  },
+  errorModalText: {
+    fontSize: 16,
+    color: '#d32f2f',
+    fontWeight: 'bold',
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  errorModalButton: {
+    backgroundColor: '#22CC6B',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+  },
+  errorModalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
