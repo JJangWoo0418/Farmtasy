@@ -82,7 +82,6 @@ const Map = () => {
 
     // 지도 움직임 시작 시 핀 애니메이션 및 키보드 닫기
     const handleRegionChangeStart = () => {
-        console.log('handleRegionChangeStart - isAddingCropMode:', isAddingCropMode); // 상태 로그 추가
         if (!isAddingCropMode) return; // 작물 추가 모드가 아닐 때는 애니메이션 안 함
 
         Keyboard.dismiss();
@@ -97,7 +96,6 @@ const Map = () => {
 
     // 지도 움직임 종료 시 핀 애니메이션 및 (조건부) 주소 가져오기
     const handleRegionChangeComplete = (newRegion) => {
-        console.log('handleRegionChangeComplete - isAddingCropMode:', isAddingCropMode); // 상태 로그 추가
         if (!isAddingCropMode && !isMapMoving) return; // 상태 확인 추가 (불필요할 수 있음)
 
         setIsMapMoving(false);
@@ -142,12 +140,10 @@ const Map = () => {
         // 사용자의 농장 정보 불러오기
         const fetchUserFarms = async () => {
             try {
-                console.log('사용자 농장 정보 요청:', phone);
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
                 const data = await response.json();
                 
                 if (response.ok) {
-                    console.log('불러온 농장 정보:', data);
                     // 농장 정보를 지도에 표시할 형식으로 변환
                     const formattedFarms = data.map(farm => ({
                         id: farm.farm_id,
@@ -287,24 +283,15 @@ const Map = () => {
 
         try {
             // 중심 좌표로 주소 가져오기
-            console.log('Geocoder 호출 시작:', { lat, lng });
             const geocodeResponse = await Geocoder.from(lat, lng);
-            console.log('Geocoder 응답:', geocodeResponse);
             
             if (geocodeResponse.results && geocodeResponse.results.length > 0) {
                 formattedAddress = geocodeResponse.results[0]?.formatted_address || '';
                 shortAddress = formattedAddress.split(' ').slice(1).join(' ');
             } else {
-                console.log('Geocoder 결과가 없습니다. 기본 주소를 사용합니다.');
                 formattedAddress = `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`;
                 shortAddress = formattedAddress;
             }
-            
-            console.log('=== 농장 주소 정보 ===');
-            console.log('전체 주소:', formattedAddress);
-            console.log('간단 주소:', shortAddress);
-            console.log('중심 좌표:', { lat, lng });
-            console.log('==================');
 
             const farmData = {
                 user_phone: phone,
@@ -314,8 +301,6 @@ const Map = () => {
                 coordinates: coordinates,
                 address: shortAddress // 간단 주소를 address 필드에 저장
             };
-
-            console.log('저장할 농장 데이터:', farmData);
 
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm`, {
                 method: 'POST',
@@ -328,8 +313,6 @@ const Map = () => {
                 throw new Error(data.error || '농장 정보 저장에 실패했습니다.');
             }
 
-            console.log('서버 응답:', data);
-
             // 성공 시 지도에 반영
             setFarmAreas(prev => [...prev, { 
                 id: data.farm_id, 
@@ -339,10 +322,8 @@ const Map = () => {
             }]);
             Alert.alert('성공', '농장이 등록되었습니다.');
         } catch (error) {
-            console.error('농장 저장 중 오류:', error);
             // Geocoder 오류가 발생해도 기본 주소로 저장 시도
             if (error.code === 4) {
-                console.log('Geocoder 오류 발생, 기본 주소로 저장 시도');
                 formattedAddress = `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`;
                 shortAddress = formattedAddress;
                 
@@ -375,7 +356,6 @@ const Map = () => {
                     }]);
                     Alert.alert('성공', '농장이 등록되었습니다. (기본 주소 사용)');
                 } catch (retryError) {
-                    console.error('기본 주소로 저장 시도 중 오류:', retryError);
                     Alert.alert('오류', '농장 정보 저장에 실패했습니다.');
                 }
             } else {
@@ -413,7 +393,6 @@ const Map = () => {
 
     const handleDeleteArea = async (areaId) => {
         try {
-            console.log('농장 삭제 시도:', areaId);
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm/${areaId}`, {
                 method: 'DELETE'
             });

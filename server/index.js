@@ -1558,6 +1558,179 @@ app.put('/api/farm/image/:farmId', async (req, res) => {
     }
 });
 
+// 작물 목록 조회
+app.get('/api/crop', async (req, res) => {
+  try {
+    const { farm_id } = req.query;
+    
+    if (!farm_id) {
+      return res.status(400).json({ error: 'farm_id is required' });
+    }
+
+    const [crops] = await pool.query(
+      'SELECT * FROM crop WHERE farm_id = ? ORDER BY created_at DESC',
+      [farm_id]
+    );
+
+    res.json(crops);
+  } catch (error) {
+    console.error('작물 목록 조회 실패:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 작물 상세 조회
+app.get('/api/crop/:crop_id', async (req, res) => {
+  try {
+    const { crop_id } = req.params;
+
+    const [crops] = await pool.query(
+      'SELECT * FROM crop WHERE crop_id = ?',
+      [crop_id]
+    );
+
+    if (crops.length === 0) {
+      return res.status(404).json({ error: 'Crop not found' });
+    }
+
+    res.json(crops[0]);
+  } catch (error) {
+    console.error('작물 상세 조회 실패:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 작물 추가
+app.post('/api/crop', async (req, res) => {
+  try {
+    const {
+      farm_id,
+      crop_name,
+      crop_type,
+      crop_image_url,
+      crop_area_m2,
+      crop_planting_date,
+      crop_harvest_date,
+      crop_yield_kg
+    } = req.body;
+
+    // 필수 필드 검증
+    if (!farm_id || !crop_name || !crop_type || !crop_area_m2 || 
+        !crop_planting_date || !crop_harvest_date || !crop_yield_kg) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // farm_id 유효성 검증
+    const [farms] = await pool.query('SELECT farm_id FROM farm WHERE farm_id = ?', [farm_id]);
+    if (farms.length === 0) {
+      return res.status(404).json({ error: 'Farm not found' });
+    }
+
+    // 작물 추가
+    const [result] = await pool.query(
+      `INSERT INTO crop (
+        farm_id, crop_name, crop_type, crop_image_url, 
+        crop_area_m2, crop_planting_date, crop_harvest_date, crop_yield_kg
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        farm_id,
+        crop_name,
+        crop_type,
+        crop_image_url,
+        crop_area_m2,
+        crop_planting_date,
+        crop_harvest_date,
+        crop_yield_kg
+      ]
+    );
+
+    res.status(201).json({
+      message: 'Crop added successfully',
+      crop_id: result.insertId
+    });
+  } catch (error) {
+    console.error('작물 추가 실패:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 작물 수정
+app.put('/api/crop/:crop_id', async (req, res) => {
+  try {
+    const { crop_id } = req.params;
+    const {
+      crop_name,
+      crop_type,
+      crop_image_url,
+      crop_area_m2,
+      crop_planting_date,
+      crop_harvest_date,
+      crop_yield_kg
+    } = req.body;
+
+    // 필수 필드 검증
+    if (!crop_name || !crop_type || !crop_area_m2 || 
+        !crop_planting_date || !crop_harvest_date || !crop_yield_kg) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    // 작물 존재 여부 확인
+    const [crops] = await pool.query('SELECT crop_id FROM crop WHERE crop_id = ?', [crop_id]);
+    if (crops.length === 0) {
+      return res.status(404).json({ error: 'Crop not found' });
+    }
+
+    // 작물 정보 수정
+    await pool.query(
+      `UPDATE crop SET 
+        crop_name = ?,
+        crop_type = ?,
+        crop_image_url = ?,
+        crop_area_m2 = ?,
+        crop_planting_date = ?,
+        crop_harvest_date = ?,
+        crop_yield_kg = ?
+      WHERE crop_id = ?`,
+      [
+        crop_name,
+        crop_type,
+        crop_image_url,
+        crop_area_m2,
+        crop_planting_date,
+        crop_harvest_date,
+        crop_yield_kg,
+        crop_id
+      ]
+    );
+
+    res.json({ message: 'Crop updated successfully' });
+  } catch (error) {
+    console.error('작물 수정 실패:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 작물 삭제
+app.delete('/api/crop/:crop_id', async (req, res) => {
+  try {
+    const { crop_id } = req.params;
+
+    // 작물 존재 여부 확인
+    const [crops] = await pool.query('SELECT crop_id FROM crop WHERE crop_id = ?', [crop_id]);
+    if (crops.length === 0) {
+      return res.status(404).json({ error: 'Crop not found' });
+    }
+
+    // 작물 삭제
+    await pool.query('DELETE FROM crop WHERE crop_id = ?', [crop_id]);
+
+    res.json({ message: 'Crop deleted successfully' });
+  } catch (error) {
+    console.error('작물 삭제 실패:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });

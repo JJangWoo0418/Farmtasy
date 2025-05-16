@@ -11,8 +11,16 @@ export default function FarmEdit() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  // 작물 카드 리스트 상태
+  // 상태 관리
   const [crops, setCrops] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [image, setImage] = useState(null);
+  const [name, setName] = useState(params.name || '');
+  const [farmId, setFarmId] = useState(null);
+  const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
+  const [farmAddress, setFarmAddress] = useState('');
+
+  const editIndex = params.editIndex !== undefined ? Number(params.editIndex) : null;
 
   // cropplus에서 돌아올 때 params로 값이 오면 추가
   useEffect(() => {
@@ -43,11 +51,6 @@ export default function FarmEdit() {
     }
   }, [params?.deleteCrop, params?.editIndex]);
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [image, setImage] = useState(null);
-  const [name, setName] = useState(params.name || '');
-  const editIndex = params.editIndex !== undefined ? Number(params.editIndex) : null;
-
   // farm_image 가져오기
   useEffect(() => {
     const fetchFarmImage = async () => {
@@ -73,6 +76,54 @@ export default function FarmEdit() {
 
     fetchFarmImage();
   }, [farmName, params.phone]);
+
+  // farm_id 가져오기
+  useEffect(() => {
+    const fetchFarmId = async () => {
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
+        const farms = await response.json();
+        
+        if (response.ok) {
+          const farm = farms.find(f => f.farm_name === farmName);
+          if (farm) {
+            setFarmId(farm.farm_id);
+            console.log('농장 ID 설정됨:', farm.farm_id);
+          }
+        }
+      } catch (error) {
+        console.error('농장 ID 가져오기 실패:', error);
+      }
+    };
+
+    if (params.phone && farmName) {
+      fetchFarmId();
+    }
+  }, [params.phone, farmName]);
+
+  // farm_id로 crop 테이블에서 작물 목록 불러오기
+  useEffect(() => {
+    if (!farmId) return;
+    const fetchCrops = async () => {
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/crop?farm_id=${farmId}`);
+        const data = await response.json();
+        if (response.ok) {
+          setCrops(data.map(crop => ({
+            name: crop.crop_name,
+            image: crop.crop_image_url,
+            // 필요시 crop_id 등 추가
+          })));
+        } else {
+          setCrops([]);
+        }
+      } catch (error) {
+        console.error('작물 목록 불러오기 실패:', error);
+        setCrops([]);
+      }
+    };
+    fetchCrops();
+  }, [farmId]);
 
   const pickImage = async () => {
     try {
@@ -158,9 +209,6 @@ export default function FarmEdit() {
     }
   };
 
-  const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
-  const [farmAddress, setFarmAddress] = useState('');
-
   // 농장 주소 가져오기
   const fetchFarmAddress = async () => {
     try {
@@ -194,6 +242,23 @@ export default function FarmEdit() {
   const handleOpenAddressModal = () => {
     fetchFarmAddress();
     setIsAddressModalVisible(true);
+  };
+
+  // 작물 추가 버튼 클릭 시
+  const handleAddCrop = () => {
+    if (!farmId) {
+      Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    router.push({
+      pathname: '/Memo/cropplus',
+      params: {
+        phone: params.phone,
+        farmName: farmName,
+        farmId: farmId
+      }
+    });
   };
 
   return (
@@ -258,9 +323,9 @@ export default function FarmEdit() {
           </TouchableOpacity>
         )}
         ListFooterComponent={
-          <TouchableOpacity style={styles.cropBox} onPress={() => router.push('/Memo/cropplus')}>
+          <TouchableOpacity style={styles.cropBox} onPress={handleAddCrop}>
             <Image source={require('../../assets/cropicon.png')} style={styles.iconSmall} />
-            <Text style={styles.cropText}>작물 추가</Text>
+            <Text style={styles.cropText}>작물 종류 추가</Text>
           </TouchableOpacity>
         }
       />
@@ -412,7 +477,6 @@ const styles = StyleSheet.create({
   settingIcon: {
     width: 24,
     height: 24,
-    tintColor: '#888',
   },
   confirmButton: {
     backgroundColor: '#22CC6B',

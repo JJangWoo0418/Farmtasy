@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, Modal, FlatList } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker'; // 캘린더용
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import API_CONFIG from '../DB/api';
 
 export default function CropPlus() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function CropPlus() {
   const [amount, setAmount] = useState('');
   const [selectedCrop, setSelectedCrop] = useState(params.crop || '');
   const [selectedCropEmoji, setSelectedCropEmoji] = useState(params.cropEmoji || '');
+  const [farmId, setFarmId] = useState(null);
 
   // 캘린더 상태
   const [isPlantDatePickerVisible, setPlantDatePickerVisible] = useState(false);
@@ -30,16 +32,77 @@ export default function CropPlus() {
     if (params?.cropEmoji) setSelectedCropEmoji(params.cropEmoji);
   }, [params?.crop, params?.cropEmoji]);
 
-  // 이미지 선택
+  // farm_id 가져오기
+  useEffect(() => {
+    if (!params.farmId) {
+      console.error('farm_id가 전달되지 않았습니다.');
+      Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
+      router.back();
+      return;
+    }
+
+    setFarmId(params.farmId);
+    console.log('농장 ID 설정됨:', params.farmId);
+  }, [params.farmId]);
+
+  // 이미지 선택 및 S3 업로드
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const selectedImage = result.assets[0].uri;
+        setImage(selectedImage);
+
+        // UUID 형식의 파일명 생성
+        const fileName = `${Date.now().toString(16).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 14).toUpperCase()}.jpg`;
+        
+        // S3 presigned URL 요청
+        const presignResponse = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileName: fileName,
+            fileType: 'image/jpeg'
+          })
+        });
+
+        if (!presignResponse.ok) {
+          throw new Error('S3 presigned URL을 가져오는데 실패했습니다.');
+        }
+
+        const { url } = await presignResponse.json();
+
+        // 이미지를 S3에 업로드
+        const imageResponse = await fetch(selectedImage);
+        const blob = await imageResponse.blob();
+        
+        const uploadResponse = await fetch(url, {
+          method: 'PUT',
+          body: blob,
+          headers: {
+            'Content-Type': 'image/jpeg',
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('이미지 업로드에 실패했습니다.');
+        }
+
+        // S3 URL 생성
+        const s3Url = `https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/${fileName}`;
+        setImage(s3Url);
+      }
+    } catch (error) {
+      console.error('이미지 처리 중 오류:', error);
+      Alert.alert('오류', '이미지 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -47,7 +110,7 @@ export default function CropPlus() {
   const formatDate = (date) => {
     if (!date) return '';
     const d = new Date(date);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
   useEffect(() => {
@@ -56,6 +119,67 @@ export default function CropPlus() {
     }
     // ...기존 추가/수정 처리...
   }, [params?.deleteCrop, params?.editIndex]);
+
+  // 확인 버튼 클릭 시
+  const handleConfirm = async () => {
+    if (!farmId) {
+      Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    if (!name || !selectedCrop || !area || !plantDate || !harvestDate || !amount || !image) {
+      Alert.alert('오류', '모든 필드를 입력해주세요.');
+      return;
+    }
+
+    try {
+      const cropData = {
+        farm_id: farmId,
+        crop_name: name,
+        crop_type: selectedCrop,
+        crop_image_url: image,
+        crop_area_m2: parseFloat(area),
+        crop_planting_date: formatDate(new Date(plantDate)),
+        crop_harvest_date: formatDate(new Date(harvestDate)),
+        crop_yield_kg: parseFloat(amount)
+      };
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/crop`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cropData)
+      });
+
+      if (!response.ok) {
+        throw new Error('작물 정보 저장에 실패했습니다.');
+      }
+
+      Alert.alert('성공', '작물 정보가 저장되었습니다.');
+      router.replace({
+        pathname: '/Memo/farmedit',
+        params: {
+          newCropName: name,
+          newCropImage: image,
+        }
+      });
+    } catch (error) {
+      console.error('작물 정보 저장 중 오류:', error);
+      Alert.alert('오류', '작물 정보 저장 중 오류가 발생했습니다.');
+    }
+  };
+
+  const [isCropModalVisible, setIsCropModalVisible] = useState(false);
+
+  // 인기작물 리스트 (이모지+이름)
+  const popularCrops = [
+    { emoji: '🌶️', name: '고추' }, { emoji: '🫐', name: '블루베리' }, { emoji: '🥔', name: '감자' },
+    { emoji: '🍠', name: '고구마' }, { emoji: '🍎', name: '사과' }, { emoji: '🍓', name: '딸기' },
+    { emoji: '🧄', name: '마늘' }, { emoji: '🥬', name: '상추' }, { emoji: '🥒', name: '오이' },
+    { emoji: '🍅', name: '토마토' }, { emoji: '🍇', name: '포도' }, { emoji: '🌱', name: '콩' },
+    // ... 필요시 추가 ...
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -73,7 +197,7 @@ export default function CropPlus() {
           <TouchableOpacity onPress={() => router.back()}>
             <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>작물 추가</Text>
+          <Text style={styles.headerTitle}>작물 종류 추가</Text>
           <TouchableOpacity
             onPress={() => {
               Alert.alert(
@@ -100,11 +224,14 @@ export default function CropPlus() {
         </View>
 
         {/* 이미지 추가 */}
-        <TouchableOpacity style={styles.imageBox} onPress={pickImage} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
           {image ? (
             <Image source={{ uri: image }} style={styles.image} resizeMode="cover" />
           ) : (
-            <Text style={styles.imagePlaceholder}>사진 추가</Text>
+            <>
+              <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} />
+              <Text style={styles.photoText}>사진 추가</Text>
+            </>
           )}
         </TouchableOpacity>
 
@@ -120,7 +247,7 @@ export default function CropPlus() {
         {/* 작물 선택 버튼 */}
         <Text style={styles.label}>작물</Text>
         <TouchableOpacity
-          onPress={() => router.push('/Memo/cropedit')}
+          onPress={() => setIsCropModalVisible(true)}
           activeOpacity={0.7}
         >
           {selectedCrop ? (
@@ -211,19 +338,60 @@ export default function CropPlus() {
         {/* 확인 버튼 */}
         <TouchableOpacity
           style={styles.confirmButton}
-          onPress={() => {
-            // 입력값 검증 등 추가 가능
-            router.replace({
-              pathname: '/Memo/farmedit',
-              params: {
-                newCropName: name,
-                newCropImage: image,
-              }
-            });
-          }}
+          onPress={handleConfirm}
         >
           <Text style={styles.confirmButtonText}>확인</Text>
         </TouchableOpacity>
+
+        {/* 작물 선택 모달 */}
+        <Modal
+          visible={isCropModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsCropModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.cropModalContent}>
+              <Text style={styles.cropModalTitle}>어떤 작물을 추가하시겠어요?</Text>
+              <TouchableOpacity
+                style={styles.directAddButton}
+                onPress={() => {
+                  setIsCropModalVisible(false);
+                }}
+              >
+                <Text style={styles.directAddButtonText}>직접 추가하기</Text>
+              </TouchableOpacity>
+              <Text style={styles.popularTitle}>인기작물 TOP 30</Text>
+              <FlatList
+                data={popularCrops}
+                keyExtractor={item => item.name}
+                numColumns={3}
+                contentContainerStyle={{ alignItems: 'center' }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.cropGridItem}
+                    onPress={() => {
+                      setSelectedCrop(item.name);
+                      setSelectedCropEmoji(item.emoji);
+                      setIsCropModalVisible(false);
+                    }}
+                  >
+                    <View style={styles.cropGridCircle}>
+                      <Text style={styles.cropGridEmoji}>{item.emoji}</Text>
+                    </View>
+                    <Text style={styles.cropGridName}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <TouchableOpacity
+                style={styles.cropModalCloseButton}
+                onPress={() => setIsCropModalVisible(false)}
+              >
+                <Text style={styles.cropModalCloseText}>닫기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -234,16 +402,23 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   headerTitle: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  deleteIcon: { width: 22, height: 22, resizeMode: 'contain', marginRight: 4 },
+  deleteIcon: { width: 25, height: 25, resizeMode: 'contain', marginRight: 4 },
   imageBox: {
     width: '100%',
     height: 200,
-    backgroundColor: '#eee',
+    backgroundColor: '#fff',
     borderRadius: 16,
     marginBottom: 16,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: 'black',
   },
   image: { width: '100%', height: '100%' },
   imagePlaceholder: { color: '#aaa', fontSize: 16 },
@@ -306,5 +481,81 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#222',
+  },
+  icon: { width: 60, height: 60, marginBottom: 8 },
+  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold'},
+  cropModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 80,
+    elevation: 10,
+  },
+  cropModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  directAddButton: {
+    backgroundColor: '#22CC6B',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    marginBottom: 18,
+  },
+  directAddButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  popularTitle: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    marginBottom: 10,
+    alignSelf: 'flex-start',
+  },
+  cropGridItem: {
+    alignItems: 'center',
+    margin: 10,
+    width: 80,
+  },
+  cropGridCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#e5e5e5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  cropGridEmoji: {
+    fontSize: 32,
+  },
+  cropGridName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#222',
+  },
+  cropModalCloseButton: {
+    marginTop: 18,
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: '#eee',
+  },
+  cropModalCloseText: {
+    color: '#333',
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
