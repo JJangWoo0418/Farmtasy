@@ -664,7 +664,17 @@ const Map = () => {
                                 strokeWidth={3}
                                 fillColor="rgba(0, 255, 0, 0.1)"
                                 tappable={true}
-                                onPress={() => router.push({ pathname: 'Memo/farmedit', params: { farmName: area.name } })}
+                                onPress={() => router.push({
+                                    pathname: 'Memo/farmedit',
+                                    params: {
+                                        farmName: area.name,
+                                        userData: route.params?.userData,
+                                        phone: route.params?.phone,
+                                        name: route.params?.name,
+                                        region: route.params?.region,
+                                        introduction: route.params?.introduction
+                                    }
+                                })}
                             />
                             {area.coordinates.length > 0 && (
                                 <Marker

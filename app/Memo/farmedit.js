@@ -63,7 +63,16 @@ export default function FarmEdit() {
     <View style={styles.container}>
       {/* 상단 주소(농장 이름) */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push({
+          pathname: '/Map/Map',
+          params: {
+            userData: params.userData,
+            phone: params.phone,
+            name: params.name,
+            region: params.region,
+            introduction: params.introduction
+          }
+        })}>
           <Image source={gobackIcon} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.title}>{farmName}</Text>
@@ -75,11 +84,12 @@ export default function FarmEdit() {
           <Image source={{ uri: image }} style={styles.photo} resizeMode="cover" />
         ) : (
           <>
-            <Image source={require('../../assets/addphotoicon.png')} style={styles.icon} />
+            <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} />
             <Text style={styles.photoText}>사진 추가</Text>
           </>
         )}
       </TouchableOpacity>
+      <View style={styles.divider} />
 
       {/* 작물 카드 리스트 */}
       <FlatList
@@ -138,33 +148,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     height: 40, // 높이 고정(필요시 조정)
+    marginTop: -15,
   },
   backIcon: {
     width: 24,
     height: 24,
-    position: 'absolute',
-    left: 0,
     zIndex: 1,
     resizeMode: 'contain',
+    marginLeft: 5,
   },
   title: {
     flex: 1,
     fontWeight: 'bold',
     fontSize: 18,
     textAlign: 'center',
+    marginRight: 25,
   },
   photoBox: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    overflow: 'hidden',
     width: '100%',
     height: 220,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.13,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
     borderWidth: 1,
     borderColor: '#eee',
     justifyContent: 'center',
@@ -174,9 +184,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 16,
+    overflow: 'hidden',
   },
   icon: { width: 60, height: 60, marginBottom: 8 },
-  photoText: { fontSize: 16, color: '#444' },
+  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold'},
   cropBox: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -184,15 +195,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.10,
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
     borderWidth: 1,
     borderColor: '#eee',
   },
   iconSmall: { width: 40, height: 40, marginBottom: 8 },
-  cropText: { fontSize: 16, color: '#222' },
+  cropText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
   cropCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -233,15 +244,23 @@ const styles = StyleSheet.create({
     tintColor: '#888',
   },
   confirmButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#22CC6B',
     borderRadius: 16,
-    padding: 16,
+    padding: 18,
     alignItems: 'center',
     marginTop: 16,
+    marginBottom: 16,
   },
   confirmButtonText: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  divider: {
+    height: 4,
+    backgroundColor: '#e9ecef',
+    marginBottom: 16,
+    width: '150%',
+    marginLeft: -20,
   },
 });
