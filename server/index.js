@@ -1505,6 +1505,33 @@ app.put('/api/farm/:farmId', async (req, res) => {
     }
 });
 
+// 특정 농장의 주소 정보 조회 API
+app.get('/api/farm/address/:farmId', async (req, res) => {
+    const { farmId } = req.params;
+    console.log('GET /api/farm/address/:farmId 호출됨, farmId:', farmId);
+
+    try {
+        // 농장 정보 조회
+        const [farm] = await pool.query(
+            'SELECT farm_id, farm_name, address FROM farm WHERE farm_id = ?',
+            [farmId]
+        );
+
+        if (farm.length === 0) {
+            return res.status(404).json({ error: '해당 농장을 찾을 수 없습니다.' });
+        }
+
+        res.json({
+            farm_id: farm[0].farm_id,
+            farm_name: farm[0].farm_name,
+            address: farm[0].address || '주소 정보가 없습니다.'
+        });
+    } catch (error) {
+        console.error('Error fetching farm address:', error);
+        res.status(500).json({ error: '농장 주소 정보 조회에 실패했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });

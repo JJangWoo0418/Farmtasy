@@ -1,9 +1,10 @@
 // farmedit.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, TextInput, Alert, Modal } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import gobackIcon from '../../assets/gobackicon.png';
+import API_CONFIG from '../DB/api';
 
 export default function FarmEdit() {
   const { farmName } = useLocalSearchParams();
@@ -59,6 +60,44 @@ export default function FarmEdit() {
     }
   };
 
+  const [isAddressModalVisible, setIsAddressModalVisible] = useState(false);
+  const [farmAddress, setFarmAddress] = useState('');
+
+  // 농장 주소 가져오기
+  const fetchFarmAddress = async () => {
+    try {
+      // 먼저 farm_id를 가져오기 위해 모든 농장 정보 조회
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
+      const farms = await response.json();
+      
+      if (response.ok) {
+        const farm = farms.find(f => f.farm_name === farmName);
+        if (farm) {
+          // farm_id로 주소 정보 조회
+          const addressResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm/address/${farm.farm_id}`);
+          const addressData = await addressResponse.json();
+          
+          if (addressResponse.ok) {
+            setFarmAddress(addressData.address);
+          } else {
+            setFarmAddress('주소 정보를 가져오는데 실패했습니다.');
+          }
+        } else {
+          setFarmAddress('농장을 찾을 수 없습니다.');
+        }
+      }
+    } catch (error) {
+      console.error('농장 주소 가져오기 실패:', error);
+      setFarmAddress('주소 정보를 가져오는데 실패했습니다.');
+    }
+  };
+
+  // 모달 열 때 주소 가져오기
+  const handleOpenAddressModal = () => {
+    fetchFarmAddress();
+    setIsAddressModalVisible(true);
+  };
+
   return (
     <View style={styles.container}>
       {/* 상단 주소(농장 이름) */}
@@ -76,6 +115,9 @@ export default function FarmEdit() {
           <Image source={gobackIcon} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.title}>{farmName}</Text>
+        <TouchableOpacity onPress={handleOpenAddressModal}>
+          <Image source={require('../../assets/mappingicon.png')} style={styles.mappingIcon} />
+        </TouchableOpacity>
       </View>
 
       {/* 사진 추가 카드 */}
@@ -135,6 +177,27 @@ export default function FarmEdit() {
       >
         <Text style={styles.confirmButtonText}>확인</Text>
       </TouchableOpacity>
+
+      {/* 주소 모달 */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isAddressModalVisible}
+        onRequestClose={() => setIsAddressModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>농장 주소</Text>
+            <Text style={styles.addressText}>{farmAddress}</Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setIsAddressModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -162,7 +225,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
     textAlign: 'center',
-    marginRight: 25,
+    marginRight: -10,
   },
   photoBox: {
     backgroundColor: '#fff',
@@ -267,5 +330,58 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '150%',
     marginLeft: -20,
+  },
+  mappingIcon: {
+    width: 28,
+    height: 25, 
+    marginBottom: 2,
+    marginRight: 3,
+    resizeMode: 'contain',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#2ECC71',
+  },
+  addressText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+    lineHeight: 24,
+  },
+  closeButton: {
+    backgroundColor: '#2ECC71',
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    borderRadius: 25,
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
