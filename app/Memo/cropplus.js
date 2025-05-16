@@ -214,6 +214,9 @@ export default function CropPlus() {
   };
 
   const [isCropModalVisible, setIsCropModalVisible] = useState(false);
+  const [isDirectInputModalVisible, setIsDirectInputModalVisible] = useState(false);
+  const [directInputValue, setDirectInputValue] = useState('');
+  const defaultCropImage = require('../../assets/handpencilicon.png');
 
   // 인기작물 리스트 (이모지+이름)
   const popularCrops = [
@@ -250,7 +253,7 @@ export default function CropPlus() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ScrollView
         style={styles.container}
@@ -429,7 +432,9 @@ export default function CropPlus() {
               <TouchableOpacity
                 style={styles.directAddButton}
                 onPress={() => {
+                  setIsDirectInputModalVisible(true);
                   setIsCropModalVisible(false);
+                  setDirectInputValue('');
                 }}
               >
                 <Text style={styles.directAddButtonText}>직접 추가하기</Text>
@@ -464,6 +469,51 @@ export default function CropPlus() {
               >
                 <Text style={styles.cropModalCloseText}>닫기</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* 직접 입력 모달 */}
+        <Modal
+          visible={isDirectInputModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsDirectInputModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.directInputModalContent}>
+              <Text style={styles.cropModalTitle}>작물 이름 직접 입력</Text>
+              <TextInput
+                style={styles.input}
+                value={directInputValue}
+                onChangeText={setDirectInputValue}
+                placeholder="작물 이름을 입력하세요"
+                placeholderTextColor="#888888"
+                autoFocus
+              />
+              <View style={{ flexDirection: 'row', marginTop: 18 }}>
+                <TouchableOpacity
+                  style={[styles.errorModalButton, { marginRight: 10 }]}
+                  onPress={() => setIsDirectInputModalVisible(false)}
+                >
+                  <Text style={styles.errorModalButtonText}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.errorModalButton}
+                  onPress={() => {
+                    if (directInputValue.trim() === '') {
+                      setErrorMessage('작물 이름을 입력해주세요.');
+                      setErrorModalVisible(true);
+                      return;
+                    }
+                    setSelectedCrop(directInputValue.trim());
+                    setSelectedCropImage(defaultCropImage);
+                    setIsDirectInputModalVisible(false);
+                  }}
+                >
+                  <Text style={styles.errorModalButtonText}>확인</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -690,5 +740,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     resizeMode: 'contain',
+  },
+  directInputModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 28,
+    alignItems: 'center',
+    width: 280,
+    alignSelf: 'center',
+    elevation: 10,
   },
 });
