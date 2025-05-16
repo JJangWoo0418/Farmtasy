@@ -1366,7 +1366,7 @@ app.post('/api/farm', async (req, res) => {
     console.log('POST /api/farm 호출됨');
     console.log('요청 바디:', req.body);
     
-    const { user_phone, farm_name, latitude, longitude, coordinates } = req.body;
+    const { user_phone, farm_name, latitude, longitude, coordinates, address } = req.body;
 
     try {
         // 필수값 체크
@@ -1379,8 +1379,8 @@ app.post('/api/farm', async (req, res) => {
         const coordinatesJson = JSON.stringify(coordinates);
 
         // 쿼리 및 파라미터 로그
-        const query = `INSERT INTO farm (user_phone, farm_name, latitude, longitude, coordinates) VALUES (?, ?, ?, ?, ?)`;
-        const params = [user_phone, farm_name, latitude, longitude, coordinatesJson];
+        const query = `INSERT INTO farm (user_phone, farm_name, latitude, longitude, coordinates, address) VALUES (?, ?, ?, ?, ?, ?)`;
+        const params = [user_phone, farm_name, latitude, longitude, coordinatesJson, address];
         console.log('쿼리:', query);
         console.log('파라미터:', params);
 

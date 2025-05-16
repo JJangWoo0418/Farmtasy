@@ -282,15 +282,41 @@ const Map = () => {
         const lat = coordinates.reduce((sum, c) => sum + c.latitude, 0) / coordinates.length;
         const lng = coordinates.reduce((sum, c) => sum + c.longitude, 0) / coordinates.length;
 
-        const farmData = {
-            user_phone: phone,
-            farm_name: name,
-            latitude: Number(lat.toFixed(7)),
-            longitude: Number(lng.toFixed(7)),
-            coordinates: coordinates // 드래그로 그린 영역 좌표 추가
-        };
+        let formattedAddress = '';
+        let shortAddress = '';
 
         try {
+            // 중심 좌표로 주소 가져오기
+            console.log('Geocoder 호출 시작:', { lat, lng });
+            const geocodeResponse = await Geocoder.from(lat, lng);
+            console.log('Geocoder 응답:', geocodeResponse);
+            
+            if (geocodeResponse.results && geocodeResponse.results.length > 0) {
+                formattedAddress = geocodeResponse.results[0]?.formatted_address || '';
+                shortAddress = formattedAddress.split(' ').slice(1).join(' ');
+            } else {
+                console.log('Geocoder 결과가 없습니다. 기본 주소를 사용합니다.');
+                formattedAddress = `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`;
+                shortAddress = formattedAddress;
+            }
+            
+            console.log('=== 농장 주소 정보 ===');
+            console.log('전체 주소:', formattedAddress);
+            console.log('간단 주소:', shortAddress);
+            console.log('중심 좌표:', { lat, lng });
+            console.log('==================');
+
+            const farmData = {
+                user_phone: phone,
+                farm_name: name,
+                latitude: Number(lat.toFixed(7)),
+                longitude: Number(lng.toFixed(7)),
+                coordinates: coordinates,
+                address: shortAddress // 간단 주소를 address 필드에 저장
+            };
+
+            console.log('저장할 농장 데이터:', farmData);
+
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -302,15 +328,59 @@ const Map = () => {
                 throw new Error(data.error || '농장 정보 저장에 실패했습니다.');
             }
 
+            console.log('서버 응답:', data);
+
             // 성공 시 지도에 반영
             setFarmAreas(prev => [...prev, { 
                 id: data.farm_id, 
                 name, 
-                coordinates: coordinates // 드래그로 그린 영역 좌표 사용
+                coordinates: coordinates,
+                address: shortAddress // 간단 주소를 address 필드에 저장
             }]);
             Alert.alert('성공', '농장이 등록되었습니다.');
         } catch (error) {
-            Alert.alert('오류', error.message || '농장 정보 저장에 실패했습니다.');
+            console.error('농장 저장 중 오류:', error);
+            // Geocoder 오류가 발생해도 기본 주소로 저장 시도
+            if (error.code === 4) {
+                console.log('Geocoder 오류 발생, 기본 주소로 저장 시도');
+                formattedAddress = `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`;
+                shortAddress = formattedAddress;
+                
+                try {
+                    const farmData = {
+                        user_phone: phone,
+                        farm_name: name,
+                        latitude: Number(lat.toFixed(7)),
+                        longitude: Number(lng.toFixed(7)),
+                        coordinates: coordinates,
+                        address: shortAddress // 기본 주소도 address 필드에 저장
+                    };
+
+                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(farmData)
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || '농장 정보 저장에 실패했습니다.');
+                    }
+
+                    setFarmAreas(prev => [...prev, { 
+                        id: data.farm_id, 
+                        name, 
+                        coordinates: coordinates,
+                        address: shortAddress // 기본 주소도 address 필드에 저장
+                    }]);
+                    Alert.alert('성공', '농장이 등록되었습니다. (기본 주소 사용)');
+                } catch (retryError) {
+                    console.error('기본 주소로 저장 시도 중 오류:', retryError);
+                    Alert.alert('오류', '농장 정보 저장에 실패했습니다.');
+                }
+            } else {
+                Alert.alert('오류', error.message || '농장 정보 저장에 실패했습니다.');
+            }
         } finally {
             setIsDrawingMode(false);
             setDrawnPath([]);
