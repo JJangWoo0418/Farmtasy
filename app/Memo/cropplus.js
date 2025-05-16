@@ -61,7 +61,7 @@ export default function CropPlus() {
 
         // UUID 형식의 파일명 생성
         const fileName = `${Date.now().toString(16).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 14).toUpperCase()}.jpg`;
-        
+
         // S3 presigned URL 요청
         const presignResponse = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
           method: 'POST',
@@ -83,7 +83,7 @@ export default function CropPlus() {
         // 이미지를 S3에 업로드
         const imageResponse = await fetch(selectedImage);
         const blob = await imageResponse.blob();
-        
+
         const uploadResponse = await fetch(url, {
           method: 'PUT',
           body: blob,
@@ -216,11 +216,17 @@ export default function CropPlus() {
 
   // 인기작물 리스트 (이모지+이름)
   const popularCrops = [
-    { emoji: '🌶️', name: '고추' }, { emoji: '🫐', name: '블루베리' }, { emoji: '🥔', name: '감자' },
+    { emoji: '🌶️', name: '고추' }, { emoji: '🌾', name: '벼' }, { emoji: '🥔', name: '감자' },
     { emoji: '🍠', name: '고구마' }, { emoji: '🍎', name: '사과' }, { emoji: '🍓', name: '딸기' },
-    { emoji: '🧄', name: '마늘' }, { emoji: '🥬', name: '상추' }, { emoji: '🥒', name: '오이' },
-    { emoji: '🍅', name: '토마토' }, { emoji: '🍇', name: '포도' }, { emoji: '🌱', name: '콩' },
-    // ... 필요시 추가 ...
+    { emoji: '🧄', name: '마늘' }, { emoji: '🥬', name: '상추' }, { emoji: '🍄', name: '표고버섯' },
+    { emoji: '🍅', name: '토마토' }, { emoji: '🍇', name: '포도' }, { emoji: '🫘', name: '콩' },
+    { emoji: '🍊', name: '감귤' }, { emoji: '🍑', name: '복숭아' }, { emoji: '🧅', name: '양파' },
+    { emoji: '🍂', name: '감' }, { emoji: '🌿', name: '파' }, { emoji: '🌱', name: '들깨' },
+    { emoji: '🌽', name: '옥수수' }, { emoji: '🌳', name: '낙엽교목류' }, { emoji: '🥒', name: '오이' },
+    { emoji: '🌿', name: '두릅' }, { emoji: '🥜', name: '참깨' }, { emoji: '🟢', name: '매실' },
+    { emoji: '🍃', name: '시금치' }, { emoji: '🟣', name: '자두' }, { emoji: '🎃', name: '호박' },
+    { emoji: '🥬', name: '양배추' }, { emoji: '🫐', name: '블루베리' }, { emoji: '🥬', name: '배추' },
+
   ];
 
   return (
@@ -309,14 +315,17 @@ export default function CropPlus() {
 
         {/* 재배 면적 */}
         <Text style={styles.label}>재배 면적</Text>
-        <TextInput
-          style={styles.input}
-          value={area}
-          onChangeText={setArea}
-          placeholder="예: 10000"
-          keyboardType="numeric"
-          placeholderTextColor="#888888"
-        />
+        <View style={styles.row}>
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            value={area}
+            onChangeText={setArea}
+            placeholder="예: 10000"
+            keyboardType="numeric"
+            placeholderTextColor="#888888"
+          />
+          <Text style={styles.unit}>평</Text>
+        </View>
         <Text style={styles.subText}>최대 99,999평까지 입력이 가능해요</Text>
 
         {/* 정식 시기 */}
@@ -414,6 +423,7 @@ export default function CropPlus() {
                 keyExtractor={item => item.name}
                 numColumns={3}
                 contentContainerStyle={{ alignItems: 'center' }}
+                style={{ maxHeight: 320 }}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     style={styles.cropGridItem}
@@ -466,7 +476,7 @@ export default function CropPlus() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: -15 },
   headerTitle: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
   deleteIcon: { width: 25, height: 25, resizeMode: 'contain', marginRight: 4 },
@@ -489,7 +499,7 @@ const styles = StyleSheet.create({
   },
   image: { width: '100%', height: '100%' },
   imagePlaceholder: { color: '#aaa', fontSize: 16 },
-  label: { fontWeight: 'bold', fontSize: 20, marginTop: 8, marginBottom: 4 },
+  label: { fontWeight: 'bold', fontSize: 20, marginTop: 15, marginBottom: 4 },
   input: {
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -502,7 +512,7 @@ const styles = StyleSheet.create({
   },
   subText: { color: '#aaa', fontSize: 12, marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  calendarIcon: { width: 28, height: 28, marginLeft: 8, resizeMode: 'contain' , marginTop: 3},
+  calendarIcon: { width: 28, height: 28, marginLeft: 8, resizeMode: 'contain', marginTop: 3 },
   unit: { fontSize: 15, color: '#888', marginLeft: 8 },
   confirmButton: {
     backgroundColor: '#22CC6B',
@@ -523,7 +533,7 @@ const styles = StyleSheet.create({
   cropSelectButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   selectedCropBox: {
     flexDirection: 'row',
@@ -551,7 +561,7 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   icon: { width: 60, height: 60, marginBottom: 8 },
-  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold'},
+  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
   cropModalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
