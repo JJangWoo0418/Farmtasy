@@ -20,6 +20,7 @@ export default function CropPlus() {
   const [amount, setAmount] = useState('');
   const [selectedCrop, setSelectedCrop] = useState(params.crop || '');
   const [selectedCropEmoji, setSelectedCropEmoji] = useState(params.cropEmoji || '');
+  const [selectedCropImage, setSelectedCropImage] = useState(null);
   const [farmId, setFarmId] = useState(null);
 
   // 캘린더 상태
@@ -216,17 +217,33 @@ export default function CropPlus() {
 
   // 인기작물 리스트 (이모지+이름)
   const popularCrops = [
-    { emoji: '🌶️', name: '고추' }, { emoji: '🌾', name: '벼' }, { emoji: '🥔', name: '감자' },
-    { emoji: '🍠', name: '고구마' }, { emoji: '🍎', name: '사과' }, { emoji: '🍓', name: '딸기' },
-    { emoji: '🧄', name: '마늘' }, { emoji: '🥬', name: '상추' }, { emoji: '🍄', name: '표고버섯' },
-    { emoji: '🍅', name: '토마토' }, { emoji: '🍇', name: '포도' }, { emoji: '🫘', name: '콩' },
-    { emoji: '🍊', name: '감귤' }, { emoji: '🍑', name: '복숭아' }, { emoji: '🧅', name: '양파' },
-    { emoji: '🍂', name: '감' }, { emoji: '🌿', name: '파' }, { emoji: '🌱', name: '들깨' },
-    { emoji: '🌽', name: '옥수수' }, { emoji: '🌳', name: '낙엽교목류' }, { emoji: '🥒', name: '오이' },
-    { emoji: '🌿', name: '두릅' }, { emoji: '🥜', name: '참깨' }, { emoji: '🟢', name: '매실' },
-    { emoji: '🍃', name: '시금치' }, { emoji: '🟣', name: '자두' }, { emoji: '🎃', name: '호박' },
-    { emoji: '🥬', name: '양배추' }, { emoji: '🫐', name: '블루베리' }, { emoji: '🥬', name: '배추' },
-
+    { name: '고추', image: require('../../assets/peppericon.png') },
+    { name: '벼', image: require('../../assets/riceicon.png') },
+    { name: '감자', image: require('../../assets/potatoicon.png') },
+    { name: '고구마', image: require('../../assets/sweetpotatoicon.png') },
+    { name: '사과', image: require('../../assets/appleicon.png') },
+    { name: '딸기', image: require('../../assets/strawberryicon.png') },
+    { name: '마늘', image: require('../../assets/garlicicon.png') },
+    { name: '상추', image: require('../../assets/lettuceicon.png') },
+    { name: '배추', image: require('../../assets/napacabbageicon.png') },
+    { name: '토마토', image: require('../../assets/tomatoicon.png') },
+    { name: '포도', image: require('../../assets/grapeicon.png') },
+    { name: '콩', image: require('../../assets/beanicon.png') },
+    { name: '감귤', image: require('../../assets/tangerinesicon.png') },
+    { name: '복숭아', image: require('../../assets/peachicon.png') },
+    { name: '양파', image: require('../../assets/onionicon.png') },
+    { name: '감', image: require('../../assets/persimmonicon.png') },
+    { name: '파', image: require('../../assets/greenonionicon.png') },
+    { name: '들깨', image: require('../../assets/perillaseedsicon.png') },
+    { name: '오이', image: require('../../assets/cucumbericon.png') },
+    { name: '낙엽교목류', image: require('../../assets/deciduoustreesicon.png') },
+    { name: '옥수수', image: require('../../assets/cornericon.png') },
+    { name: '표고버섯', image: require('../../assets/mushroomicon.png') },
+    { name: '블루베리', image: require('../../assets/blueberryicon.png') },
+    { name: '양배추', image: require('../../assets/cabbageicon.png') },
+    { name: '호박', image: require('../../assets/pumpkinicon.png') },
+    { name: '참깨', image: require('../../assets/sesameicon.png') },
+    { name: '매실', image: require('../../assets/greenplumicon.png') },
   ];
 
   return (
@@ -301,9 +318,9 @@ export default function CropPlus() {
         >
           {selectedCrop ? (
             <View style={styles.selectedCropBox}>
-              <View style={styles.cropEmojiCircle}>
-                <Text style={styles.cropEmoji}>{selectedCropEmoji}</Text>
-              </View>
+              {selectedCropImage && (
+                <Image source={selectedCropImage} style={styles.cropGridImage2} />
+              )}
               <Text style={styles.selectedCropText}>{selectedCrop}</Text>
             </View>
           ) : (
@@ -429,12 +446,13 @@ export default function CropPlus() {
                     style={styles.cropGridItem}
                     onPress={() => {
                       setSelectedCrop(item.name);
-                      setSelectedCropEmoji(item.emoji);
+                      setSelectedCropImage(item.image);
+                      setSelectedCropEmoji(null);
                       setIsCropModalVisible(false);
                     }}
                   >
                     <View style={styles.cropGridCircle}>
-                      <Text style={styles.cropGridEmoji}>{item.emoji}</Text>
+                      <Image source={item.image} style={styles.cropGridImage} />
                     </View>
                     <Text style={styles.cropGridName}>{item.name}</Text>
                   </TouchableOpacity>
@@ -559,6 +577,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#222',
+    marginLeft: 10,
   },
   icon: { width: 60, height: 60, marginBottom: 8 },
   photoText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
@@ -605,7 +624,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#e5e5e5',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 6,
@@ -662,5 +680,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  cropGridImage: {
+    width: 60,
+    height: 60,
+    resizeMode: 'contain',
+  },
+  cropGridImage2: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
   },
 });
