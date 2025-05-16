@@ -411,9 +411,25 @@ const Map = () => {
         Alert.alert("수정 시작", "지도를 드래그하여 영역을 새로 그리세요.");
     };
 
-    const handleDeleteArea = (areaId) => {
-        setFarmAreas(prevAreas => prevAreas.filter(area => area.id !== areaId));
-        console.log('Area Deleted:', areaId);
+    const handleDeleteArea = async (areaId) => {
+        try {
+            console.log('농장 삭제 시도:', areaId);
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm/${areaId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || '농장 삭제에 실패했습니다.');
+            }
+
+            // 성공적으로 삭제되면 상태 업데이트
+            setFarmAreas(prev => prev.filter(area => area.id !== areaId));
+            Alert.alert('성공', '농장이 삭제되었습니다.');
+        } catch (error) {
+            console.error('농장 삭제 중 오류:', error);
+            Alert.alert('오류', error.message || '농장 삭제에 실패했습니다.');
+        }
     };
 
     const handleShovelPress = () => {
@@ -446,12 +462,73 @@ const Map = () => {
                         }, style: "destructive"
                     },
                     {
-                        text: "완료", onPress: () => {
+                        text: "완료", onPress: async () => {
                             if (drawnPath.length < 3) {
                                 Alert.alert("오류", "영역을 형성하려면 최소 3개 이상의 점을 그려야 합니다.");
                                 return;
                             }
-                            promptForAreaName(drawnPath);
+
+                            if (modifyingAreaId) {
+                                // 수정 모드일 때는 업데이트 API 호출
+                                try {
+                                    // 중심 좌표 계산
+                                    const lat = drawnPath.reduce((sum, c) => sum + c.latitude, 0) / drawnPath.length;
+                                    const lng = drawnPath.reduce((sum, c) => sum + c.longitude, 0) / drawnPath.length;
+
+                                    // 주소 가져오기
+                                    let shortAddress = '';
+                                    try {
+                                        const geocodeResponse = await Geocoder.from(lat, lng);
+                                        if (geocodeResponse.results && geocodeResponse.results.length > 0) {
+                                            const formattedAddress = geocodeResponse.results[0]?.formatted_address || '';
+                                            shortAddress = formattedAddress.split(' ').slice(1).join(' ');
+                                        }
+                                    } catch (error) {
+                                        console.error('Geocoder 오류:', error);
+                                        shortAddress = `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`;
+                                    }
+
+                                    // 업데이트 요청
+                                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm/${modifyingAreaId}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            latitude: Number(lat.toFixed(7)),
+                                            longitude: Number(lng.toFixed(7)),
+                                            coordinates: drawnPath,
+                                            address: shortAddress
+                                        })
+                                    });
+
+                                    if (!response.ok) {
+                                        throw new Error('농장 정보 업데이트에 실패했습니다.');
+                                    }
+
+                                    // 성공 시 상태 업데이트
+                                    setFarmAreas(prev => prev.map(area => 
+                                        area.id === modifyingAreaId 
+                                            ? { 
+                                                ...area, 
+                                                coordinates: drawnPath,
+                                                address: shortAddress
+                                            } 
+                                            : area
+                                    ));
+
+                                    Alert.alert('성공', '농장 영역이 수정되었습니다.');
+                                } catch (error) {
+                                    console.error('농장 수정 중 오류:', error);
+                                    Alert.alert('오류', error.message || '농장 수정에 실패했습니다.');
+                                }
+                            } else {
+                                // 새로 그리기 모드일 때는 기존 로직 실행
+                                promptForAreaName(drawnPath);
+                            }
+
+                            // 공통 정리 작업
+                            setIsDrawingMode(false);
+                            setDrawnPath([]);
+                            setModifyingAreaId(null);
                         }
                     }
                 ]

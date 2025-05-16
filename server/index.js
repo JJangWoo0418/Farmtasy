@@ -1438,6 +1438,73 @@ app.get('/api/farm', async (req, res) => {
     }
 });
 
+// 농장 삭제 API
+app.delete('/api/farm/:farmId', async (req, res) => {
+    const { farmId } = req.params;
+    console.log('DELETE /api/farm/:farmId 호출됨, farmId:', farmId);
+
+    try {
+        // 농장 존재 여부 확인
+        const [farm] = await pool.query('SELECT * FROM farm WHERE farm_id = ?', [farmId]);
+        if (farm.length === 0) {
+            return res.status(404).json({ error: '해당 농장을 찾을 수 없습니다.' });
+        }
+
+        // 농장 삭제
+        await pool.query('DELETE FROM farm WHERE farm_id = ?', [farmId]);
+        console.log('농장 삭제 완료:', farmId);
+
+        res.json({ message: '농장이 성공적으로 삭제되었습니다.' });
+    } catch (error) {
+        console.error('Error deleting farm:', error);
+        res.status(500).json({ error: '농장 삭제에 실패했습니다.' });
+    }
+});
+
+// 농장 정보 업데이트 API
+app.put('/api/farm/:farmId', async (req, res) => {
+    const { farmId } = req.params;
+    const { latitude, longitude, coordinates, address } = req.body;
+    console.log('PUT /api/farm/:farmId 호출됨:', { farmId, latitude, longitude, coordinates, address });
+
+    try {
+        // coordinates를 JSON 문자열로 변환
+        const coordinatesJson = JSON.stringify(coordinates);
+
+        // 쿼리 및 파라미터 로그
+        const query = `
+            UPDATE farm 
+            SET latitude = ?, 
+                longitude = ?, 
+                coordinates = ?, 
+                address = ?,
+                updated_at = NOW()
+            WHERE farm_id = ?
+        `;
+        const params = [latitude, longitude, coordinatesJson, address, farmId];
+        console.log('쿼리:', query);
+        console.log('파라미터:', params);
+
+        // DB 업데이트
+        const [result] = await pool.query(query, params);
+        console.log('DB 업데이트 결과:', result);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: '해당 농장을 찾을 수 없습니다.' });
+        }
+
+        res.json({
+            message: '농장 정보가 성공적으로 업데이트되었습니다.',
+            farm_id: farmId
+        });
+    } catch (error) {
+        console.error('Error updating farm:', error);
+        console.error('SQL Message:', error?.sqlMessage);
+        console.error('Error Code:', error?.code);
+        res.status(500).json({ error: '농장 정보 업데이트에 실패했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
