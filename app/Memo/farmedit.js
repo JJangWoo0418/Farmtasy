@@ -1,6 +1,6 @@
 // farmedit.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList, TextInput, Alert, Modal, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import gobackIcon from '../../assets/gobackicon.png';
@@ -43,20 +43,118 @@ export default function FarmEdit() {
     }
   }, [params?.deleteCrop, params?.editIndex]);
 
-  const [image, setImage] = useState(params.image || null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [image, setImage] = useState(null);
   const [name, setName] = useState(params.name || '');
   const editIndex = params.editIndex !== undefined ? Number(params.editIndex) : null;
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  // farm_image 가져오기
+  useEffect(() => {
+    const fetchFarmImage = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
+        const farms = await response.json();
+        
+        if (response.ok) {
+          const farm = farms.find(f => f.farm_name === farmName);
+          if (farm && farm.farm_image) {
+            setImage(farm.farm_image);
+          }
+        }
+      } catch (error) {
+        console.error('농장 이미지 가져오기 실패:', error);
+      } finally {
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 500);
+      }
+    };
 
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+    fetchFarmImage();
+  }, [farmName, params.phone]);
+
+  const pickImage = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const selectedImage = result.assets[0].uri;
+        setImage(selectedImage);
+
+        // UUID 형식의 파일명 생성
+        const fileName = `${Date.now().toString(16).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 14).toUpperCase()}.jpg`;
+        
+        // S3 presigned URL 요청
+        const presignResponse = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileName: fileName,
+            fileType: 'image/jpeg'
+          })
+        });
+
+        if (!presignResponse.ok) {
+          throw new Error('S3 presigned URL을 가져오는데 실패했습니다.');
+        }
+
+        const { url } = await presignResponse.json();
+
+        // 이미지를 S3에 업로드
+        const imageResponse = await fetch(selectedImage);
+        const blob = await imageResponse.blob();
+        
+        const uploadResponse = await fetch(url, {
+          method: 'PUT',
+          body: blob,
+          headers: {
+            'Content-Type': 'image/jpeg',
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('이미지 업로드에 실패했습니다.');
+        }
+
+        // S3 URL 생성
+        const s3Url = `https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/${fileName}`;
+
+        // farm_id 가져오기
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
+        const farms = await response.json();
+        
+        if (response.ok) {
+          const farm = farms.find(f => f.farm_name === farmName);
+          if (farm) {
+            // farm_image 업데이트
+            const updateResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm/image/${farm.farm_id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                farm_image: s3Url
+              })
+            });
+
+            if (!updateResponse.ok) {
+              console.error('농장 이미지 업데이트 실패');
+              Alert.alert('오류', '이미지 업데이트에 실패했습니다.');
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('이미지 처리 중 오류:', error);
+      Alert.alert('오류', '이미지 처리 중 오류가 발생했습니다.');
     }
   };
 
@@ -122,7 +220,12 @@ export default function FarmEdit() {
 
       {/* 사진 추가 카드 */}
       <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
-        {image ? (
+        {isLoading ? (
+          <View style={[styles.loadingContainer, styles.photoBox]}>
+            <ActivityIndicator size="large" color="#22CC6B" />
+            <Text style={styles.loadingText}>이미지 로딩 중...</Text>
+          </View>
+        ) : image ? (
           <Image source={{ uri: image }} style={styles.photo} resizeMode="cover" />
         ) : (
           <>
@@ -383,5 +486,22 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
   },
 });

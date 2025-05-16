@@ -1532,6 +1532,32 @@ app.get('/api/farm/address/:farmId', async (req, res) => {
     }
 });
 
+// 농장 이미지 업데이트 API
+app.put('/api/farm/image/:farmId', async (req, res) => {
+    const { farmId } = req.params;
+    const { farm_image } = req.body;
+    console.log('PUT /api/farm/image/:farmId 호출됨:', { farmId, farm_image });
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE farm SET farm_image = ? WHERE farm_id = ?',
+            [farm_image, farmId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: '해당 농장을 찾을 수 없습니다.' });
+        }
+
+        res.json({
+            message: '농장 이미지가 성공적으로 업데이트되었습니다.',
+            farm_id: farmId
+        });
+    } catch (error) {
+        console.error('Error updating farm image:', error);
+        res.status(500).json({ error: '농장 이미지 업데이트에 실패했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
