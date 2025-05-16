@@ -477,6 +477,7 @@ const styles = StyleSheet.create({
   settingIcon: {
     width: 24,
     height: 24,
+
   },
   confirmButton: {
     backgroundColor: '#22CC6B',

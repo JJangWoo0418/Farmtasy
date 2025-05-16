@@ -160,6 +160,9 @@ export default function CropPlus() {
       router.replace({
         pathname: '/Memo/farmedit',
         params: {
+          phone: params.phone,
+          farmName: params.farmName,
+          farmId: farmId,
           newCropName: name,
           newCropImage: image,
         }
