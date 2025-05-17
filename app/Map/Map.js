@@ -769,14 +769,19 @@ const Map = () => {
                         const region = {
                             latitude: location.lat,
                             longitude: location.lng,
-                            latitudeDelta: 0.004,  // 줌 강도 조절 (더 큰 값 = 더 넓은 영역)
-                            longitudeDelta: 0.004,  // 줌 강도 조절 (더 큰 값 = 더 넓은 영역)
+                            latitudeDelta: 0.004,
+                            longitudeDelta: 0.004,
                         };
                         console.log('설정할 region:', region);
                         
                         setInitialRegion(region);
                         mapRef.current?.animateToRegion(region, 1000);
                         console.log('농장 위치로 이동 완료:', response.results[0].formatted_address);
+                        
+                        // 지도 이동 완료 후 작물 추가 모드 활성화
+                        setTimeout(() => {
+                            activateAddCropMode();  // activateAddCropMode 함수 호출
+                        }, 1000);
                     } else {
                         console.log('검색 결과 없음');
                         Alert.alert('오류', '농장 주소를 찾을 수 없습니다.');
@@ -798,7 +803,7 @@ const Map = () => {
                 region={region}
                 initialRegion={initialRegion}
                 scrollEnabled={!isDrawingMode}
-                zoomEnabled={true}  // 항상 확대/축소 가능하도록 설정
+                zoomEnabled={true}
                 onRegionChangeStart={handleRegionChangeStart}
                 onRegionChangeComplete={handleRegionChangeComplete}
                 onPanDrag={handlePanDrag}
@@ -821,6 +826,18 @@ const Map = () => {
                         strokeWidth={4}
                     />
                 )}
+
+                {/* 관리 작물 핀 표시 */}
+                {managedCrops.map((crop) => (
+                    <Marker
+                        key={crop.id}
+                        coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
+                        onPress={() => handleCropPress(crop)}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                    >
+                        <Text style={styles.cropMarker}>☘️</Text>
+                    </Marker>
+                ))}
 
                 {farmAreas
                     .filter(area => area.id !== modifyingAreaId)
@@ -868,18 +885,6 @@ const Map = () => {
                         strokeWidth={4}
                     />
                 )}
-
-                {/* 관리 작물 핀 표시 */}
-                {managedCrops.map((crop) => (
-                    <Marker
-                        key={crop.id}
-                        coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
-                        onPress={() => handleCropPress(crop)}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                        <Text style={styles.cropMarker}>☘️</Text>
-                    </Marker>
-                ))}
             </MapView>
 
             <View style={styles.searchContainer}>
@@ -935,10 +940,10 @@ const Map = () => {
             {!isDrawingMode && (
                 <>
                     {!isAddingCropMode ? (
-                        // 초기 상태: 작물 추가 버튼 (Animated.View 추가 및 스타일 수정)
+                        // 초기 상태: 작물 추가 버튼
                         <Animated.View style={[
-                            styles.addCropButtonContainer, // 기본 위치 스타일 (bottom: 40)
-                            { transform: [{ translateY: addButtonOffsetY }] } // Y축 오프셋 애니메이션 적용
+                            styles.addCropButtonContainer,
+                            { transform: [{ translateY: addButtonOffsetY }] }
                         ]}>
                             <TouchableOpacity onPress={activateAddCropMode}>
                                 <View style={styles.addCropButton}>
@@ -947,19 +952,51 @@ const Map = () => {
                             </TouchableOpacity>
                         </Animated.View>
                     ) : (
-                        // 작물 추가 모드: 주소 표시 영역 (위치 조정 필요시 addButtonOffsetY 적용 가능)
-                        <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
-                            {/* 현재는 주소 영역 위치 고정 */}
-                            <View style={styles.centerAddressContainer}>
-                                {isFetchingAddress ? (
-                                    <ActivityIndicator size="small" color="#0000ff" />
-                                ) : (
-                                    <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
-                                        {centerAddress || "주소 정보를 불러오는 중..."}
-                                    </Text>
-                                )}
-                            </View>
-                        </TouchableOpacity>
+                        // 작물 추가 모드: 주소 표시 영역과 표시하기 버튼
+                        <View style={styles.addCropModeContainer}>
+                            <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
+                                <View style={styles.centerAddressContainer}>
+                                    {isFetchingAddress ? (
+                                        <ActivityIndicator size="small" color="#0000ff" />
+                                    ) : (
+                                        <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
+                                            {centerAddress || "주소 정보를 불러오는 중..."}
+                                        </Text>
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+                            
+                            {/* 표시하기 버튼 추가 */}
+                            <TouchableOpacity 
+                                style={styles.showLocationButton}
+                                onPress={() => {
+                                    setIsAddingCropMode(false);
+                                    Alert.alert(
+                                        "작물 추가",
+                                        "☘️ 현재 위치에 관리 작물을 추가하시겠습니까?",
+                                        [
+                                            { text: "아니요", style: "cancel" },
+                                            { 
+                                                text: "예", 
+                                                onPress: () => {
+                                                    const newCrop = {
+                                                        id: Date.now(),
+                                                        name: "작물",
+                                                        latitude: region.latitude,
+                                                        longitude: region.longitude,
+                                                    };
+                                                    setManagedCrops(prevCrops => [...prevCrops, newCrop]);
+                                                    Alert.alert("저장 완료", "작물이 현재 위치에 추가되었습니다.");
+                                                    
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }}
+                            >
+                                <Text style={styles.showLocationButtonText}>표시하기</Text>
+                            </TouchableOpacity>
+                        </View>
                     )}
                 </>
             )}
@@ -1188,7 +1225,7 @@ const styles = StyleSheet.create({
     // --- 중앙 주소 표시 스타일 --- (위치 변경, zIndex 조정)
     centerAddressTouchable: {
         position: 'absolute',
-        bottom: 143,
+        bottom: 70,
         alignSelf: 'center',
         zIndex: 6,
     },
@@ -1295,6 +1332,31 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 14,
+    },
+    addCropModeContainer: {
+        position: 'absolute',
+        bottom: 143,
+        alignSelf: 'center',
+        zIndex: 6,
+        width: '100%',
+        alignItems: 'center',
+    },
+    showLocationButton: {
+        backgroundColor: '#2ECC71',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 25,
+        marginTop: 10,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1,
+    },
+    showLocationButtonText: {
+        color: 'white',
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 });
 

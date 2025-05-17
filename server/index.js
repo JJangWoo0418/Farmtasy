@@ -1731,6 +1731,128 @@ app.delete('/api/crop/:crop_id', async (req, res) => {
   }
 });
 
+// cropdetail 테이블 생성
+const createCropDetailTable = `
+CREATE TABLE IF NOT EXISTS cropdetail (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  crop_id INT NOT NULL,
+  detail_name VARCHAR(255) NOT NULL,
+  detail_qr_code VARCHAR(255) NOT NULL,
+  detail_image_url TEXT,
+  latitude DECIMAL(10, 8) NOT NULL,
+  longitude DECIMAL(11, 8) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (crop_id) REFERENCES crop(crop_id)
+)`;
+
+// 테이블 생성 실행
+(async () => {
+  try {
+    await pool.query(createCropDetailTable);
+    console.log('cropdetail 테이블이 생성되었습니다.');
+  } catch (err) {
+    console.error('cropdetail 테이블 생성 중 오류:', err);
+  }
+})();
+
+// 작물 상세 정보 저장 API
+app.post('/api/cropdetail', async (req, res) => {
+  try {
+    const { crop_id, detail_name, detail_qr_code, detail_image_url, latitude, longitude } = req.body;
+    
+    // 요청 데이터 로깅
+    console.log('작물 상세 정보 저장 요청:', {
+      crop_id,
+      detail_name,
+      detail_qr_code,
+      detail_image_url,
+      latitude,
+      longitude
+    });
+
+    // 필수 필드 검증
+    if (!crop_id || !detail_name || !detail_qr_code || !latitude || !longitude) {
+      console.error('필수 필드 누락:', { crop_id, detail_name, detail_qr_code, latitude, longitude });
+      return res.status(400).json({ 
+        error: '필수 정보가 누락되었습니다.',
+        details: '작물 ID, 이름, QR코드, 위도, 경도는 필수 입력 항목입니다.'
+      });
+    }
+
+    // crop_id 유효성 검증
+    const [crops] = await pool.query('SELECT crop_id FROM crop WHERE crop_id = ?', [crop_id]);
+    if (crops.length === 0) {
+      return res.status(404).json({ 
+        error: '작물을 찾을 수 없습니다.',
+        details: '유효한 작물 ID를 입력해주세요.'
+      });
+    }
+
+    const query = `
+      INSERT INTO cropdetail 
+      (crop_id, detail_name, detail_qr_code, detail_image_url, latitude, longitude) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+    
+    const [results] = await pool.query(
+      query,
+      [crop_id, detail_name, detail_qr_code, detail_image_url || null, latitude, longitude]
+    );
+    
+    console.log('작물 상세 정보 저장 성공:', {
+      insertId: results.insertId,
+      affectedRows: results.affectedRows
+    });
+
+    res.status(201).json({ 
+      message: '작물 상세 정보가 성공적으로 저장되었습니다.',
+      cropDetailId: results.insertId 
+    });
+  } catch (error) {
+    console.error('작물 상세 정보 저장 중 오류:', error);
+    console.error('에러 상세:', {
+      message: error.message,
+      code: error.code,
+      sqlMessage: error.sqlMessage,
+      sqlState: error.sqlState
+    });
+    res.status(500).json({ 
+      error: '작물 상세 정보 저장에 실패했습니다.',
+      details: error.sqlMessage || error.message
+    });
+  }
+});
+
+// 작물 상세 정보 조회 API
+app.get('/api/cropdetail', async (req, res) => {
+  try {
+    const [results] = await pool.query('SELECT * FROM cropdetail ORDER BY created_at DESC');
+    res.json(results);
+  } catch (error) {
+    console.error('작물 상세 정보 조회 중 오류:', error);
+    res.status(500).json({ error: '작물 상세 정보 조회에 실패했습니다.' });
+  }
+});
+
+// 특정 작물 상세 정보 조회 API
+app.get('/api/cropdetail/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [results] = await pool.query('SELECT * FROM cropdetail WHERE id = ?', [id]);
+    
+    if (results.length === 0) {
+      res.status(404).json({ error: '해당 작물 상세 정보를 찾을 수 없습니다.' });
+      return;
+    }
+    
+    res.json(results[0]);
+  } catch (error) {
+    console.error('특정 작물 상세 정보 조회 중 오류:', error);
+    res.status(500).json({ error: '작물 상세 정보 조회에 실패했습니다.' });
+  }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
@@ -1765,4 +1887,39 @@ app.listen(PORT, '0.0.0.0', async () => {
     } catch (err) {
         console.error('테이블 수정 중 오류:', err);
     }
+});
+
+// 부모 작물 ID 조회 API
+app.get('/api/crop/parent', async (req, res) => {
+  try {
+    const { farm_id } = req.query;
+    
+    if (!farm_id) {
+      return res.status(400).json({ 
+        error: '필수 정보가 누락되었습니다.',
+        details: 'farm_id는 필수 입력 항목입니다.'
+      });
+    }
+
+    // 해당 농장의 가장 최근에 추가된 작물 ID 조회
+    const [crops] = await pool.query(
+      'SELECT crop_id FROM crop WHERE farm_id = ? ORDER BY created_at DESC LIMIT 1',
+      [farm_id]
+    );
+
+    if (crops.length === 0) {
+      return res.status(404).json({ 
+        error: '작물을 찾을 수 없습니다.',
+        details: '해당 농장에 등록된 작물이 없습니다.'
+      });
+    }
+
+    res.json({ crop_id: crops[0].crop_id });
+  } catch (error) {
+    console.error('부모 작물 ID 조회 중 오류:', error);
+    res.status(500).json({ 
+      error: '부모 작물 ID 조회에 실패했습니다.',
+      details: error.sqlMessage || error.message
+    });
+  }
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, Modal } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
@@ -14,6 +14,8 @@ export default function MemoPlus() {
   const [name, setName] = useState(params.name || '');
   const [qrValue, setQrValue] = useState('');
   const [showQR, setShowQR] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
   // 이미지 선택
   const pickImage = async () => {
@@ -66,11 +68,17 @@ export default function MemoPlus() {
     });
   };
 
+  // 모달 표시 함수
+  const showWarningModal = (message) => {
+    setModalMessage(message);
+    setShowModal(true);
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {/* 상단 헤더 */}
@@ -90,7 +98,7 @@ export default function MemoPlus() {
             <Image source={{ uri: image }} style={styles.photo} resizeMode="cover" />
           ) : (
             <>
-              <Image source={require('../../assets/addphotoicon.png')} style={styles.icon} />
+              <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} />
               <Text style={styles.photoText}>사진 추가</Text>
             </>
           )}
@@ -103,9 +111,34 @@ export default function MemoPlus() {
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholder=""
+            placeholder="상세 작물 이름을 입력해주세요"
             placeholderTextColor="#aaa"
           />
+        </View>
+
+        <Text style={styles.label}>QR코드</Text>
+        {/* QR코드 생성 */}
+        <View style={styles.qrSection}>
+          <View style={styles.qrBox}>
+            {showQR && qrValue ? (
+              <QRCode value={qrValue} size={100} />
+            ) : (
+              <TouchableOpacity
+                style={styles.qrGenButton}
+                onPress={() => {
+                  const qrValueToSet = name ? `${name}_${Date.now()}` : `${Date.now()}`;
+                  console.log('=== QR코드 생성 ===');
+                  console.log('생성된 QR값:', qrValueToSet);
+                  console.log('작물 이름:', name);
+                  console.log('타임스탬프:', Date.now());
+                  setQrValue(qrValueToSet);
+                  setShowQR(true);
+                }}
+              >
+                <Text style={styles.qrGenText}>큐알코드 생성하기</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* 위치 선택 버튼 */}
@@ -113,6 +146,18 @@ export default function MemoPlus() {
           style={styles.locationButton}
           onPress={async () => {
             console.log('=== 작물 위치 표시하기 버튼 클릭 ===');
+            
+            // 이름과 QR코드 입력 확인
+            if (!name.trim()) {
+              showWarningModal('작물의 이름을 입력해주세요.');
+              return;
+            }
+            
+            if (!qrValue) {
+              showWarningModal('QR코드를 먼저 생성해주세요.');
+              return;
+            }
+
             try {
               // farm 테이블에서 농장 정보 가져오기
               const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
@@ -124,7 +169,64 @@ export default function MemoPlus() {
                 
                 if (currentFarm && currentFarm.address) {
                   console.log('농장 주소:', currentFarm.address);
+                  console.log('농장 ID:', currentFarm.farm_id);
                   
+                  // crop 테이블에서 작물 ID 가져오기
+                  const cropUrl = `${API_CONFIG.BASE_URL}/api/crop?farm_id=${currentFarm.farm_id}`;
+                  console.log('작물 ID 요청 URL:', cropUrl);
+                  
+                  const cropResponse = await fetch(cropUrl);
+                  const cropData = await cropResponse.json();
+                  
+                  console.log('작물 정보 응답:', cropData);
+                  
+                  if (!cropResponse.ok) {
+                    console.error('작물 정보 조회 실패:', cropData);
+                    throw new Error(cropData.error || '작물 정보를 가져오는데 실패했습니다.');
+                  }
+
+                  if (!cropData || cropData.length === 0) {
+                    console.error('작물 정보가 없음:', cropData);
+                    throw new Error('작물 정보가 없습니다. 먼저 작물을 등록해주세요.');
+                  }
+
+                  // 가장 최근에 추가된 작물의 ID 사용
+                  const latestCrop = cropData[0];
+                  console.log('사용할 작물 ID:', latestCrop.crop_id);
+
+                  // cropdetail 테이블에 저장할 데이터
+                  const cropDetailData = {
+                    crop_id: latestCrop.crop_id,
+                    detail_name: name,
+                    detail_qr_code: qrValue,
+                    detail_image_url: image,
+                    latitude: currentFarm.latitude,  // 농장의 위도
+                    longitude: currentFarm.longitude,  // 농장의 경도
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  };
+
+                  console.log('저장할 작물 상세 정보:', cropDetailData);
+
+                  // cropdetail 테이블에 데이터 저장
+                  const saveResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(cropDetailData)
+                  });
+
+                  const saveResult = await saveResponse.json();
+                  console.log('저장 응답:', saveResult);
+
+                  if (!saveResponse.ok) {
+                    throw new Error(saveResult.error || '작물 상세 정보 저장에 실패했습니다.');
+                  }
+
+                  console.log('작물 상세 정보 저장 성공:', cropDetailData);
+                  
+                  // Map.js로 이동하여 위치 표시
                   const mapParams = {
                     cropName: name,
                     cropImage: image,
@@ -135,11 +237,22 @@ export default function MemoPlus() {
                     phone: params.phone,
                     region: params.region,
                     introduction: params.introduction,
-                    farmAddress: currentFarm.address  // DB에서 가져온 정확한 주소 사용
+                    farmAddress: currentFarm.address,
+                    latitude: currentFarm.latitude,
+                    longitude: currentFarm.longitude,
+                    showMarker: true,  // 마커 표시 여부
+                    markerType: 'crop',  // 마커 타입
+                    markerName: name,  // 마커에 표시할 이름
+                    markerImage: image,  // 마커에 표시할 이미지
+                    markerEmoji: '☘️',  // 마커에 표시할 이모지
+                    markerTitle: name,  // 마커 타이틀
+                    markerDescription: '작물 위치',  // 마커 설명
+                    markerColor: '#22CC6B'  // 마커 색상
                   };
-                  
+
                   console.log('Map.js로 전달할 전체 파라미터:', mapParams);
 
+                  // Map.js로 이동
                   router.push({
                     pathname: '/Map/Map',
                     params: mapParams
@@ -152,37 +265,32 @@ export default function MemoPlus() {
               }
             } catch (error) {
               console.error('농장 정보 요청 중 오류:', error);
-              Alert.alert('오류', '농장 정보를 가져오는데 실패했습니다.');
+              showWarningModal('농장 정보를 가져오는데 실패했습니다.');
             }
           }}
         >
           <Text style={styles.locationButtonText}>작물 위치 표시하기</Text>
         </TouchableOpacity>
 
-        {/* QR코드 생성 */}
-        <View style={styles.qrSection}>
-          <Text style={styles.qrLabel}>큐알코드 생성하기</Text>
-          <View style={styles.qrBox}>
-            {showQR && qrValue ? (
-              <QRCode value={qrValue} size={100} />
-            ) : (
+        {/* 경고 모달 */}
+        <Modal
+          visible={showModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalText}>{modalMessage}</Text>
               <TouchableOpacity
-                style={styles.qrGenButton}
-                onPress={() => {
-                  setQrValue(name ? `${name}_${Date.now()}` : `${Date.now()}`);
-                  setShowQR(true);
-                }}
+                style={styles.modalButton}
+                onPress={() => setShowModal(false)}
               >
-                <Text style={styles.qrGenText}>큐알코드 생성하기</Text>
+                <Text style={styles.modalButtonText}>확인</Text>
               </TouchableOpacity>
-            )}
+            </View>
           </View>
-        </View>
-
-        {/* 확인 버튼 */}
-        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-          <Text style={styles.confirmButtonText}>확인</Text>
-        </TouchableOpacity>
+        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -195,44 +303,36 @@ const styles = StyleSheet.create({
   title: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 },
   deleteIcon: { width: 22, height: 22, resizeMode: 'contain', marginRight: 4 },
   photoBox: {
+    width: '100%',
+    height: 200,
     backgroundColor: '#fff',
     borderRadius: 16,
-    overflow: 'hidden',
-    width: '100%',
-    height: 160,
     marginBottom: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: 'black',
   },
   photo: { width: '100%', height: '100%', borderRadius: 16 },
   icon: { width: 60, height: 60, marginBottom: 8 },
-  photoText: { fontSize: 16, color: '#444' },
-  label: { fontWeight: 'bold', fontSize: 15, marginTop: 8, marginBottom: 4 },
-  inputCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    borderWidth: 1,
-    borderColor: '#eee',
-    marginBottom: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
+  photoText: {fontSize: 16, color: '#222', fontWeight: 'bold' },
+  label: {fontWeight: 'bold', fontSize: 20, marginTop: 15, marginBottom: 4 },
+  
   input: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     fontSize: 15,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    color: '#222',
-    backgroundColor: 'transparent',
+    marginBottom: 4,
+    borderWidth: 3,
+    borderColor: '#ABABAB',
+    marginTop: 10
   },
   qrSection: {
     backgroundColor: '#bbb',
@@ -289,6 +389,45 @@ const styles = StyleSheet.create({
   locationButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 18,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalText: {
     fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#d32f2f',
+    fontWeight: 'bold',
+  },
+  modalButton: {
+    backgroundColor: '#22CC6B',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
