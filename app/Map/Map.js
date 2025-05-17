@@ -5,7 +5,7 @@ import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
 import * as Location from 'expo-location';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import API_CONFIG from '../DB/api';
 
@@ -19,6 +19,8 @@ const locationIcon = '📍';  // 이미지 대신 이모지 사용
 const Map = () => {
     const navigation = useNavigation();
     const { farmName } = useLocalSearchParams();
+    const router = useRouter();
+    const params = useLocalSearchParams();
     // 초기 region을 고정값으로 설정
     const [region, setRegion] = useState({
         latitude: 37.5665, // 서울 시청
@@ -50,6 +52,7 @@ const Map = () => {
     const [selectedArea, setSelectedArea] = useState(null);
     const [isAddingArea, setIsAddingArea] = useState(false);
     const [initialRegion, setInitialRegion] = useState(null);
+    const [saving, setSaving] = useState(false);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -138,15 +141,18 @@ const Map = () => {
 
     // --- 컴포넌트 마운트 시 초기 작업 ---
     useEffect(() => {
-        // 사용자의 농장 정보 불러오기
-        const fetchUserFarms = async () => {
+        // 사용자의 농장 정보와 작물 정보 불러오기
+        const fetchUserFarmsAndCrops = async () => {
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
-                const data = await response.json();
+                // 1. 농장 정보 가져오기
+                const farmResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
+                const farmData = await farmResponse.json();
                 
-                if (response.ok) {
+                if (farmResponse.ok) {
+                    console.log('가져온 농장 정보:', farmData); // 디버깅용 로그
+
                     // 농장 정보를 지도에 표시할 형식으로 변환
-                    const formattedFarms = data.map(farm => ({
+                    const formattedFarms = farmData.map(farm => ({
                         id: farm.farm_id,
                         name: farm.farm_name,
                         coordinates: Array.isArray(farm.coordinates) && farm.coordinates.length > 0
@@ -154,16 +160,37 @@ const Map = () => {
                             : [{ latitude: farm.latitude, longitude: farm.longitude }]
                     }));
                     setFarmAreas(formattedFarms);
+
+                    // 2. 작물 상세 정보 가져오기
+                    const cropDetailResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail?user_phone=${phone}`);
+                    const cropDetailData = await cropDetailResponse.json();
+
+                    if (cropDetailResponse.ok) {
+                        console.log('가져온 작물 상세 정보:', cropDetailData); // 디버깅용 로그
+
+                        // 작물 정보를 managedCrops 상태에 저장
+                        const formattedCrops = cropDetailData.map(crop => ({
+                            id: crop.detail_id,
+                            name: crop.detail_name,
+                            latitude: Number(crop.latitude),
+                            longitude: Number(crop.longitude),
+                            image: crop.detail_image_url,
+                            qrCode: crop.detail_qr_code
+                        }));
+
+                        console.log('포맷팅된 작물 정보:', formattedCrops); // 디버깅용 로그
+                        setManagedCrops(formattedCrops);
+                    }
                 } else {
-                    console.error('농장 정보 불러오기 실패:', data.error);
+                    console.error('농장 정보 불러오기 실패:', farmData.error);
                 }
             } catch (error) {
-                console.error('농장 정보 요청 중 오류:', error);
+                console.error('정보 요청 중 오류:', error);
             }
         };
 
         if (phone) {
-            fetchUserFarms();
+            fetchUserFarmsAndCrops();
         }
 
         // 컴포넌트 언마운트 시 debounce 취소
@@ -795,6 +822,57 @@ const Map = () => {
         }
     }, [route.params]);
 
+    // 위치 저장 버튼 클릭 시 region의 중심 좌표를 저장
+    const handleSaveCropDetail = async () => {
+        const latitude = region.latitude;
+        const longitude = region.longitude;
+        setSaving(true);
+        try {
+            // crop_id 가져오기 (farm_id로 최신 crop 조회)
+            const cropRes = await fetch(`${API_CONFIG.BASE_URL}/api/crop?farm_id=${params.farmId || params.farm_id}`);
+            const cropList = await cropRes.json();
+            if (!cropRes.ok || !cropList.length) {
+                alert('작물 정보를 찾을 수 없습니다.');
+                setSaving(false);
+                return;
+            }
+            const crop_id = cropList[0].crop_id;
+            // cropdetail 저장
+            const saveRes = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    crop_id,
+                    detail_name: params.name,
+                    detail_qr_code: params.qrValue,
+                    detail_image_url: params.image,
+                    latitude,
+                    longitude,
+                })
+            });
+            if (!saveRes.ok) {
+                alert('작물 위치 저장에 실패했습니다.');
+                setSaving(false);
+                return;
+            }
+            // 저장 성공 시 memolist로 이동
+            router.replace({ pathname: '/Memo/memolist', params: { ...params } });
+        } catch (e) {
+            alert('오류가 발생했습니다.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    useEffect(() => {
+        if (params.isAddingCropMode) {
+            setIsAddingCropMode(true);
+            if (region) {
+                fetchCenterAddress(region.latitude, region.longitude);
+            }
+        }
+    }, [params.isAddingCropMode]);
+
     return (
         <View style={styles.container}>
             <MapView
@@ -809,7 +887,6 @@ const Map = () => {
                 onPanDrag={handlePanDrag}
                 onTouchStart={handleMapTouchStart}
                 onTouchEnd={handleMapTouchEnd}
-                onPress={handleMapPress}
             >
                 {userLocation && (
                     <Marker
@@ -828,9 +905,9 @@ const Map = () => {
                 )}
 
                 {/* 관리 작물 핀 표시 */}
-                {managedCrops.map((crop) => (
+                {managedCrops.map((crop, index) => (
                     <Marker
-                        key={crop.id}
+                        key={`managed-crop-${crop.id}-${index}`}
                         coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
                         onPress={() => handleCropPress(crop)}
                         anchor={{ x: 0.5, y: 0.5 }}
@@ -839,10 +916,26 @@ const Map = () => {
                     </Marker>
                 ))}
 
+                {/* 전달받은 작물 정보 마커 표시 */}
+                {route.params?.showMarker && (
+                    <Marker
+                        key={`route-crop-${route.params.markerName}-${Date.now()}`}
+                        coordinate={{
+                            latitude: Number(route.params.latitude),
+                            longitude: Number(route.params.longitude)
+                        }}
+                        title={route.params.markerTitle}
+                        description={route.params.markerDescription}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                    >
+                        <Text style={styles.cropMarker}>{route.params.markerEmoji}</Text>
+                    </Marker>
+                )}
+
                 {farmAreas
                     .filter(area => area.id !== modifyingAreaId)
-                    .map((area) => (
-                        <React.Fragment key={area.id}>
+                    .map((area, index) => (
+                        <React.Fragment key={`farm-area-${area.id}-${index}`}>
                             <Polygon
                                 coordinates={area.coordinates}
                                 strokeColor="green"
@@ -850,7 +943,6 @@ const Map = () => {
                                 fillColor="rgba(0, 255, 0, 0.1)"
                                 tappable={true}
                                 onPress={() => {
-                                    
                                     router.push({
                                         pathname: 'Memo/farmedit',
                                         params: {
@@ -866,6 +958,7 @@ const Map = () => {
                             />
                             {area.coordinates.length > 0 && (
                                 <Marker
+                                    key={`farm-marker-${area.id}-${index}`}
                                     coordinate={area.coordinates[0]}
                                     anchor={{ x: 0.5, y: 1 }}
                                     onPress={() => handleAreaPress(area.id)}
@@ -969,32 +1062,10 @@ const Map = () => {
                             {/* 표시하기 버튼 추가 */}
                             <TouchableOpacity 
                                 style={styles.showLocationButton}
-                                onPress={() => {
-                                    setIsAddingCropMode(false);
-                                    Alert.alert(
-                                        "작물 추가",
-                                        "☘️ 현재 위치에 관리 작물을 추가하시겠습니까?",
-                                        [
-                                            { text: "아니요", style: "cancel" },
-                                            { 
-                                                text: "예", 
-                                                onPress: () => {
-                                                    const newCrop = {
-                                                        id: Date.now(),
-                                                        name: "작물",
-                                                        latitude: region.latitude,
-                                                        longitude: region.longitude,
-                                                    };
-                                                    setManagedCrops(prevCrops => [...prevCrops, newCrop]);
-                                                    Alert.alert("저장 완료", "작물이 현재 위치에 추가되었습니다.");
-                                                    
-                                                }
-                                            }
-                                        ]
-                                    );
-                                }}
+                                onPress={handleSaveCropDetail}
+                                disabled={saving}
                             >
-                                <Text style={styles.showLocationButtonText}>표시하기</Text>
+                                <Text style={styles.showLocationButtonText}>위치 저장</Text>
                             </TouchableOpacity>
                         </View>
                     )}

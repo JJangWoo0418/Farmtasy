@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, Modal } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -16,6 +16,30 @@ export default function MemoPlus() {
   const [showQR, setShowQR] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const [farmAddress, setFarmAddress] = useState('');
+  const [farmId, setFarmId] = useState(null);
+
+  // 농장 주소와 farmId 가져오기 (최초 렌더링 시)
+  useEffect(() => {
+    const fetchFarmInfo = async () => {
+      if (params.farmName && params.phone) {
+        try {
+          const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
+          const data = await response.json();
+          if (response.ok && data.length > 0) {
+            const currentFarm = data.find(farm => farm.farm_name === params.farmName);
+            if (currentFarm) {
+              if (currentFarm.address) setFarmAddress(currentFarm.address);
+              if (currentFarm.farm_id) setFarmId(currentFarm.farm_id);
+            }
+          }
+        } catch (e) {
+          // 무시
+        }
+      }
+    };
+    fetchFarmInfo();
+  }, [params.farmName, params.phone]);
 
   // 이미지 선택
   const pickImage = async () => {
@@ -144,129 +168,37 @@ export default function MemoPlus() {
         {/* 위치 선택 버튼 */}
         <TouchableOpacity
           style={styles.locationButton}
-          onPress={async () => {
-            console.log('=== 작물 위치 표시하기 버튼 클릭 ===');
-            
-            // 이름과 QR코드 입력 확인
+          onPress={() => {
             if (!name.trim()) {
               showWarningModal('작물의 이름을 입력해주세요.');
               return;
             }
-            
             if (!qrValue) {
               showWarningModal('QR코드를 먼저 생성해주세요.');
               return;
             }
-
-            try {
-              // farm 테이블에서 농장 정보 가져오기
-              const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
-              const data = await response.json();
-              
-              if (response.ok && data.length > 0) {
-                // 현재 농장 찾기
-                const currentFarm = data.find(farm => farm.farm_name === params.farmName);
-                
-                if (currentFarm && currentFarm.address) {
-                  console.log('농장 주소:', currentFarm.address);
-                  console.log('농장 ID:', currentFarm.farm_id);
-                  
-                  // crop 테이블에서 작물 ID 가져오기
-                  const cropUrl = `${API_CONFIG.BASE_URL}/api/crop?farm_id=${currentFarm.farm_id}`;
-                  console.log('작물 ID 요청 URL:', cropUrl);
-                  
-                  const cropResponse = await fetch(cropUrl);
-                  const cropData = await cropResponse.json();
-                  
-                  console.log('작물 정보 응답:', cropData);
-                  
-                  if (!cropResponse.ok) {
-                    console.error('작물 정보 조회 실패:', cropData);
-                    throw new Error(cropData.error || '작물 정보를 가져오는데 실패했습니다.');
-                  }
-
-                  if (!cropData || cropData.length === 0) {
-                    console.error('작물 정보가 없음:', cropData);
-                    throw new Error('작물 정보가 없습니다. 먼저 작물을 등록해주세요.');
-                  }
-
-                  // 가장 최근에 추가된 작물의 ID 사용
-                  const latestCrop = cropData[0];
-                  console.log('사용할 작물 ID:', latestCrop.crop_id);
-
-                  // cropdetail 테이블에 저장할 데이터
-                  const cropDetailData = {
-                    crop_id: latestCrop.crop_id,
-                    detail_name: name,
-                    detail_qr_code: qrValue,
-                    detail_image_url: image,
-                    latitude: currentFarm.latitude,  // 농장의 위도
-                    longitude: currentFarm.longitude,  // 농장의 경도
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  };
-
-                  console.log('저장할 작물 상세 정보:', cropDetailData);
-
-                  // cropdetail 테이블에 데이터 저장
-                  const saveResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(cropDetailData)
-                  });
-
-                  const saveResult = await saveResponse.json();
-                  console.log('저장 응답:', saveResult);
-
-                  if (!saveResponse.ok) {
-                    throw new Error(saveResult.error || '작물 상세 정보 저장에 실패했습니다.');
-                  }
-
-                  console.log('작물 상세 정보 저장 성공:', cropDetailData);
-                  
-                  // Map.js로 이동하여 위치 표시
-                  const mapParams = {
-                    cropName: name,
-                    cropImage: image,
-                    cropQR: qrValue,
-                    editIndex: params.editIndex,
-                    farmName: params.farmName,
-                    userData: params.userData,
-                    phone: params.phone,
-                    region: params.region,
-                    introduction: params.introduction,
-                    farmAddress: currentFarm.address,
-                    latitude: currentFarm.latitude,
-                    longitude: currentFarm.longitude,
-                    showMarker: true,  // 마커 표시 여부
-                    markerType: 'crop',  // 마커 타입
-                    markerName: name,  // 마커에 표시할 이름
-                    markerImage: image,  // 마커에 표시할 이미지
-                    markerEmoji: '☘️',  // 마커에 표시할 이모지
-                    markerTitle: name,  // 마커 타이틀
-                    markerDescription: '작물 위치',  // 마커 설명
-                    markerColor: '#22CC6B'  // 마커 색상
-                  };
-
-                  console.log('Map.js로 전달할 전체 파라미터:', mapParams);
-
-                  // Map.js로 이동
-                  router.push({
-                    pathname: '/Map/Map',
-                    params: mapParams
-                  });
-                } else {
-                  Alert.alert('오류', '농장 주소를 찾을 수 없습니다.');
-                }
-              } else {
-                Alert.alert('오류', '농장 정보를 가져오는데 실패했습니다.');
-              }
-            } catch (error) {
-              console.error('농장 정보 요청 중 오류:', error);
-              showWarningModal('농장 정보를 가져오는데 실패했습니다.');
+            if (!farmId) {
+              showWarningModal('농장 정보를 찾을 수 없습니다.');
+              return;
             }
+            // cropdetail 저장 없이, 입력값만 Map 페이지로 전달
+            router.push({
+              pathname: '/Map/Map',
+              params: {
+                name,
+                image,
+                qrValue,
+                editIndex: params.editIndex,
+                farmName: params.farmName,
+                userData: params.userData,
+                phone: params.phone,
+                region: params.region,
+                introduction: params.introduction,
+                isAddingCropMode: true,
+                farmAddress: farmAddress,
+                farmId: farmId,
+              }
+            });
           }}
         >
           <Text style={styles.locationButtonText}>작물 위치 표시하기</Text>
