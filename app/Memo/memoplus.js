@@ -50,7 +50,32 @@ export default function MemoPlus() {
       quality: 1,
     });
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const localUri = result.assets[0].uri;
+      const fileName = localUri.split('/').pop();
+
+      // S3 presigned URL 요청
+      const presignRes = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName,
+          fileType: 'image/jpeg', // 실제 타입 필요시 동적으로 변경
+        }),
+      });
+      const { url: presignedUrl } = await presignRes.json();
+
+      // S3에 이미지 업로드
+      const img = await fetch(localUri);
+      const blob = await img.blob();
+      await fetch(presignedUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': 'image/jpeg' },
+      });
+
+      // S3 URL 생성
+      const s3Url = `https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/${fileName}`;
+      setImage(s3Url);
     }
   };
 

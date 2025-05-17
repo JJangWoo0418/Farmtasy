@@ -1032,33 +1032,18 @@ const Map = () => {
             {/* 하단 버튼 또는 주소 표시 (작물 추가 모드에 따라 분기) */}
             {!isDrawingMode && (
                 <>
-                    {!isAddingCropMode ? (
-                        // 초기 상태: 작물 추가 버튼
-                        <Animated.View style={[
-                            styles.addCropButtonContainer,
-                            { transform: [{ translateY: addButtonOffsetY }] }
-                        ]}>
-                            <TouchableOpacity onPress={activateAddCropMode}>
-                                <View style={styles.addCropButton}>
-                                    <Text style={styles.addCropButtonText}>여기를 눌러 작물을 추가해보세요!</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </Animated.View>
-                    ) : (
+                    {isAddingCropMode ? (
                         // 작물 추가 모드: 주소 표시 영역과 표시하기 버튼
                         <View style={styles.addCropModeContainer}>
-                            <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
-                                <View style={styles.centerAddressContainer}>
-                                    {isFetchingAddress ? (
-                                        <ActivityIndicator size="small" color="#0000ff" />
-                                    ) : (
-                                        <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
-                                            {centerAddress || "주소 정보를 불러오는 중..."}
-                                        </Text>
-                                    )}
-                                </View>
-                            </TouchableOpacity>
-                            
+                            <View style={styles.centerAddressContainer}>
+                                {isFetchingAddress ? (
+                                    <ActivityIndicator size="small" color="#0000ff" />
+                                ) : (
+                                    <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
+                                        {centerAddress || "주소 정보를 불러오는 중..."}
+                                    </Text>
+                                )}
+                            </View>
                             {/* 표시하기 버튼 추가 */}
                             <TouchableOpacity 
                                 style={styles.showLocationButton}
@@ -1068,7 +1053,7 @@ const Map = () => {
                                 <Text style={styles.showLocationButtonText}>위치 저장</Text>
                             </TouchableOpacity>
                         </View>
-                    )}
+                    ) : null}
                 </>
             )}
 
@@ -1312,6 +1297,7 @@ const styles = StyleSheet.create({
         shadowRadius: 1,
         minWidth: 200,
         alignItems: 'center',
+        marginBottom: 20
     },
     centerAddressText: {
         fontSize: 14,
@@ -1332,28 +1318,30 @@ const styles = StyleSheet.create({
     //     color: 'white',
     //     fontSize: 10,
     // },
-    addCropButtonContainer: {
+    addCropModeContainer: {
         position: 'absolute',
-        bottom: 140,
+        bottom: 143,
         alignSelf: 'center',
         zIndex: 6,
+        width: '100%',
+        alignItems: 'center',
     },
-    addCropButton: {
+    showLocationButton: {
         backgroundColor: '#2ECC71',
         paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingVertical: 10,
         borderRadius: 25,
+        marginTop: 10,
         elevation: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 1,
     },
-    addCropButtonText: {
+    showLocationButtonText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 20,
         fontWeight: 'bold',
-        textAlign: 'center',
     },
     locationButton: {
         position: 'absolute',
@@ -1403,31 +1391,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 14,
-    },
-    addCropModeContainer: {
-        position: 'absolute',
-        bottom: 143,
-        alignSelf: 'center',
-        zIndex: 6,
-        width: '100%',
-        alignItems: 'center',
-    },
-    showLocationButton: {
-        backgroundColor: '#2ECC71',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 25,
-        marginTop: 10,
-        elevation: 6,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 1,
-    },
-    showLocationButtonText: {
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
     },
 });
 
