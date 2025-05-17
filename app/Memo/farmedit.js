@@ -58,7 +58,7 @@ export default function FarmEdit() {
       try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
         const farms = await response.json();
-        
+
         if (response.ok) {
           const farm = farms.find(f => f.farm_name === farmName);
           if (farm && farm.farm_image) {
@@ -83,7 +83,7 @@ export default function FarmEdit() {
       try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
         const farms = await response.json();
-        
+
         if (response.ok) {
           const farm = farms.find(f => f.farm_name === farmName);
           if (farm) {
@@ -140,7 +140,7 @@ export default function FarmEdit() {
 
         // UUID 형식의 파일명 생성
         const fileName = `${Date.now().toString(16).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 6).toUpperCase()}-${Math.random().toString(16).substring(2, 14).toUpperCase()}.jpg`;
-        
+
         // S3 presigned URL 요청
         const presignResponse = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
           method: 'POST',
@@ -162,7 +162,7 @@ export default function FarmEdit() {
         // 이미지를 S3에 업로드
         const imageResponse = await fetch(selectedImage);
         const blob = await imageResponse.blob();
-        
+
         const uploadResponse = await fetch(url, {
           method: 'PUT',
           body: blob,
@@ -181,7 +181,7 @@ export default function FarmEdit() {
         // farm_id 가져오기
         const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
         const farms = await response.json();
-        
+
         if (response.ok) {
           const farm = farms.find(f => f.farm_name === farmName);
           if (farm) {
@@ -215,14 +215,14 @@ export default function FarmEdit() {
       // 먼저 farm_id를 가져오기 위해 모든 농장 정보 조회
       const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
       const farms = await response.json();
-      
+
       if (response.ok) {
         const farm = farms.find(f => f.farm_name === farmName);
         if (farm) {
           // farm_id로 주소 정보 조회
           const addressResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm/address/${farm.farm_id}`);
           const addressData = await addressResponse.json();
-          
+
           if (addressResponse.ok) {
             setFarmAddress(addressData.address);
           } else {
@@ -308,14 +308,23 @@ export default function FarmEdit() {
         renderItem={({ item, index }) => (
           <TouchableOpacity
             style={styles.cropCard}
-            onPress={() => router.push({
-              pathname: '/Memo/memolist',
-              params: {
-                cropName: item.name,
-                cropImage: item.image,
-                cropIndex: index,
-              }
-            })}
+            onPress={() => {
+
+              router.push({
+                pathname: '/Memo/memolist',
+                params: {
+                  cropName: item.name,
+                  cropImage: item.image,
+                  cropIndex: index,
+                  farmName: params.farmName,
+                  userData: params.userData,
+                  phone: params.phone,
+                  name: params.name,
+                  region: params.region,
+                  introduction: params.introduction
+                }
+              });
+            }}
           >
             <Image source={{ uri: item.image }} style={styles.cropCardImage} />
             <Text style={styles.cropCardText}>{item.name}</Text>
@@ -357,7 +366,7 @@ export default function FarmEdit() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>농장 주소</Text>
             <Text style={styles.addressText}>{farmAddress}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setIsAddressModalVisible(false)}
             >
@@ -423,7 +432,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   icon: { width: 60, height: 60, marginBottom: 8 },
-  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold'},
+  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
   cropBox: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -501,7 +510,7 @@ const styles = StyleSheet.create({
   },
   mappingIcon: {
     width: 28,
-    height: 25, 
+    height: 25,
     marginBottom: 2,
     marginRight: 3,
     resizeMode: 'contain',

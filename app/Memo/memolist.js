@@ -17,7 +17,7 @@ export default function MemoList() {
         image: params.newMemoImage,
         qrCode: params.newMemoQR,
       };
-      
+
       if (params.editIndex !== undefined) {
         // 수정인 경우
         const newCrops = [...managedCrops];
@@ -53,17 +53,20 @@ export default function MemoList() {
         data={managedCrops}
         keyExtractor={(_, idx) => idx.toString()}
         renderItem={({ item, index }) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cropCard}
-            onPress={() => router.push({
-              pathname: '/Memo/memoplus',
-              params: {
-                name: item.name,
-                image: item.image,
-                qrValue: item.qrCode,
-                editIndex: index
-              }
-            })}
+            onPress={() => {
+              router.push({
+                pathname: '/Memo/memoplus',
+                params: {
+                  farmName: params.farmName,
+                  userData: params.userData,
+                  phone: params.phone,
+                  region: params.region,
+                  introduction: params.introduction
+                }
+              });
+            }}
           >
             <Image source={{ uri: item.image }} style={styles.cropCardImage} />
             <Text style={styles.cropCardText}>{item.name}</Text>
@@ -73,7 +76,27 @@ export default function MemoList() {
         ListFooterComponent={
           <TouchableOpacity
             style={styles.cropBox}
-            onPress={() => router.push('/Memo/memoplus')}
+            onPress={() => {
+                console.log('작물 추가 버튼 클릭 - 현재 params 정보:', params);
+                console.log('작물 추가 버튼 클릭 - memoplus로 전달할 파라미터:', {
+                    farmName: params.farmName,
+                    userData: params.userData,
+                    phone: params.phone,
+                    region: params.region,
+                    introduction: params.introduction
+                });
+
+                router.push({
+                    pathname: '/Memo/memoplus',
+                    params: {
+                        farmName: params.farmName,
+                        userData: params.userData,
+                        phone: params.phone,
+                        region: params.region,
+                        introduction: params.introduction
+                    }
+                });
+            }}
           >
             <Image source={require('../../assets/cropicon.png')} style={styles.iconSmall} />
             <Text style={styles.cropText}>관리작물 추가</Text>

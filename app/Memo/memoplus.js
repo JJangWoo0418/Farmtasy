@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import gobackIcon from '../../assets/gobackicon.png';
+import API_CONFIG from '../DB/api';
 
 export default function MemoPlus() {
   const router = useRouter();
@@ -106,6 +107,57 @@ export default function MemoPlus() {
             placeholderTextColor="#aaa"
           />
         </View>
+
+        {/* 위치 선택 버튼 */}
+        <TouchableOpacity
+          style={styles.locationButton}
+          onPress={async () => {
+            console.log('=== 작물 위치 표시하기 버튼 클릭 ===');
+            try {
+              // farm 테이블에서 농장 정보 가져오기
+              const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${params.phone}`);
+              const data = await response.json();
+              
+              if (response.ok && data.length > 0) {
+                // 현재 농장 찾기
+                const currentFarm = data.find(farm => farm.farm_name === params.farmName);
+                
+                if (currentFarm && currentFarm.address) {
+                  console.log('농장 주소:', currentFarm.address);
+                  
+                  const mapParams = {
+                    cropName: name,
+                    cropImage: image,
+                    cropQR: qrValue,
+                    editIndex: params.editIndex,
+                    farmName: params.farmName,
+                    userData: params.userData,
+                    phone: params.phone,
+                    region: params.region,
+                    introduction: params.introduction,
+                    farmAddress: currentFarm.address  // DB에서 가져온 정확한 주소 사용
+                  };
+                  
+                  console.log('Map.js로 전달할 전체 파라미터:', mapParams);
+
+                  router.push({
+                    pathname: '/Map/Map',
+                    params: mapParams
+                  });
+                } else {
+                  Alert.alert('오류', '농장 주소를 찾을 수 없습니다.');
+                }
+              } else {
+                Alert.alert('오류', '농장 정보를 가져오는데 실패했습니다.');
+              }
+            } catch (error) {
+              console.error('농장 정보 요청 중 오류:', error);
+              Alert.alert('오류', '농장 정보를 가져오는데 실패했습니다.');
+            }
+          }}
+        >
+          <Text style={styles.locationButtonText}>작물 위치 표시하기</Text>
+        </TouchableOpacity>
 
         {/* QR코드 생성 */}
         <View style={styles.qrSection}>
@@ -226,4 +278,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   confirmButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  locationButton: {
+    backgroundColor: '#22CC6B',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  locationButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });

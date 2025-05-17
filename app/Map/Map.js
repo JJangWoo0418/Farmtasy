@@ -47,6 +47,9 @@ const Map = () => {
     const [locationError, setLocationError] = useState(null);
     const route = useRoute();
     const { userData, phone, name } = useLocalSearchParams();
+    const [selectedArea, setSelectedArea] = useState(null);
+    const [isAddingArea, setIsAddingArea] = useState(false);
+    const [initialRegion, setInitialRegion] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -61,9 +64,7 @@ const Map = () => {
             const formattedAddress = response.results[0]?.formatted_address || '';
             const shortAddress = formattedAddress.split(' ').slice(1).join(' ');
             setCenterAddress(shortAddress || formattedAddress);
-            console.log('[fetchCenterAddress] 주소 변환 성공:', shortAddress || formattedAddress);
         } catch (error) {
-            console.error('[fetchCenterAddress] 주소 변환 실패:', error?.message || error);
             setCenterAddress('');
         } finally {
             setIsFetchingAddress(false);
@@ -233,6 +234,13 @@ const Map = () => {
     const handleMapTouchEnd = () => {
         if (isDrawingMode) {
             isDragging.current = false;
+        }
+    };
+
+    const handleMapPress = (e) => {
+        if (isDrawingMode) {
+            const coordinate = e.nativeEvent.coordinate;
+            setDrawnPath(prevPath => [...prevPath, coordinate]);
         }
     };
 
@@ -523,7 +531,6 @@ const Map = () => {
 
     const handleSearch = async () => {
         if (!searchQuery) return;
-        console.log('Searching for:', searchQuery);
         try {
             const response = await Geocoder.from(searchQuery);
             if (response.results.length > 0) {
@@ -537,7 +544,6 @@ const Map = () => {
                 if (mapRef.current) {
                     mapRef.current.animateToRegion(newRegion, 1000);
                 }
-                console.log('Search successful, moving to:', newRegion);
             } else {
                 Alert.alert("검색 실패", "해당 주소를 찾을 수 없습니다.");
             }
@@ -633,7 +639,6 @@ const Map = () => {
             longitude: region.longitude,
         };
         setManagedCrops(prevCrops => [...prevCrops, newCrop]);
-        console.log('New Crop Saved:', newCrop);
         Alert.alert("저장 완료", `"${name}" 작물이 현재 위치에 추가되었습니다.`);
     };
 
@@ -654,13 +659,11 @@ const Map = () => {
 
     // 작물 관리 (임시)
     const manageCrop = (cropId) => {
-        console.log("Manage Crop:", cropId);
         Alert.alert("관리", "작물 관리 기능은 아직 구현되지 않았습니다.");
     };
 
     // 작물 위치 수정 시작 (임시)
     const startModifyCropLocation = (cropId) => {
-        console.log("Start Modify Crop Location:", cropId);
         Alert.alert("위치 수정", "작물 위치 수정 기능은 아직 구현되지 않았습니다.");
         // TODO: 위치 수정 모드 구현 필요
     };
@@ -676,7 +679,6 @@ const Map = () => {
                     text: "삭제",
                     onPress: () => {
                         setManagedCrops(prevCrops => prevCrops.filter(crop => crop.id !== cropId));
-                        console.log('Crop Deleted:', cropId);
                     },
                     style: "destructive"
                 },
@@ -750,19 +752,59 @@ const Map = () => {
         }
     };
 
+    useEffect(() => {
+        if (route.params?.farmAddress) {
+            console.log('전달받은 농장 주소:', route.params.farmAddress);
+            // 주소로 검색
+            const searchAddress = async () => {
+                try {
+                    console.log('Geocoder 검색 시작:', route.params.farmAddress);
+                    const response = await Geocoder.from(route.params.farmAddress);
+                    console.log('Geocoder 응답:', response);
+                    
+                    if (response.results.length > 0) {
+                        const location = response.results[0].geometry.location;
+                        console.log('검색된 위치:', location);
+                        
+                        const region = {
+                            latitude: location.lat,
+                            longitude: location.lng,
+                            latitudeDelta: 0.004,  // 줌 강도 조절 (더 큰 값 = 더 넓은 영역)
+                            longitudeDelta: 0.004,  // 줌 강도 조절 (더 큰 값 = 더 넓은 영역)
+                        };
+                        console.log('설정할 region:', region);
+                        
+                        setInitialRegion(region);
+                        mapRef.current?.animateToRegion(region, 1000);
+                        console.log('농장 위치로 이동 완료:', response.results[0].formatted_address);
+                    } else {
+                        console.log('검색 결과 없음');
+                        Alert.alert('오류', '농장 주소를 찾을 수 없습니다.');
+                    }
+                } catch (error) {
+                    console.error('주소 검색 실패:', error);
+                    Alert.alert('오류', '농장 주소를 찾을 수 없습니다.');
+                }
+            };
+            searchAddress();
+        }
+    }, [route.params]);
+
     return (
         <View style={styles.container}>
             <MapView
                 ref={mapRef}
                 style={styles.map}
                 region={region}
+                initialRegion={initialRegion}
                 scrollEnabled={!isDrawingMode}
-                zoomEnabled={!isDrawingMode}
+                zoomEnabled={true}  // 항상 확대/축소 가능하도록 설정
                 onRegionChangeStart={handleRegionChangeStart}
                 onRegionChangeComplete={handleRegionChangeComplete}
                 onPanDrag={handlePanDrag}
                 onTouchStart={handleMapTouchStart}
                 onTouchEnd={handleMapTouchEnd}
+                onPress={handleMapPress}
             >
                 {userLocation && (
                     <Marker
@@ -790,17 +832,20 @@ const Map = () => {
                                 strokeWidth={3}
                                 fillColor="rgba(0, 255, 0, 0.1)"
                                 tappable={true}
-                                onPress={() => router.push({
-                                    pathname: 'Memo/farmedit',
-                                    params: {
-                                        farmName: area.name,
-                                        userData: route.params?.userData,
-                                        phone: route.params?.phone,
-                                        name: route.params?.name,
-                                        region: route.params?.region,
-                                        introduction: route.params?.introduction
-                                    }
-                                })}
+                                onPress={() => {
+                                    
+                                    router.push({
+                                        pathname: 'Memo/farmedit',
+                                        params: {
+                                            farmName: area.name,
+                                            userData: route.params?.userData,
+                                            phone: route.params?.phone,
+                                            name: route.params?.name,
+                                            region: route.params?.region,
+                                            introduction: route.params?.introduction
+                                        }
+                                    });
+                                }}
                             />
                             {area.coordinates.length > 0 && (
                                 <Marker
