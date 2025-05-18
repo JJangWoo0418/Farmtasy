@@ -1901,17 +1901,49 @@ app.get('/api/cropdetail', async (req, res) => {
 app.get('/api/cropdetail/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const [results] = await pool.query('SELECT * FROM cropdetail WHERE id = ?', [id]);
+    const [results] = await pool.query('SELECT * FROM cropdetail WHERE cropdetail_id = ?', [id]);
     
     if (results.length === 0) {
-      res.status(404).json({ error: '해당 작물 상세 정보를 찾을 수 없습니다.' });
-      return;
+      return res.status(404).json({ error: '해당 작물 상세 정보를 찾을 수 없습니다.' });
     }
-    
-    res.json(results[0]);
+
+    // detail_qr_code에서 숫자만 추출
+    const qr = results[0].detail_qr_code || '';
+    const onlyNumber = qr.replace(/[^0-9]/g, '');
+
+    res.json({
+      ...results[0],
+      detail_qr_code: onlyNumber
+    });
   } catch (error) {
     console.error('특정 작물 상세 정보 조회 중 오류:', error);
     res.status(500).json({ error: '작물 상세 정보 조회에 실패했습니다.' });
+  }
+});
+
+// cropdetail 이미지(및 기타 정보) 수정 API
+app.put('/api/cropdetail/:id', async (req, res) => {
+  const { id } = req.params;
+  const { detail_image_url } = req.body;
+
+  if (!detail_image_url) {
+    return res.status(400).json({ error: 'detail_image_url은 필수입니다.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE cropdetail SET detail_image_url = ? WHERE cropdetail_id = ?',
+      [detail_image_url, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: '해당 상세작물을 찾을 수 없습니다.' });
+    }
+
+    res.json({ success: true, message: '이미지 URL이 성공적으로 업데이트되었습니다.' });
+  } catch (error) {
+    console.error('cropdetail 이미지 업데이트 오류:', error);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
   }
 });
 

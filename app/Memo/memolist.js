@@ -62,7 +62,7 @@ export default function MemoList() {
               image: detail.detail_image_url || 'https://via.placeholder.com/48',
               qrCode: detail.detail_qr_code,
               cropId: detail.crop_id,
-              detailId: detail.id
+              detailId: detail.cropdetail_id
             }));
             console.log('매핑된 데이터:', mappedData);
             setManagedCrops(mappedData);
@@ -132,6 +132,7 @@ export default function MemoList() {
           <TouchableOpacity 
             style={styles.cropCard}
             onPress={() => {
+              console.log('카드 클릭 detailId:', item.detailId);
               router.push({
                 pathname: '/Memo/cropdetailmemopage',
                 params: {
