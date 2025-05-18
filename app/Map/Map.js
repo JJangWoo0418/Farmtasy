@@ -59,6 +59,7 @@ const Map = () => {
     const [loadingCrops, setLoadingCrops] = useState(false);
     const highlightTimerRef = useRef(null);
     const highlightDelayRef = useRef(null);
+    const [highlightedName, setHighlightedName] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -932,16 +933,16 @@ const Map = () => {
         }
     }, [params.farmAddress]);
 
-    // highlightDetailName이 바뀔 때 2초간만 강조
+    // params.name이 바뀔 때마다 2초간만 하이라이트, 이후 원래 이미지로 복귀
     useEffect(() => {
-        if (params.highlightDetailName) {
-            setActiveHighlightName(params.highlightDetailName);
+        if (params.name) {
+            setHighlightedName(params.name);
             const timer = setTimeout(() => {
-                setActiveHighlightName(null);
-            }, 2000);
+                setHighlightedName(null);
+            }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [params.highlightDetailName]);
+    }, [params.name]);
 
     // region prop과 state(region) 완전 동기화, params.latitude/longitude가 명확히 준비된 경우에만 setRegion, 중복 setRegion 방지
     useEffect(() => {
@@ -1064,7 +1065,8 @@ const Map = () => {
                 {loadingCrops ? (
                     <ActivityIndicator size="large" color="#22C55E" />
                 ) : managedCrops.map((crop, index) => {
-                    const isHighlighted = String(crop.id) === String(highlightedId);
+                    // 이름이 같으면 하이라이트 (2초간만)
+                    const isHighlighted = crop.name && highlightedName && crop.name === highlightedName;
                     return (
                         <Marker
                             key={`managed-crop-${crop.id}-${index}`}
