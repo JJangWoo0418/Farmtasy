@@ -594,9 +594,7 @@ const Map = () => {
                     latitudeDelta: region?.latitudeDelta || 0.01,
                     longitudeDelta: region?.longitudeDelta || 0.01,
                 };
-                if (mapRef.current) {
-                    mapRef.current.setRegion(newRegion);
-                }
+                setRegion(newRegion);
             } else {
                 Alert.alert("검색 실패", "해당 주소를 찾을 수 없습니다.");
             }
@@ -797,7 +795,7 @@ const Map = () => {
     // 현재 위치로 이동하는 함수
     const moveToCurrentLocation = async () => {
         if (userLocation) {
-            mapRef.current?.setRegion({
+            setRegion({
                 ...userLocation,
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421,
@@ -828,7 +826,7 @@ const Map = () => {
                         console.log('설정할 region:', region);
                         
                         setInitialRegion(region);
-                        mapRef.current?.setRegion(region);
+                        setRegion(region);
                         console.log('농장 위치로 이동 완료:', response.results[0].formatted_address);
                         
                         // 지도 이동 완료 후 작물 추가 모드 활성화
@@ -907,7 +905,7 @@ const Map = () => {
                     const response = await Geocoder.from(params.farmAddress);
                     if (response.results.length > 0) {
                         const location = response.results[0].geometry.location;
-                        mapRef.current?.setRegion({
+                        setRegion({
                             latitude: location.lat,
                             longitude: location.lng,
                             latitudeDelta: 0.002,
