@@ -227,7 +227,24 @@ export default function CropDetailMemoPage() {
             <View style={styles.container}>
                 {/* 상단 헤더 */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            router.push({
+                                pathname: '/Memo/memolist',
+                                params: {
+                                    farmName: params.farmName,
+                                    userData: params.userData,
+                                    phone: params.phone,
+                                    name: params.name,
+                                    region: params.region,
+                                    introduction: params.introduction,
+                                    farmId: params.farmId,
+                                    cropId: params.cropId
+                                }
+                            });
+                        }}
+                        style={styles.headerIconBtn}
+                    >
                         <Image source={require('../../assets/gobackicon.png')} style={styles.headerIcon} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{cropName}</Text>
@@ -253,8 +270,8 @@ export default function CropDetailMemoPage() {
 
                 {/* 버튼 영역 */}
                 <View style={styles.buttonRow}>
-                    <TouchableOpacity 
-                        style={styles.actionButton} 
+                    <TouchableOpacity
+                        style={styles.actionButton}
                         onPress={async () => {
                             if (!location || !params.detailId) {
                                 alert('작물 위치 정보가 없습니다.');

@@ -16,11 +16,11 @@ export default function MemoList() {
   useEffect(() => {
     const fetchCropName = async () => {
       if (!params.cropId) return;
-      
+
       try {
         const response = await fetch(`${API_CONFIG.BASE_URL}/api/crop?crop_id=${params.cropId}`);
         const data = await response.json();
-        
+
         if (response.ok && data.length > 0) {
           setCropName(data[0].crop_name);
         }
@@ -37,26 +37,26 @@ export default function MemoList() {
     console.log('현재 farmId:', params.farmId);
     console.log('현재 phone:', params.phone);
     console.log('현재 cropId:', params.cropId);
-    
+
     if (!params.farmId || !params.phone || !params.cropId) {
       console.log('필수 파라미터가 없습니다.');
       return;
     }
-    
+
     const fetchCropDetails = async () => {
       try {
         const url = `${API_CONFIG.BASE_URL}/api/cropdetail?crop_id=${params.cropId}&user_phone=${params.phone}`;
         console.log('CropDetail API 호출 URL:', url);
-        
+
         const response = await fetch(url);
         const data = await response.json();
         console.log('CropDetail API 응답 데이터:', data);
-        
+
         if (response.ok) {
           if (Array.isArray(data) && data.length > 0) {
             const filteredData = data.filter(detail => detail.crop_id === parseInt(params.cropId));
             console.log('필터링된 데이터:', filteredData);
-            
+
             const mappedData = filteredData.map(detail => ({
               name: detail.detail_name || '이름 없음',
               image: detail.detail_image_url || 'https://via.placeholder.com/48',
@@ -118,7 +118,21 @@ export default function MemoList() {
     <View style={styles.container}>
       {/* 상단 제목 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => {
+          router.push({
+            pathname: '/Memo/farmedit',
+            params: {
+              farmName: params.farmName,
+              userData: params.userData,
+              phone: params.phone,
+              name: params.name,
+              region: params.region,
+              introduction: params.introduction,
+              farmId: params.farmId,
+              cropId: params.cropId,
+            }
+          });
+        }}>
           <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.title}>{cropName || '상세 작물'}</Text>
@@ -129,7 +143,7 @@ export default function MemoList() {
         data={managedCrops}
         keyExtractor={(item) => item.detailId?.toString() || Math.random().toString()}
         renderItem={({ item, index }) => (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cropCard}
             onPress={() => {
               console.log('카드 클릭 detailId:', item.detailId);
@@ -140,8 +154,14 @@ export default function MemoList() {
                   name: item.name,
                   image: item.image,
                   cropId: item.cropId,
-                  farmId: params.farmId,
+                  farmName: params.farmName,
+                  userData: params.userData,
                   phone: params.phone,
+                  name: params.name,
+                  region: params.region,
+                  introduction: params.introduction,
+                  farmId: params.farmId,
+                  cropId: params.cropId,
                   // 필요시 추가 정보 전달
                 }
               });
@@ -180,31 +200,31 @@ export default function MemoList() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff', 
-    padding: 16 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 16
   },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
     justifyContent: 'center',
     position: 'relative',
     height: 40,
     marginTop: -15,
   },
-  backIcon: { 
-    width: 24, 
-    height: 24, 
+  backIcon: {
+    width: 24,
+    height: 24,
     zIndex: 1,
     resizeMode: 'contain',
     marginLeft: 5,
   },
-  title: { 
-    flex: 1, 
-    fontWeight: 'bold', 
-    fontSize: 18, 
+  title: {
+    flex: 1,
+    fontWeight: 'bold',
+    fontSize: 18,
     textAlign: 'center',
     marginRight: 30,
   },
@@ -255,14 +275,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  iconSmall: { 
-    width: 40, 
-    height: 40, 
-    marginRight: 8 
+  iconSmall: {
+    width: 40,
+    height: 40,
+    marginRight: 8
   },
-  cropText: { 
-    fontSize: 16, 
-    color: '#222', 
-    fontWeight: 'bold' 
+  cropText: {
+    fontSize: 16,
+    color: '#222',
+    fontWeight: 'bold'
   },
 });
