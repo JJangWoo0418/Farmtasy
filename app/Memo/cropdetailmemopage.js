@@ -148,7 +148,7 @@ export default function CropDetailMemoPage() {
             <View style={styles.buttonRow}>
                 <TouchableOpacity 
                     style={styles.actionButton} 
-                    onPress={() => {
+                    onPress={async () => {
                         if (!location) {
                             alert('작물 위치 정보가 없습니다.');
                             return;
@@ -157,6 +157,7 @@ export default function CropDetailMemoPage() {
                             pathname: '/Map/Map',
                             params: {
                                 highlightDetailId: params.detailId,
+                                highlightDetailName: params.name,
                                 latitude: location.latitude,
                                 longitude: location.longitude,
                                 // 사용자 데이터

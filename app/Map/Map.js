@@ -54,6 +54,7 @@ const Map = () => {
     const [initialRegion, setInitialRegion] = useState(null);
     const [saving, setSaving] = useState(false);
     const [highlightMarker, setHighlightMarker] = useState(null);
+    const [activeHighlightName, setActiveHighlightName] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -140,66 +141,90 @@ const Map = () => {
         ]
     };
 
-    // --- 컴포넌트 마운트 시 초기 작업 ---
-    useEffect(() => {
-        // 사용자의 농장 정보와 작물 정보 불러오기
-        const fetchUserFarmsAndCrops = async () => {
-            try {
-                // 1. 농장 정보 가져오기
-                const farmResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
-                const farmData = await farmResponse.json();
-                
-                if (farmResponse.ok) {
-                    console.log('가져온 농장 정보:', farmData); // 디버깅용 로그
-
-                    // 농장 정보를 지도에 표시할 형식으로 변환
-                    const formattedFarms = farmData.map(farm => ({
-                        id: farm.farm_id,
-                        name: farm.farm_name,
-                        coordinates: Array.isArray(farm.coordinates) && farm.coordinates.length > 0
-                            ? farm.coordinates
-                            : [{ latitude: farm.latitude, longitude: farm.longitude }]
+    // 농장/작물 데이터 패치 함수
+    const fetchUserFarmsAndCrops = async () => {
+        try {
+            // 1. 농장 정보 가져오기
+            const farmResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
+            const farmData = await farmResponse.json();
+            if (farmResponse.ok) {
+                const formattedFarms = farmData.map(farm => ({
+                    id: farm.farm_id,
+                    name: farm.farm_name,
+                    coordinates: Array.isArray(farm.coordinates) && farm.coordinates.length > 0
+                        ? farm.coordinates
+                        : [{ latitude: farm.latitude, longitude: farm.longitude }]
+                }));
+                setFarmAreas(formattedFarms);
+                // 2. 작물 상세 정보 가져오기
+                const cropDetailResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail?user_phone=${phone}`);
+                const cropDetailData = await cropDetailResponse.json();
+                if (cropDetailResponse.ok) {
+                    const formattedCrops = cropDetailData.map(crop => ({
+                        id: crop.detail_id,
+                        name: crop.detail_name,
+                        latitude: Number(crop.latitude),
+                        longitude: Number(crop.longitude),
+                        image: crop.detail_image_url,
+                        qrCode: crop.detail_qr_code
                     }));
-                    setFarmAreas(formattedFarms);
-
-                    // 2. 작물 상세 정보 가져오기
-                    const cropDetailResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail?user_phone=${phone}`);
-                    const cropDetailData = await cropDetailResponse.json();
-
-                    if (cropDetailResponse.ok) {
-                        console.log('가져온 작물 상세 정보:', cropDetailData); // 디버깅용 로그
-
-                        // 작물 정보를 managedCrops 상태에 저장
-                        const formattedCrops = cropDetailData.map(crop => ({
-                            id: crop.detail_id,
-                            name: crop.detail_name,
-                            latitude: Number(crop.latitude),
-                            longitude: Number(crop.longitude),
-                            image: crop.detail_image_url,
-                            qrCode: crop.detail_qr_code
-                        }));
-
-                        console.log('포맷팅된 작물 정보:', formattedCrops); // 디버깅용 로그
-                        setManagedCrops(formattedCrops);
-                    }
-                } else {
-                    console.error('농장 정보 불러오기 실패:', farmData.error);
+                    setManagedCrops(formattedCrops);
                 }
-            } catch (error) {
-                console.error('정보 요청 중 오류:', error);
             }
-        };
+        } catch (error) {
+            // 에러 무시
+        }
+    };
 
+    // 특정 작물만 fetch해서 지도 이동 및 강조
+    const fetchAndHighlightCropDetail = async (detailId) => {
+        try {
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${detailId}`);
+            const data = await res.json();
+            if (data.latitude && data.longitude) {
+                setHighlightMarker({
+                    latitude: parseFloat(data.latitude),
+                    longitude: parseFloat(data.longitude),
+                    detailId: detailId,
+                });
+                const region = {
+                    latitude: parseFloat(data.latitude),
+                    longitude: parseFloat(data.longitude),
+                    latitudeDelta: 0.002,
+                    longitudeDelta: 0.002,
+                };
+                console.log('이동할 region:', region); // 디버깅용 로그
+                setRegion(region); // region 상태도 동기화 (MapView region prop과 연결되어 있으므로 즉시 이동)
+                setTimeout(() => {
+                    setHighlightMarker(null);
+                }, 2000);
+            } else {
+                console.log('잘못된 좌표:', data);
+            }
+        } catch (e) {
+            setHighlightMarker(null);
+            console.log('fetchAndHighlightCropDetail 에러:', e);
+        }
+    };
+
+    // 농장/작물 데이터는 phone이 바뀔 때만 1회 패치
+    useEffect(() => {
         if (phone) {
             fetchUserFarmsAndCrops();
         }
-
-        // 컴포넌트 언마운트 시 debounce 취소
         return () => {
             debouncedFetchCenterAddress.cancel();
         };
-    }, [phone]); // phone이 변경될 때마다 실행
-    // -----------------------------------------------------------
+    }, [phone]);
+
+    // highlightDetailId가 바뀔 때만 해당 작물만 fetch해서 animateToRegion 및 강조
+    useEffect(() => {
+        if (params.highlightDetailId) {
+            fetchAndHighlightCropDetail(params.highlightDetailId);
+        } else {
+            setHighlightMarker(null);
+        }
+    }, [params.highlightDetailId]);
 
     // 메뉴 토글 함수 수정 (버튼 위치 애니메이션 타겟 조정)
     const toggleMenu = () => {
@@ -570,7 +595,7 @@ const Map = () => {
                     longitudeDelta: region?.longitudeDelta || 0.01,
                 };
                 if (mapRef.current) {
-                    mapRef.current.animateToRegion(newRegion, 1000);
+                    mapRef.current.setRegion(newRegion);
                 }
             } else {
                 Alert.alert("검색 실패", "해당 주소를 찾을 수 없습니다.");
@@ -772,11 +797,11 @@ const Map = () => {
     // 현재 위치로 이동하는 함수
     const moveToCurrentLocation = async () => {
         if (userLocation) {
-            mapRef.current?.animateToRegion({
+            mapRef.current?.setRegion({
                 ...userLocation,
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421,
-            }, 1000);
+            });
         }
     };
 
@@ -797,13 +822,13 @@ const Map = () => {
                         const region = {
                             latitude: location.lat,
                             longitude: location.lng,
-                            latitudeDelta: 0.004,
-                            longitudeDelta: 0.004,
+                            latitudeDelta: 0.002,
+                            longitudeDelta: 0.002,
                         };
                         console.log('설정할 region:', region);
                         
                         setInitialRegion(region);
-                        mapRef.current?.animateToRegion(region, 1000);
+                        mapRef.current?.setRegion(region);
                         console.log('농장 위치로 이동 완료:', response.results[0].formatted_address);
                         
                         // 지도 이동 완료 후 작물 추가 모드 활성화
@@ -874,36 +899,38 @@ const Map = () => {
         }
     }, [params.isAddingCropMode]);
 
-    // highlightDetailId가 있으면 해당 cropdetail_id의 좌표를 fetch해서 지도를 이동하고 줌을 당기는 useEffect를 추가합니다.
+    // farmAddress가 있으면 주소로 지도 이동
     useEffect(() => {
-        if (params.highlightDetailId) {
-            fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.highlightDetailId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.latitude && data.longitude) {
-                        setHighlightMarker({
-                            latitude: parseFloat(data.latitude),
-                            longitude: parseFloat(data.longitude),
-                            detailId: params.highlightDetailId,
+        if (params.farmAddress) {
+            (async () => {
+                try {
+                    const response = await Geocoder.from(params.farmAddress);
+                    if (response.results.length > 0) {
+                        const location = response.results[0].geometry.location;
+                        mapRef.current?.setRegion({
+                            latitude: location.lat,
+                            longitude: location.lng,
+                            latitudeDelta: 0.002,
+                            longitudeDelta: 0.002,
                         });
-                        // 지도 이동 및 줌
-                        mapRef.current?.animateToRegion({
-                            latitude: parseFloat(data.latitude),
-                            longitude: parseFloat(data.longitude),
-                            latitudeDelta: 0.005,
-                            longitudeDelta: 0.005,
-                        }, 1000);
-
-                        // 2초 후에 강조 표시 제거
-                        setTimeout(() => {
-                            setHighlightMarker(null);
-                        }, 2000);
                     }
-                });
-        } else {
-            setHighlightMarker(null);
+                } catch (e) {
+                    // 주소 검색 실패 시 무시
+                }
+            })();
         }
-    }, [params.highlightDetailId]);
+    }, [params.farmAddress]);
+
+    // highlightDetailName이 바뀔 때 2초간만 강조
+    useEffect(() => {
+        if (params.highlightDetailName) {
+            setActiveHighlightName(params.highlightDetailName);
+            const timer = setTimeout(() => {
+                setActiveHighlightName(null);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [params.highlightDetailName]);
 
     return (
         <View style={styles.container}>
@@ -945,12 +972,12 @@ const Map = () => {
                         anchor={{ x: 0.5, y: 0.5 }}
                     >
                         <View style={{
-                            borderWidth: highlightMarker && crop.id == highlightMarker.detailId ? 4 : 2,
-                            borderColor: highlightMarker && crop.id == highlightMarker.detailId ? '#FF4444' : '#22C55E',
+                            borderWidth: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? 4 : 2,
+                            borderColor: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? '#22C55E' : '#22C55E',
                             borderRadius: 25,
                             padding: 4,
-                            backgroundColor: highlightMarker && crop.id == highlightMarker.detailId ? '#FFF5F5' : '#fff',
-                            shadowColor: highlightMarker && crop.id == highlightMarker.detailId ? '#FF4444' : '#22C55E',
+                            backgroundColor: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? '#FFA726' : '#fff',
+                            shadowColor: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? '#FF4444' : '#22C55E',
                             shadowOffset: { width: 0, height: 0 },
                             shadowOpacity: 0.5,
                             shadowRadius: 5,
@@ -958,7 +985,7 @@ const Map = () => {
                         }}>
                             <Text style={[
                                 styles.cropMarker,
-                                highlightMarker && crop.id == highlightMarker.detailId && { transform: [{ scale: 1.2 }] }
+                                ((highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName)) && { transform: [{ scale: 1.2 }] }
                             ]}>☘️</Text>
                         </View>
                     </Marker>
