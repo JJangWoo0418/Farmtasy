@@ -129,21 +129,19 @@ export default function MemoList() {
         data={managedCrops}
         keyExtractor={(item) => item.detailId?.toString() || Math.random().toString()}
         renderItem={({ item, index }) => (
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.cropCard}
             onPress={() => {
               router.push({
-                pathname: '/Memo/memoplus',
+                pathname: '/Memo/cropdetailmemopage',
                 params: {
-                  farmName: params.farmName,
-                  userData: params.userData,
-                  phone: params.phone,
-                  region: params.region,
-                  introduction: params.introduction,
-                  farmId: params.farmId,
-                  cropId: params.cropId,
                   detailId: item.detailId,
-                  editIndex: index
+                  name: item.name,
+                  image: item.image,
+                  cropId: item.cropId,
+                  farmId: params.farmId,
+                  phone: params.phone,
+                  // 필요시 추가 정보 전달
                 }
               });
             }}
@@ -207,7 +205,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', 
     fontSize: 18, 
     textAlign: 'center',
-    marginRight: -10,
+    marginRight: 30,
   },
   cropCard: {
     flexDirection: 'row',
@@ -239,7 +237,6 @@ const styles = StyleSheet.create({
   settingIcon: {
     width: 24,
     height: 24,
-    tintColor: '#888',
   },
   cropBox: {
     backgroundColor: '#fff',
