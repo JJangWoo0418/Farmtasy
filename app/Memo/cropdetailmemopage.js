@@ -232,14 +232,16 @@ export default function CropDetailMemoPage() {
                             router.push({
                                 pathname: '/Memo/memolist',
                                 params: {
+                                    detailId: params.detailId,
+                                    name: params.name,
+                                    image: params.image,
+                                    cropId: params.cropId,
+                                    phone: params.phone,
+                                    farmId: params.farmId,
                                     farmName: params.farmName,
                                     userData: params.userData,
-                                    phone: params.phone,
-                                    name: params.name,
                                     region: params.region,
                                     introduction: params.introduction,
-                                    farmId: params.farmId,
-                                    cropId: params.cropId
                                 }
                             });
                         }}
@@ -288,9 +290,9 @@ export default function CropDetailMemoPage() {
                                     name: params.name,
                                     region: params.region,
                                     introduction: params.introduction,
+                                    shouldHighlight: true,
                                 }
                             });
-                            // 이미지 변경(setImage)은 이 버튼에서는 제거
                         }}
                     >
                         <Image source={require('../../assets/planticon.png')} style={styles.actionIcon} />

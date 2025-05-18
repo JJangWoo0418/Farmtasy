@@ -129,6 +129,8 @@ export default function MemoList() {
               region: params.region,
               introduction: params.introduction,
               farmId: params.farmId,
+              detailId: params.detailId,
+              image: params.image,
               cropId: params.cropId,
             }
           });
@@ -154,14 +156,12 @@ export default function MemoList() {
                   name: item.name,
                   image: item.image,
                   cropId: item.cropId,
+                  phone: params.phone,
+                  farmId: params.farmId,
                   farmName: params.farmName,
                   userData: params.userData,
-                  phone: params.phone,
-                  name: params.name,
                   region: params.region,
                   introduction: params.introduction,
-                  farmId: params.farmId,
-                  cropId: params.cropId,
                   // 필요시 추가 정보 전달
                 }
               });

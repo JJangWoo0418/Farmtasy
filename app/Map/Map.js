@@ -932,16 +932,16 @@ const Map = () => {
         }
     }, [params.farmAddress]);
 
-    // params.name이 바뀔 때마다 2초간만 하이라이트, 이후 원래 이미지로 복귀
+    // 마커 하이라이트 useEffect 수정
     useEffect(() => {
-        if (params.name) {
+        if (params.name && params.shouldHighlight) {
             setHighlightedName(params.name);
             const timer = setTimeout(() => {
                 setHighlightedName(null);
             }, 3000);
             return () => clearTimeout(timer);
         }
-    }, [params.name]);
+    }, [params.name, params.shouldHighlight]);
 
     // region prop과 state(region) 완전 동기화, params.latitude/longitude가 명확히 준비된 경우에만 setRegion, 중복 setRegion 방지
     useEffect(() => {
@@ -953,8 +953,8 @@ const Map = () => {
             const newRegion = {
                 latitude: Number(params.latitude),
                 longitude: Number(params.longitude),
-                latitudeDelta: 0.0008,
-                longitudeDelta: 0.0008,
+                latitudeDelta: 0.002,
+                longitudeDelta: 0.002,
             };
             if (
                 region.latitude !== newRegion.latitude ||
