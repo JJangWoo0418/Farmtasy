@@ -207,12 +207,14 @@ export default function MemoPlus() {
               return;
             }
             // cropdetail 저장 없이, 입력값만 Map 페이지로 전달
+            console.log('crop_id:', params.cropId);
             router.push({
               pathname: '/Map/Map',
               params: {
                 name,
                 image,
                 qrValue,
+                cropId: params.cropId,
                 editIndex: params.editIndex,
                 farmName: params.farmName,
                 userData: params.userData,

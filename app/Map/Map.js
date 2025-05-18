@@ -866,15 +866,14 @@ const Map = () => {
         const longitude = region.longitude;
         setSaving(true);
         try {
-            // crop_id 가져오기 (farm_id로 최신 crop 조회)
-            const cropRes = await fetch(`${API_CONFIG.BASE_URL}/api/crop?farm_id=${params.farmId || params.farm_id}`);
-            const cropList = await cropRes.json();
-            if (!cropRes.ok || !cropList.length) {
+            // params에서 직접 crop_id 받아오기
+            const crop_id = params.cropId;
+            if (!crop_id) {
                 alert('작물 정보를 찾을 수 없습니다.');
                 setSaving(false);
                 return;
             }
-            const crop_id = cropList[0].crop_id;
+
             // cropdetail 저장
             const saveRes = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail`, {
                 method: 'POST',
