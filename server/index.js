@@ -1902,41 +1902,53 @@ app.get('/api/cropdetail/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const [results] = await pool.query('SELECT * FROM cropdetail WHERE cropdetail_id = ?', [id]);
-    
     if (results.length === 0) {
       return res.status(404).json({ error: '해당 작물 상세 정보를 찾을 수 없습니다.' });
     }
-
-    res.json(results[0]);
+    const detail = results[0];
+    // memo가 있으면 JSON 파싱
+    if (detail.memo) {
+      try {
+        detail.memo = JSON.parse(detail.memo);
+      } catch (e) {
+        detail.memo = [];
+      }
+    }
+    res.json(detail);
   } catch (error) {
-    console.error('특정 작물 상세 정보 조회 중 오류:', error);
     res.status(500).json({ error: '작물 상세 정보 조회에 실패했습니다.' });
   }
 });
 
-// cropdetail 이미지(및 기타 정보) 수정 API
+// cropdetail 정보(메모 포함) 수정 API
 app.put('/api/cropdetail/:id', async (req, res) => {
   const { id } = req.params;
-  const { detail_image_url } = req.body;
+  const { memo, detail_image_url } = req.body;
 
-  if (!detail_image_url) {
-    return res.status(400).json({ error: 'detail_image_url은 필수입니다.' });
+  let updateFields = [];
+  let updateValues = [];
+
+  if (memo !== undefined) {
+    updateFields.push('memo = ?');
+    updateValues.push(JSON.stringify(memo));
   }
+  if (detail_image_url !== undefined) {
+    updateFields.push('detail_image_url = ?');
+    updateValues.push(detail_image_url);
+  }
+  if (updateFields.length === 0) {
+    return res.status(400).json({ error: '수정할 필드가 없습니다.' });
+  }
+  updateValues.push(id);
 
   try {
     const [result] = await pool.query(
-      'UPDATE cropdetail SET detail_image_url = ? WHERE cropdetail_id = ?',
-      [detail_image_url, id]
+      `UPDATE cropdetail SET ${updateFields.join(', ')} WHERE cropdetail_id = ?`,
+      updateValues
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: '해당 상세작물을 찾을 수 없습니다.' });
-    }
-
-    res.json({ success: true, message: '이미지 URL이 성공적으로 업데이트되었습니다.' });
+    res.json({ success: true });
   } catch (error) {
-    console.error('cropdetail 이미지 업데이트 오류:', error);
-    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    res.status(500).json({ error: '작물 상세 정보 수정에 실패했습니다.' });
   }
 });
 

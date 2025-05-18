@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Modal, TextInput, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/Memo/cropdetailmemopagestyle';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,12 +13,16 @@ export default function CropDetailMemoPage() {
     const [qrModalVisible, setQrModalVisible] = useState(false);
     const [qrCode, setQrCode] = useState('');
     const [location, setLocation] = useState(null);
+    const [newMemo, setNewMemo] = useState('');
+    const [memoContent, setMemoContent] = useState('');
+    const [memoTitle, setMemoTitle] = useState('');
+    const [memos, setMemos] = useState([
+        { title: '', content: '' }
+    ]);
 
     // 예시 데이터 (실제 데이터는 props나 API로 받아오세요)
     const cropName = params.name || '나의 소중한 감자밭 1호';
     const cropImage = 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc';
-    const memoTitle = '3월 11일 나의 첫 메모';
-    const memoContent = '몇개들은 태풍맞아 감자들이 피해받았다\n기스가 심하게 생긴 감자들은 거르고\n상태 좋은 감자들은 계속 지켜봐야 겠다';
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -26,6 +30,9 @@ export default function CropDetailMemoPage() {
             try {
                 const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
                 const data = await res.json();
+                if (data.memo) {
+                    setMemos(Array.isArray(data.memo) ? data.memo : [{ title: '', content: data.memo }]);
+                }
                 setQrCode(data.detail_qr_code || '');
                 if (data.latitude && data.longitude) {
                     setLocation({
@@ -121,105 +128,179 @@ export default function CropDetailMemoPage() {
     // QR코드에서 숫자만 추출하는 함수
     const onlyNumber = (qr) => (qr ? qr.replace(/[^0-9]/g, '') : '');
 
+    const handleSaveMemo = () => {
+        if (!newMemo.trim()) return;
+        setMemoContent(newMemo);
+        setNewMemo('');
+        // (옵션) 서버 저장 필요시 이곳에 API 호출 추가
+    };
+
+    // 메모 DB 저장 함수
+    const saveMemosToDB = async () => {
+        if (!params.detailId) return;
+        try {
+            await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ memo: memos }),
+            });
+        } catch (e) {
+            // 에러 처리
+        }
+    };
+
+    // 메모 추가 버튼 클릭 시 저장도 함께 수행
+    const handleAddMemoCard = () => {
+        setMemos(prev => {
+            const next = [...prev, { title: '', content: '' }];
+            setTimeout(saveMemosToDB, 0); // 비동기 반영 후 저장
+            return next;
+        });
+    };
+
+    // 메모 수정 시 저장
+    const handleUpdateMemo = (idx, key, value) => {
+        setMemos(prev => {
+            const next = prev.map((memo, i) => i === idx ? { ...memo, [key]: value } : memo);
+            setTimeout(saveMemosToDB, 0);
+            return next;
+        });
+    };
+
     return (
-        <View style={styles.container}>
-            {/* 상단 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn}>
-                    <Image source={require('../../assets/gobackicon.png')} style={styles.headerIcon} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{cropName}</Text>
-                <TouchableOpacity style={styles.headerIconBtn}>
-                    <Image source={require('../../assets/deleteicon.png')} style={styles.headerIcon} />
-                </TouchableOpacity>
-            </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+                {/* 상단 헤더 */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn}>
+                        <Image source={require('../../assets/gobackicon.png')} style={styles.headerIcon} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>{cropName}</Text>
+                    <TouchableOpacity style={styles.headerIconBtn}>
+                        <Image source={require('../../assets/deleteicon.png')} style={styles.headerIcon} />
+                    </TouchableOpacity>
+                </View>
 
-            {/* 사진 추가 */}
-            <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
-                {image ? (
-                    <Image source={{ uri: image }} style={styles.photo} resizeMode="cover" />
-                ) : (
-                    <>
-                        <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} />
-                        <Text style={styles.photoText}>사진 추가</Text>
-                    </>
-                )}
-            </TouchableOpacity>
+                {/* 사진 추가 */}
+                <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
+                    {image ? (
+                        <Image source={{ uri: image }} style={styles.photo} resizeMode="cover" />
+                    ) : (
+                        <>
+                            <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} />
+                            <Text style={styles.photoText}>사진 추가</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
 
-            {/* 버튼 영역 */}
-            <View style={styles.buttonRow}>
-                <TouchableOpacity 
-                    style={styles.actionButton} 
-                    onPress={async () => {
-                        if (!location || !params.detailId) {
-                            alert('작물 위치 정보가 없습니다.');
-                            return;
-                        }
-                        router.push({
-                            pathname: '/Map/Map',
-                            params: {
-                                latitude: location.latitude,
-                                longitude: location.longitude,
-                                detailId: params.detailId,
-                                userData: params.userData,
-                                phone: params.phone,
-                                name: params.name,
-                                region: params.region,
-                                introduction: params.introduction,
+                {/* 버튼 영역 */}
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity 
+                        style={styles.actionButton} 
+                        onPress={async () => {
+                            if (!location || !params.detailId) {
+                                alert('작물 위치 정보가 없습니다.');
+                                return;
                             }
-                        });
-                        // 이미지 변경(setImage)은 이 버튼에서는 제거
+                            router.push({
+                                pathname: '/Map/Map',
+                                params: {
+                                    latitude: location.latitude,
+                                    longitude: location.longitude,
+                                    detailId: params.detailId,
+                                    userData: params.userData,
+                                    phone: params.phone,
+                                    name: params.name,
+                                    region: params.region,
+                                    introduction: params.introduction,
+                                }
+                            });
+                            // 이미지 변경(setImage)은 이 버튼에서는 제거
+                        }}
+                    >
+                        <Image source={require('../../assets/planticon.png')} style={styles.actionIcon} />
+                        <Text style={styles.actionText}>작물 위치</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionButton} onPress={() => {
+                        console.log('QR코드 값:', params.detail_qr_code);
+                        setQrModalVisible(true);
+                    }}>
+                        <Image source={require('../../assets/qricon.png')} style={styles.actionIcon} />
+                        <Text style={styles.actionText}>QR코드</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* 버튼 아래 구분선 */}
+                <View style={styles.divider} />
+
+                {/* 여러 개의 메모 카드 */}
+                <View style={styles.memoCardWrapper}>
+                    {memos.map((memo, idx) => (
+                        <View key={idx} style={styles.memoCard}>
+                            <View style={styles.memoHeader}>
+                                <TextInput
+                                    style={styles.memoTitle}
+                                    value={memo.title}
+                                    onChangeText={text => handleUpdateMemo(idx, 'title', text)}
+                                    placeholder="제목을 입력하세요"
+                                    placeholderTextColor="#aaa"
+                                />
+                                <TouchableOpacity>
+                                    <Text style={styles.dotsText}>⋯</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <TextInput
+                                style={styles.memoContent}
+                                value={memo.content}
+                                onChangeText={text => handleUpdateMemo(idx, 'content', text)}
+                                placeholder="메모를 입력하세요"
+                                placeholderTextColor="#aaa"
+                                multiline
+                            />
+                        </View>
+                    ))}
+                </View>
+                {/* 일반 버튼 */}
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#22CC6B',
+                        borderRadius: 8,
+                        padding: 16,
+                        alignItems: 'center',
+                        width: '100%',
+                        alignSelf: 'center',
+                        marginHorizontal: 0,
+                        marginTop: 16,
+                        marginBottom: 24,
+                        elevation: 6,
                     }}
+                    onPress={handleAddMemoCard}
                 >
-                    <Image source={require('../../assets/planticon.png')} style={styles.actionIcon} />
-                    <Text style={styles.actionText}>작물 위치</Text>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>메모 추가</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton} onPress={() => {
-                    console.log('QR코드 값:', params.detail_qr_code);
-                    setQrModalVisible(true);
-                }}>
-                    <Image source={require('../../assets/qricon.png')} style={styles.actionIcon} />
-                    <Text style={styles.actionText}>QR코드</Text>
-                </TouchableOpacity>
-            </View>
 
-            {/* 버튼 아래 구분선 */}
-            <View style={styles.divider} />
-
-            {/* 메모 카드 */}
-            <ScrollView style={styles.memoCardWrapper} contentContainerStyle={{ flexGrow: 1 }}>
-                <View style={styles.memoCard}>
-                    <View style={styles.memoHeader}>
-                        <Text style={styles.memoTitle}>{memoTitle}</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.dotsText}>⋯</Text>
-                        </TouchableOpacity>
+                {/* QR코드 모달 */}
+                <Modal
+                    visible={qrModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setQrModalVisible(false)}
+                >
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>QR 코드</Text>
+                            {qrCode ? (
+                                <QRCode value={qrCode} size={120} />
+                            ) : (
+                                <Text style={{ fontSize: 16, marginBottom: 20 }}>QR코드 정보 없음</Text>
+                            )}
+                            <TouchableOpacity onPress={() => setQrModalVisible(false)} style={{ backgroundColor: '#22C55E', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 20 }}>
+                                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>닫기</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    <Text style={styles.memoContent}>{memoContent}</Text>
-                </View>
+                </Modal>
             </ScrollView>
-
-            {/* QR코드 모달 */}
-            <Modal
-                visible={qrModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setQrModalVisible(false)}
-            >
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>QR 코드</Text>
-                        {qrCode ? (
-                            <QRCode value={qrCode} size={120} />
-                        ) : (
-                            <Text style={{ fontSize: 16, marginBottom: 20 }}>QR코드 정보 없음</Text>
-                        )}
-                        <TouchableOpacity onPress={() => setQrModalVisible(false)} style={{ backgroundColor: '#22C55E', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 20 }}>
-                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>닫기</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-        </View>
+        </TouchableWithoutFeedback>
     );
 }

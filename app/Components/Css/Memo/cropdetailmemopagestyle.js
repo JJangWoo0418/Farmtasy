@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
         elevation: 6,
         borderWidth: 1,
         borderColor: '#F3F3C8',
+        paddingBottom: 100
     },
     memoHeader: {
         flexDirection: 'row',
