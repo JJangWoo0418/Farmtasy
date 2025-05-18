@@ -31,42 +31,36 @@ const popularCrops = [
   { name: '망고', icon: '🥭' }
 ];
 
-// 발병 부위 카테고리 목록 및 설명
+// 부위 카테고리 (코드/명칭/설명)
 const partCategories = [
-  '잎', '줄기', '가지', '꽃/화서', '과실/열매', '뿌리/근권', '수관 전체', '전체(복합)', '생장점/눈', '기타/불명'
+  { code: '1', name: '잎', desc: '잎마름병, 반점병 등 잎에 흔하게 발생' },
+  { code: '2', name: '줄기', desc: '줄기썩음병, 균핵병 등' },
+  { code: '3', name: '가지', desc: '가지에 암반 생성 등' },
+  { code: '4', name: '꽃', desc: '꽃곰팡이병, 꽃썩음병 등' },
+  { code: '5', name: '과실', desc: '점무늬, 균열, 썩음 등 과일 품질 저하' },
+  { code: '6', name: '뿌리', desc: '뿌리혹병, 뿌리썩음병, 선충 피해 등' },
+  { code: '7', name: '수관 전체', desc: '나무 전체에 증상이 퍼지는 경우' },
+  { code: '8', name: '전체', desc: '작물 전체 혹은 여러 부위에 걸쳐 발생' },
+  { code: '9', name: '생장점', desc: '새순, 생장점 부위에 발생' },
+  { code: '10', name: '기타', desc: '위 항목에 포함되지 않거나 명확하지 않은 경우' }
 ];
-const partDescriptions = {
-  '잎': '가장 흔한 부위. 잎마름병, 반점병 등',
-  '줄기': '줄기썩음병, 균핵병 등',
-  '가지': '복숭아류 등에서 가지에 암반생성 등',
-  '꽃/화서': '꽃곰팡이병, 꽃썩음병 등',
-  '과실/열매': '점무늬, 균열, 썩음 등 과일 품질 저하',
-  '뿌리/근권': '뿌리혹병, 뿌리썩음병, 선충 피해 등',
-  '수관 전체': '나무 전체에 증상 확산되는 경우',
-  '전체(복합)': '작물 전체 혹은 다수 부위에 걸쳐 증상 발생',
-  '생장점/눈': '새순이나 생장점이 피해받는 경우',
-  '기타/불명': '특정 부위로 분류 불가한 경우 또는 복합 증상',
-};
 
-// 병해충 증상 카테고리 목록 및 설명
+// 증상 카테고리 (코드/명칭/설명)
 const symptomCategories = [
-  '반점', '마름', '시듦(위조)', '기형/변형', '균핵/곰팡이', '부패/썩음', '점무늬', '구멍/천공', '탈색/황화', '비정상 생장', '벌레/충 피해', '털/흰가루/분말', '기타/불명'
+  { code: '1', name: '반점', desc: '잎이나 과실 등에 검정, 갈색, 회색 등의 반점이 생김' },
+  { code: '2', name: '마름', desc: '잎, 줄기, 과실 등이 갈변되며 말라감' },
+  { code: '3', name: '시듦', desc: '물 공급이 잘 되어도 잎이나 식물 전체가 시드는 증상' },
+  { code: '4', name: '기형', desc: '잎, 줄기, 과실 등의 형태가 비정상적으로 뒤틀리거나 자람' },
+  { code: '5', name: '균핵', desc: '흰색 또는 회색 곰팡이 또는 균핵이 발생하는 형태' },
+  { code: '6', name: '부패', desc: '줄기나 과실이 물러지며 썩거나 갈색으로 변함' },
+  { code: '7', name: '점무늬', desc: '흑색 또는 갈색의 작은 점처럼 나타나는 병반' },
+  { code: '8', name: '구멍', desc: '조직 일부가 괴사되어 구멍이 생김 (예: 천공병)' },
+  { code: '9', name: '탈색', desc: '정상 엽록소 소실로 인해 잎이 노랗게 변함' },
+  { code: '10', name: '생장 이상', desc: '과도한 생장, 왜소화, 줄기 비대 등' },
+  { code: '11', name: '해충 피해', desc: '해충의 흡즙, 식해 등으로 인한 물리적 손상' },
+  { code: '12', name: '흰가루', desc: '백색 가루, 곰팡이 또는 해충 유래의 분말, 털 형태 증상' },
+  { code: '13', name: '기타', desc: '상기 항목에 포함되지 않는 특이 증상 또는 미확인 증상' }
 ];
-const symptomDescriptions = {
-  '반점': '잎이나 과실 등에 검정, 갈색, 회색 등의 반점이 생김',
-  '마름': '잎, 줄기, 과실 등이 갈변되며 말라감',
-  '시듦(위조)': '물 공급이 잘 되어도 잎이나 식물 전체가 시드는 증상',
-  '기형/변형': '잎, 줄기, 과실 등의 형태가 비정상적으로 뒤틀리거나 자람',
-  '균핵/곰팡이': '흰색/회색 곰팡이 또는 균핵이 발생하는 형태',
-  '부패/썩음': '줄기나 과실이 물러지며 썩거나 갈색으로 변함',
-  '점무늬': '흑색 또는 갈색 작은 점처럼 나타나는 병반',
-  '구멍/천공': '조직 일부가 괴사되어 구멍이 생김 (ex. 천공병)',
-  '탈색/황화': '정상 엽록소 소실로 인해 잎이 노랗게 변함',
-  '비정상 생장': '과도한 생장, 왜소화, 줄기 비대 등',
-  '벌레/충 피해': '해충의 흡즙, 식해 등으로 인한 물리적 손상',
-  '털/흰가루/분말': '해충 또는 곰팡이류에 의한 백색 가루, 털 모양 증상',
-  '기타/불명': '상기 항목에 포함되지 않는 특이 증상 또는 미확인 증상',
-};
 
 const Pests = () => {
   const navigation = useNavigation();
@@ -85,6 +79,8 @@ const Pests = () => {
   const [partSearch, setPartSearch] = useState('');
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
   const [symptomSearch, setSymptomSearch] = useState('');
+  const [partName, setPartName] = useState('');
+  const [symptomName, setSymptomName] = useState('');
 
   // 모달 오픈/닫기
   const openModal = () => {
@@ -111,24 +107,69 @@ const Pests = () => {
   // part 카테고리 필터링
   const filteredParts = partSearch === ''
     ? partCategories
-    : partCategories.filter(cat => cat.includes(partSearch));
+    : partCategories.filter(cat => cat.name.includes(partSearch));
 
   // 증상 카테고리 필터링
   const filteredSymptoms = symptomSearch === ''
     ? symptomCategories
-    : symptomCategories.filter(cat => cat.includes(symptomSearch));
+    : symptomCategories.filter(cat => cat.name.includes(symptomSearch));
 
-  // 병해충 API 요청 (예시: 병검색)
+  // 병해충 API 요청
   const handleSubmit = async () => {
     try {
-      // 예시: 병검색 서비스 (작물명 기반)
-      const url = `http://api.nongsaro.go.kr/service/pestDiseaseOccrrncInfo/pestDiseaseList?apiKey=${PEST_API_KEY}&sickKey=&cropName=${encodeURIComponent(crop)}`;
-      const res = await axios.get(url);
-      console.log('병해충 API 응답:', res.data);
-      Alert.alert('API 응답 확인', JSON.stringify(res.data).slice(0, 300));
+      // 병 검색(사진1) API 메뉴얼에 맞는 파라미터로 수정
+      const cleanParams = {
+        apiKey: PEST_API_KEY,
+        serviceCode: 'SVC01',
+        serviceType: 'AA003',
+        cropName: crop.trim(),
+        displayCount: 10,
+        startPoint: 1,
+        format: 'json'
+      };
+
+      const url = 'https://ncpms.rda.go.kr/npmsAPI/service';
+      console.log('API 요청 URL:', url);
+      console.log('API 요청 파라미터:', cleanParams);
+      console.log('사용자 입력 정보:', {
+        작물: crop,
+        발병부위: partName,
+        증상: symptomName,
+        상세설명: detail
+      });
+
+      const res = await axios.get(url, {
+        params: cleanParams,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10초 타임아웃
+      });
+
+      // HTML 응답인 경우 에러 처리
+      if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) {
+        console.error('API가 HTML을 반환했습니다:', res.data);
+        Alert.alert('API 오류', '서버 응답이 올바르지 않습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      }
+
+      console.log('병해충검색 API 응답:', res.data);
+
+      if (res.data.service?.list?.item) {
+        const diseaseList = res.data.service.list.item;
+        console.log('병 목록:', diseaseList);
+        Alert.alert('API 응답 확인', JSON.stringify(diseaseList).slice(0, 300));
+      } else {
+        Alert.alert('검색 결과', '검색 조건에 맞는 병해충 정보가 없습니다.');
+      }
     } catch (e) {
       console.error('API 오류:', e);
-      Alert.alert('API 오류', e.message);
+      if (e.code === 'ECONNABORTED') {
+        Alert.alert('API 오류', '서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        Alert.alert('API 오류', '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
     }
   };
 
@@ -208,20 +249,14 @@ const Pests = () => {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>발병 부위 선택</Text>
-          <TextInput
-            style={[styles.input, { fontSize: 18 }]}
-            placeholder="부위명 검색 또는 직접 입력"
-            value={partSearch}
-            onChangeText={setPartSearch}
-          />
           <ScrollView
             style={{ maxHeight: 240, alignSelf: 'stretch', width: '100%' }}
             contentContainerStyle={{ flexGrow: 1, alignItems: 'stretch' }}
             showsVerticalScrollIndicator={true}
           >
-            {filteredParts.map((cat, idx) => (
+            {partCategories.map((cat) => (
               <TouchableOpacity
-                key={cat}
+                key={cat.code}
                 style={{
                   paddingVertical: 12,
                   alignItems: 'flex-start',
@@ -231,24 +266,13 @@ const Pests = () => {
                   width: '100%',
                   paddingHorizontal: 8,
                 }}
-                onPress={() => { setPart(cat); setPartModalVisible(false); setPartSearch(''); }}
+                onPress={() => { setPart(cat.code); setPartName(cat.name); setPartModalVisible(false); }}
               >
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{cat}</Text>
-                <Text style={{ fontSize: 14, color: '#888', marginTop: 2 }}>{partDescriptions[cat]}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{cat.name}</Text>
+                <Text style={{ fontSize: 14, color: '#888', marginTop: 2 }}>{cat.desc}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
-          {/* 직접 입력 버튼 */}
-          {partSearch !== '' && !partCategories.includes(partSearch) && (
-            <TouchableOpacity
-              style={{ marginTop: 16, backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
-              onPress={() => { setPart(partSearch); setPartModalVisible(false); setPartSearch(''); }}
-            >
-              <Text style={{ color: '#fff', fontSize: 18 }}>
-                "{partSearch}" 직접 입력
-              </Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity style={[styles.modalCloseButton, { marginTop: 16 }]} onPress={() => setPartModalVisible(false)}>
             <Text style={styles.modalCloseButtonText}>닫기</Text>
           </TouchableOpacity>
@@ -263,20 +287,14 @@ const Pests = () => {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>병해충 증상 선택</Text>
-          <TextInput
-            style={[styles.input, { fontSize: 18 }]}
-            placeholder="증상명 검색 또는 직접 입력"
-            value={symptomSearch}
-            onChangeText={setSymptomSearch}
-          />
           <ScrollView
             style={{ maxHeight: 240, alignSelf: 'stretch', width: '100%' }}
             contentContainerStyle={{ flexGrow: 1, alignItems: 'stretch' }}
             showsVerticalScrollIndicator={true}
           >
-            {filteredSymptoms.map((cat, idx) => (
+            {symptomCategories.map((cat) => (
               <TouchableOpacity
-                key={cat}
+                key={cat.code}
                 style={{
                   paddingVertical: 12,
                   alignItems: 'flex-start',
@@ -286,24 +304,13 @@ const Pests = () => {
                   width: '100%',
                   paddingHorizontal: 8,
                 }}
-                onPress={() => { setSymptom(cat); setSymptomModalVisible(false); setSymptomSearch(''); }}
+                onPress={() => { setSymptom(cat.code); setSymptomName(cat.name); setSymptomModalVisible(false); }}
               >
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{cat}</Text>
-                <Text style={{ fontSize: 14, color: '#888', marginTop: 2 }}>{symptomDescriptions[cat]}</Text>
+                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{cat.name}</Text>
+                <Text style={{ fontSize: 14, color: '#888', marginTop: 2 }}>{cat.desc}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
-          {/* 직접 입력 버튼 */}
-          {symptomSearch !== '' && !symptomCategories.includes(symptomSearch) && (
-            <TouchableOpacity
-              style={{ marginTop: 16, backgroundColor: '#4CAF50', borderRadius: 8, paddingVertical: 12, alignItems: 'center' }}
-              onPress={() => { setSymptom(symptomSearch); setSymptomModalVisible(false); setSymptomSearch(''); }}
-            >
-              <Text style={{ color: '#fff', fontSize: 18 }}>
-                "{symptomSearch}" 직접 입력
-              </Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity style={[styles.modalCloseButton, { marginTop: 16 }]} onPress={() => setSymptomModalVisible(false)}>
             <Text style={styles.modalCloseButtonText}>닫기</Text>
           </TouchableOpacity>
@@ -314,10 +321,15 @@ const Pests = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backButtonText}>{'<'}</Text>
-      </TouchableOpacity>
-      <Text style={styles.title}>병해충 질문</Text>
+      {/* 상단 헤더: ←(뒤로가기) + 중앙 타이틀 */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, width: '100%', marginBottom: 16 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', left: 0, paddingLeft: 8, zIndex: 2 }}>
+          <Text style={{ fontSize: 28, color: '#222', fontWeight: 'bold' }}>←</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', textAlign: 'center' }}>병해충 질문</Text>
+        </View>
+      </View>
       {/* 작물 선택 버튼 */}
       <TouchableOpacity style={styles.cropButton} onPress={openModal}>
         <Text style={styles.cropButtonText}>{crop ? crop : '작물 선택'}</Text>
@@ -352,12 +364,12 @@ const Pests = () => {
       </Modal>
       {/* 발병 부위 선택 버튼 */}
       <TouchableOpacity style={styles.cropButton} onPress={() => setPartModalVisible(true)}>
-        <Text style={styles.cropButtonText}>{part ? part : '발병 부위 선택'}</Text>
+        <Text style={styles.cropButtonText}>{partName ? partName : '발병 부위 선택'}</Text>
       </TouchableOpacity>
       {renderPartModal()}
       {/* 증상 선택 버튼 */}
       <TouchableOpacity style={styles.cropButton} onPress={() => setSymptomModalVisible(true)}>
-        <Text style={styles.cropButtonText}>{symptom ? symptom : '병해충 증상 선택'}</Text>
+        <Text style={styles.cropButtonText}>{symptomName ? symptomName : '병해충 증상 선택'}</Text>
       </TouchableOpacity>
       {renderSymptomModal()}
       <TextInput

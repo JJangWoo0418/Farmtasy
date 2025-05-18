@@ -103,6 +103,14 @@ const HomePage = () => {
 
     const fetchPopularPosts = async () => {
         try {
+            if (!phone) {
+                console.log('phone 값이 없습니다:', phone);
+                setError('사용자 정보를 불러올 수 없습니다.');
+                setLoading(false);
+                return;
+            }
+
+            console.log('API 호출 전 phone 값:', phone);
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/posts/popular?user_phone=${phone}`);
             if (!response.ok) {
                 throw new Error('인기 게시글을 가져오는데 실패했습니다.');

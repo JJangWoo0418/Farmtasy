@@ -12,6 +12,7 @@ import { getHistoricalTemperature } from '../Components/Utils/weatherUtils';
 import { useWeather, WeatherProvider } from '../context/WeatherContext';
 import { router } from 'expo-router';
 
+//농장 좌표(음성)
 const FARM_COORDS = {
   latitude: 36.953862288,
   longitude: 127.681782599,
@@ -830,7 +831,7 @@ const WeatherContent = () => {
           </Text>
         </TouchableOpacity>
       </View>
-
+      {/*최상단 날씨 박스*/}
       <ScrollView style={styles.scrollContainer} nestedScrollEnabled={true}>
         <View style={styles.currentWeatherBox}>
           {isLoading ? (

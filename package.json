@@ -40,6 +40,7 @@
     "metro-resolver": "^0.82.0",
     "multer": "^1.4.5-lts.2",
     "mysql2": "^3.14.0",
+    "papaparse": "^5.5.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
