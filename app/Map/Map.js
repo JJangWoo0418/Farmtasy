@@ -53,8 +53,12 @@ const Map = () => {
     const [isAddingArea, setIsAddingArea] = useState(false);
     const [initialRegion, setInitialRegion] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [highlightMarker, setHighlightMarker] = useState(null);
+    const [highlightedId, setHighlightedId] = useState(null);
     const [activeHighlightName, setActiveHighlightName] = useState(null);
+    const [loadingFarms, setLoadingFarms] = useState(false);
+    const [loadingCrops, setLoadingCrops] = useState(false);
+    const highlightTimerRef = useRef(null);
+    const highlightDelayRef = useRef(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -141,10 +145,10 @@ const Map = () => {
         ]
     };
 
-    // 농장/작물 데이터 패치 함수
-    const fetchUserFarmsAndCrops = async () => {
+    // 농장 데이터 패치 함수
+    const fetchFarms = async () => {
+        setLoadingFarms(true);
         try {
-            // 1. 농장 정보 가져오기
             const farmResponse = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${phone}`);
             const farmData = await farmResponse.json();
             if (farmResponse.ok) {
@@ -156,25 +160,48 @@ const Map = () => {
                         : [{ latitude: farm.latitude, longitude: farm.longitude }]
                 }));
                 setFarmAreas(formattedFarms);
-                // 2. 작물 상세 정보 가져오기
-                const cropDetailResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail?user_phone=${phone}`);
-                const cropDetailData = await cropDetailResponse.json();
-                if (cropDetailResponse.ok) {
-                    const formattedCrops = cropDetailData.map(crop => ({
-                        id: crop.detail_id,
-                        name: crop.detail_name,
-                        latitude: Number(crop.latitude),
-                        longitude: Number(crop.longitude),
-                        image: crop.detail_image_url,
-                        qrCode: crop.detail_qr_code
-                    }));
-                    setManagedCrops(formattedCrops);
-                }
             }
         } catch (error) {
             // 에러 무시
+        } finally {
+            setLoadingFarms(false);
         }
     };
+
+    // 작물 데이터 패치 함수
+    const fetchCrops = async () => {
+        setLoadingCrops(true);
+        try {
+            const cropDetailResponse = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail?user_phone=${phone}`);
+            const cropDetailData = await cropDetailResponse.json();
+            if (cropDetailResponse.ok) {
+                const formattedCrops = cropDetailData.map(crop => ({
+                    id: crop.detail_id,
+                    name: crop.detail_name,
+                    latitude: Number(crop.latitude),
+                    longitude: Number(crop.longitude),
+                    image: crop.detail_image_url,
+                    qrCode: crop.detail_qr_code
+                }));
+                setManagedCrops(formattedCrops);
+            }
+        } catch (error) {
+            // 에러 무시
+        } finally {
+            setLoadingCrops(false);
+        }
+    };
+
+    // 농장/작물 데이터는 phone이 바뀔 때마다 각각 독립적으로 패치
+    useEffect(() => {
+        if (phone) {
+            fetchFarms();
+            fetchCrops();
+        }
+        return () => {
+            debouncedFetchCenterAddress.cancel();
+        };
+    }, [phone]);
 
     // 특정 작물만 fetch해서 지도 이동 및 강조
     const fetchAndHighlightCropDetail = async (detailId) => {
@@ -182,11 +209,7 @@ const Map = () => {
             const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${detailId}`);
             const data = await res.json();
             if (data.latitude && data.longitude) {
-                setHighlightMarker({
-                    latitude: parseFloat(data.latitude),
-                    longitude: parseFloat(data.longitude),
-                    detailId: detailId,
-                });
+                setHighlightedId(detailId);
                 const region = {
                     latitude: parseFloat(data.latitude),
                     longitude: parseFloat(data.longitude),
@@ -196,33 +219,23 @@ const Map = () => {
                 console.log('이동할 region:', region); // 디버깅용 로그
                 setRegion(region); // region 상태도 동기화 (MapView region prop과 연결되어 있으므로 즉시 이동)
                 setTimeout(() => {
-                    setHighlightMarker(null);
+                    setHighlightedId(null);
                 }, 2000);
             } else {
                 console.log('잘못된 좌표:', data);
             }
         } catch (e) {
-            setHighlightMarker(null);
+            setHighlightedId(null);
             console.log('fetchAndHighlightCropDetail 에러:', e);
         }
     };
-
-    // 농장/작물 데이터는 phone이 바뀔 때만 1회 패치
-    useEffect(() => {
-        if (phone) {
-            fetchUserFarmsAndCrops();
-        }
-        return () => {
-            debouncedFetchCenterAddress.cancel();
-        };
-    }, [phone]);
 
     // highlightDetailId가 바뀔 때만 해당 작물만 fetch해서 animateToRegion 및 강조
     useEffect(() => {
         if (params.highlightDetailId) {
             fetchAndHighlightCropDetail(params.highlightDetailId);
         } else {
-            setHighlightMarker(null);
+            setHighlightedId(null);
         }
     }, [params.highlightDetailId]);
 
@@ -930,6 +943,50 @@ const Map = () => {
         }
     }, [params.highlightDetailName]);
 
+    // region prop과 state(region) 완전 동기화, params.latitude/longitude가 명확히 준비된 경우에만 setRegion, 중복 setRegion 방지
+    useEffect(() => {
+        if (
+            params.latitude !== undefined && params.longitude !== undefined &&
+            params.latitude !== null && params.longitude !== null &&
+            !isNaN(Number(params.latitude)) && !isNaN(Number(params.longitude))
+        ) {
+            const newRegion = {
+                latitude: Number(params.latitude),
+                longitude: Number(params.longitude),
+                latitudeDelta: 0.0008,
+                longitudeDelta: 0.0008,
+            };
+            if (
+                region.latitude !== newRegion.latitude ||
+                region.longitude !== newRegion.longitude ||
+                region.latitudeDelta !== newRegion.latitudeDelta ||
+                region.longitudeDelta !== newRegion.longitudeDelta
+            ) {
+                setTimeout(() => {
+                    setRegion(newRegion);
+                }, 500); // 0.5초 딜레이 후 확대 이동
+            }
+        }
+    }, [params.latitude, params.longitude]);
+
+    // 마커 배경색 하이라이트 로직 (지도 이동 후 0.5초 뒤 3초간)
+    useEffect(() => {
+        if (params.detailId) {
+            if (highlightDelayRef.current) clearTimeout(highlightDelayRef.current);
+            if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+            highlightDelayRef.current = setTimeout(() => {
+                setHighlightedId(params.detailId);
+                highlightTimerRef.current = setTimeout(() => {
+                    setHighlightedId(null);
+                }, 3000);
+            }, 500);
+        }
+        return () => {
+            if (highlightDelayRef.current) clearTimeout(highlightDelayRef.current);
+            if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        };
+    }, [params.detailId]);
+
     return (
         <View style={styles.container}>
             <MapView
@@ -961,51 +1018,10 @@ const Map = () => {
                     />
                 )}
 
-                {/* 관리 작물 핀 표시 */}
-                {managedCrops.map((crop, index) => (
-                    <Marker
-                        key={`managed-crop-${crop.id}-${index}`}
-                        coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
-                        onPress={() => handleCropPress(crop)}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                        <View style={{
-                            borderWidth: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? 4 : 2,
-                            borderColor: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? '#22C55E' : '#22C55E',
-                            borderRadius: 25,
-                            padding: 4,
-                            backgroundColor: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? '#FFA726' : '#fff',
-                            shadowColor: (highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName) ? '#FF4444' : '#22C55E',
-                            shadowOffset: { width: 0, height: 0 },
-                            shadowOpacity: 0.5,
-                            shadowRadius: 5,
-                            elevation: 5
-                        }}>
-                            <Text style={[
-                                styles.cropMarker,
-                                ((highlightMarker && String(crop.id) == String(highlightMarker.detailId)) || (activeHighlightName && crop.name === activeHighlightName)) && { transform: [{ scale: 1.2 }] }
-                            ]}>☘️</Text>
-                        </View>
-                    </Marker>
-                ))}
-
-                {/* 전달받은 작물 정보 마커 표시 */}
-                {route.params?.showMarker && (
-                    <Marker
-                        key={`route-crop-${route.params.markerName}-${Date.now()}`}
-                        coordinate={{
-                            latitude: Number(route.params.latitude),
-                            longitude: Number(route.params.longitude)
-                        }}
-                        title={route.params.markerTitle}
-                        description={route.params.markerDescription}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                    >
-                        <Text style={styles.cropMarker}>{route.params.markerEmoji}</Text>
-                    </Marker>
-                )}
-
-                {farmAreas
+                {/* 농장 영역(Polygon) 표시 */}
+                {loadingFarms ? (
+                    <ActivityIndicator size="large" color="#22C55E" />
+                ) : farmAreas
                     .filter(area => area.id !== modifyingAreaId)
                     .map((area, index) => (
                         <React.Fragment key={`farm-area-${area.id}-${index}`}>
@@ -1043,6 +1059,52 @@ const Map = () => {
                             )}
                         </React.Fragment>
                     ))}
+
+                {/* 관리 작물 핀 표시 */}
+                {loadingCrops ? (
+                    <ActivityIndicator size="large" color="#22C55E" />
+                ) : managedCrops.map((crop, index) => {
+                    const isHighlighted = String(crop.id) === String(highlightedId);
+                    return (
+                        <Marker
+                            key={`managed-crop-${crop.id}-${index}`}
+                            coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
+                            onPress={() => handleCropPress(crop)}
+                            anchor={{ x: 0.5, y: 0.5 }}
+                        >
+                            <View style={{
+                                borderWidth: 2,
+                                borderColor: '#22C55E',
+                                borderRadius: 25,
+                                padding: 4,
+                                backgroundColor: isHighlighted ? '#FFA726' : '#fff',
+                                shadowColor: '#22C55E',
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 0.5,
+                                shadowRadius: 5,
+                                elevation: 5
+                            }}>
+                                <Text style={styles.cropMarker}>☘️</Text>
+                            </View>
+                        </Marker>
+                    );
+                })}
+
+                {/* 전달받은 작물 정보 마커 표시 */}
+                {route.params?.showMarker && (
+                    <Marker
+                        key={`route-crop-${route.params.markerName}-${Date.now()}`}
+                        coordinate={{
+                            latitude: Number(route.params.latitude),
+                            longitude: Number(route.params.longitude)
+                        }}
+                        title={route.params.markerTitle}
+                        description={route.params.markerDescription}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                    >
+                        <Text style={styles.cropMarker}>{route.params.markerEmoji}</Text>
+                    </Marker>
+                )}
 
                 {isDrawingMode && drawnPath.length > 0 && (
                     <Polyline

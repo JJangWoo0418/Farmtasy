@@ -49,6 +49,8 @@ export default function CropDetailMemoPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ detail_image_url: newImageUrl }),
             });
+            setImage(newImageUrl); // DB 반영 후 setImage
+            // params.detail_image_url 동기화 필요시 추가
         } catch (e) {
             alert('이미지 변경 DB 반영 실패');
         }
@@ -149,32 +151,24 @@ export default function CropDetailMemoPage() {
                 <TouchableOpacity 
                     style={styles.actionButton} 
                     onPress={async () => {
-                        if (!location) {
+                        if (!location || !params.detailId) {
                             alert('작물 위치 정보가 없습니다.');
                             return;
                         }
                         router.push({
                             pathname: '/Map/Map',
                             params: {
-                                highlightDetailId: params.detailId,
-                                highlightDetailName: params.name,
                                 latitude: location.latitude,
                                 longitude: location.longitude,
-                                // 사용자 데이터
+                                detailId: params.detailId,
                                 userData: params.userData,
                                 phone: params.phone,
                                 name: params.name,
                                 region: params.region,
                                 introduction: params.introduction,
-                                // 작물 데이터
-                                farmId: params.farmId,
-                                cropId: params.cropId,
-                                detailId: params.detailId,
-                                detailName: params.name,
-                                detailImage: params.detail_image_url,
-                                detailQrCode: params.detail_qr_code
                             }
                         });
+                        // 이미지 변경(setImage)은 이 버튼에서는 제거
                     }}
                 >
                     <Image source={require('../../assets/planticon.png')} style={styles.actionIcon} />
