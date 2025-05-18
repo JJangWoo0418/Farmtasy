@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import API_CONFIG from '../DB/api';
 
 export default function MemoList() {
   const params = useLocalSearchParams();
@@ -8,6 +9,81 @@ export default function MemoList() {
 
   // 관리작물 리스트 (초기에는 빈 배열)
   const [managedCrops, setManagedCrops] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [cropName, setCropName] = useState(''); // 작물 이름 상태 추가
+
+  // 선택한 작물의 이름 가져오기
+  useEffect(() => {
+    const fetchCropName = async () => {
+      if (!params.cropId) return;
+      
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/crop?crop_id=${params.cropId}`);
+        const data = await response.json();
+        
+        if (response.ok && data.length > 0) {
+          setCropName(data[0].crop_name);
+        }
+      } catch (error) {
+        console.error('작물 이름 가져오기 실패:', error);
+      }
+    };
+
+    fetchCropName();
+  }, [params.cropId]);
+
+  // 선택된 작물의 cropdetail 데이터 가져오기
+  useEffect(() => {
+    console.log('현재 farmId:', params.farmId);
+    console.log('현재 phone:', params.phone);
+    console.log('현재 cropId:', params.cropId);
+    
+    if (!params.farmId || !params.phone || !params.cropId) {
+      console.log('필수 파라미터가 없습니다.');
+      return;
+    }
+    
+    const fetchCropDetails = async () => {
+      try {
+        const url = `${API_CONFIG.BASE_URL}/api/cropdetail?crop_id=${params.cropId}&user_phone=${params.phone}`;
+        console.log('CropDetail API 호출 URL:', url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('CropDetail API 응답 데이터:', data);
+        
+        if (response.ok) {
+          if (Array.isArray(data) && data.length > 0) {
+            const filteredData = data.filter(detail => detail.crop_id === parseInt(params.cropId));
+            console.log('필터링된 데이터:', filteredData);
+            
+            const mappedData = filteredData.map(detail => ({
+              name: detail.detail_name || '이름 없음',
+              image: detail.detail_image_url || 'https://via.placeholder.com/48',
+              qrCode: detail.detail_qr_code,
+              cropId: detail.crop_id,
+              detailId: detail.id
+            }));
+            console.log('매핑된 데이터:', mappedData);
+            setManagedCrops(mappedData);
+          } else {
+            console.log('작물 상세 데이터가 없습니다.');
+            setManagedCrops([]);
+          }
+        } else {
+          console.log('API 응답 실패:', response.status, data);
+          setManagedCrops([]);
+        }
+      } catch (error) {
+        console.error('작물 상세 목록 불러오기 실패:', error);
+        setManagedCrops([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCropDetails();
+  }, [params.farmId, params.phone, params.cropId]);
 
   // 새로운 작물 정보가 전달되면 리스트에 추가
   useEffect(() => {
@@ -45,13 +121,13 @@ export default function MemoList() {
         <TouchableOpacity onPress={() => router.back()}>
           <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
         </TouchableOpacity>
-        <Text style={styles.title}>상세 작물</Text>
+        <Text style={styles.title}>{cropName || '상세 작물'}</Text>
       </View>
 
       {/* 관리작물 카드 리스트 */}
       <FlatList
         data={managedCrops}
-        keyExtractor={(_, idx) => idx.toString()}
+        keyExtractor={(item) => item.detailId?.toString() || Math.random().toString()}
         renderItem={({ item, index }) => (
           <TouchableOpacity
             style={styles.cropCard}
@@ -63,7 +139,11 @@ export default function MemoList() {
                   userData: params.userData,
                   phone: params.phone,
                   region: params.region,
-                  introduction: params.introduction
+                  introduction: params.introduction,
+                  farmId: params.farmId,
+                  cropId: params.cropId,
+                  detailId: item.detailId,
+                  editIndex: index
                 }
               });
             }}
@@ -77,25 +157,18 @@ export default function MemoList() {
           <TouchableOpacity
             style={styles.cropBox}
             onPress={() => {
-                console.log('작물 추가 버튼 클릭 - 현재 params 정보:', params);
-                console.log('작물 추가 버튼 클릭 - memoplus로 전달할 파라미터:', {
-                    farmName: params.farmName,
-                    userData: params.userData,
-                    phone: params.phone,
-                    region: params.region,
-                    introduction: params.introduction
-                });
-
-                router.push({
-                    pathname: '/Memo/memoplus',
-                    params: {
-                        farmName: params.farmName,
-                        userData: params.userData,
-                        phone: params.phone,
-                        region: params.region,
-                        introduction: params.introduction
-                    }
-                });
+              router.push({
+                pathname: '/Memo/memoplus',
+                params: {
+                  farmName: params.farmName,
+                  userData: params.userData,
+                  phone: params.phone,
+                  region: params.region,
+                  introduction: params.introduction,
+                  farmId: params.farmId,
+                  cropId: params.cropId
+                }
+              });
             }}
           >
             <Image source={require('../../assets/cropicon.png')} style={styles.iconSmall} />
@@ -108,10 +181,34 @@ export default function MemoList() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  title: { fontWeight: 'bold', fontSize: 20, flex: 1, textAlign: 'center' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#fff', 
+    padding: 16 
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 16,
+    justifyContent: 'center',
+    position: 'relative',
+    height: 40,
+    marginTop: -15,
+  },
+  backIcon: { 
+    width: 24, 
+    height: 24, 
+    zIndex: 1,
+    resizeMode: 'contain',
+    marginLeft: 5,
+  },
+  title: { 
+    flex: 1, 
+    fontWeight: 'bold', 
+    fontSize: 18, 
+    textAlign: 'center',
+    marginRight: -10,
+  },
   cropCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -160,6 +257,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
-  iconSmall: { width: 40, height: 40, marginRight: 8 },
-  cropText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
+  iconSmall: { 
+    width: 40, 
+    height: 40, 
+    marginRight: 8 
+  },
+  cropText: { 
+    fontSize: 16, 
+    color: '#222', 
+    fontWeight: 'bold' 
+  },
 });

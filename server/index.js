@@ -1985,3 +1985,38 @@ app.get('/api/crop/parent', async (req, res) => {
     });
   }
 });
+
+// cropdetail 조회 API
+app.get('/api/cropdetail', async (req, res) => {
+    const { crop_id, user_phone } = req.query;
+    
+    if (!crop_id || !user_phone) {
+        return res.status(400).json({
+            success: false,
+            message: 'crop_id와 user_phone은 필수 입력 항목입니다.'
+        });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        
+        // crop 테이블과 JOIN하여 crop_name과 detail_name도 함께 가져오기
+        const [details] = await connection.query(`
+            SELECT cd.*, c.crop_name, cd.detail_name
+            FROM cropdetail cd
+            JOIN crop c ON cd.crop_id = c.crop_id
+            WHERE cd.crop_id = ? AND cd.user_phone = ?
+        `, [crop_id, user_phone]);
+
+        res.json(details);
+    } catch (error) {
+        console.error('작물 상세 정보 조회 실패:', error);
+        res.status(500).json({
+            success: false,
+            message: '작물 상세 정보 조회 중 오류가 발생했습니다.'
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});

@@ -112,7 +112,7 @@ export default function FarmEdit() {
           setCrops(data.map(crop => ({
             name: crop.crop_name,
             image: crop.crop_image_url,
-            // 필요시 crop_id 등 추가
+            cropId: crop.crop_id,
           })));
         } else {
           setCrops([]);
@@ -309,19 +309,18 @@ export default function FarmEdit() {
           <TouchableOpacity
             style={styles.cropCard}
             onPress={() => {
-
+              console.log('선택된 작물 ID:', item.cropId);
               router.push({
                 pathname: '/Memo/memolist',
                 params: {
-                  cropName: item.name,
-                  cropImage: item.image,
-                  cropIndex: index,
                   farmName: params.farmName,
                   userData: params.userData,
                   phone: params.phone,
                   name: params.name,
                   region: params.region,
-                  introduction: params.introduction
+                  introduction: params.introduction,
+                  farmId: farmId,
+                  cropId: item.cropId
                 }
               });
             }}
