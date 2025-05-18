@@ -12,6 +12,7 @@ export default function CropDetailMemoPage() {
     const [image, setImage] = useState(params.detail_image_url || params.image || null);
     const [qrModalVisible, setQrModalVisible] = useState(false);
     const [qrCode, setQrCode] = useState('');
+    const [location, setLocation] = useState(null);
 
     // 예시 데이터 (실제 데이터는 props나 API로 받아오세요)
     const cropName = params.name || '나의 소중한 감자밭 1호';
@@ -26,8 +27,15 @@ export default function CropDetailMemoPage() {
                 const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
                 const data = await res.json();
                 setQrCode(data.detail_qr_code || '');
+                if (data.latitude && data.longitude) {
+                    setLocation({
+                        latitude: data.latitude,
+                        longitude: data.longitude
+                    });
+                }
             } catch (e) {
                 setQrCode('');
+                setLocation(null);
             }
         };
         fetchDetail();
@@ -138,7 +146,36 @@ export default function CropDetailMemoPage() {
 
             {/* 버튼 영역 */}
             <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.actionButton}>
+                <TouchableOpacity 
+                    style={styles.actionButton} 
+                    onPress={() => {
+                        if (!location) {
+                            alert('작물 위치 정보가 없습니다.');
+                            return;
+                        }
+                        router.push({
+                            pathname: '/Map/Map',
+                            params: {
+                                highlightDetailId: params.detailId,
+                                latitude: location.latitude,
+                                longitude: location.longitude,
+                                // 사용자 데이터
+                                userData: params.userData,
+                                phone: params.phone,
+                                name: params.name,
+                                region: params.region,
+                                introduction: params.introduction,
+                                // 작물 데이터
+                                farmId: params.farmId,
+                                cropId: params.cropId,
+                                detailId: params.detailId,
+                                detailName: params.name,
+                                detailImage: params.detail_image_url,
+                                detailQrCode: params.detail_qr_code
+                            }
+                        });
+                    }}
+                >
                     <Image source={require('../../assets/planticon.png')} style={styles.actionIcon} />
                     <Text style={styles.actionText}>작물 위치</Text>
                 </TouchableOpacity>

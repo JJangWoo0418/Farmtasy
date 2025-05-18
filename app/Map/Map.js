@@ -53,6 +53,7 @@ const Map = () => {
     const [isAddingArea, setIsAddingArea] = useState(false);
     const [initialRegion, setInitialRegion] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [highlightMarker, setHighlightMarker] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -873,6 +874,37 @@ const Map = () => {
         }
     }, [params.isAddingCropMode]);
 
+    // highlightDetailId가 있으면 해당 cropdetail_id의 좌표를 fetch해서 지도를 이동하고 줌을 당기는 useEffect를 추가합니다.
+    useEffect(() => {
+        if (params.highlightDetailId) {
+            fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.highlightDetailId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.latitude && data.longitude) {
+                        setHighlightMarker({
+                            latitude: parseFloat(data.latitude),
+                            longitude: parseFloat(data.longitude),
+                            detailId: params.highlightDetailId,
+                        });
+                        // 지도 이동 및 줌
+                        mapRef.current?.animateToRegion({
+                            latitude: parseFloat(data.latitude),
+                            longitude: parseFloat(data.longitude),
+                            latitudeDelta: 0.005,
+                            longitudeDelta: 0.005,
+                        }, 1000);
+
+                        // 2초 후에 강조 표시 제거
+                        setTimeout(() => {
+                            setHighlightMarker(null);
+                        }, 2000);
+                    }
+                });
+        } else {
+            setHighlightMarker(null);
+        }
+    }, [params.highlightDetailId]);
+
     return (
         <View style={styles.container}>
             <MapView
@@ -912,7 +944,23 @@ const Map = () => {
                         onPress={() => handleCropPress(crop)}
                         anchor={{ x: 0.5, y: 0.5 }}
                     >
-                        <Text style={styles.cropMarker}>☘️</Text>
+                        <View style={{
+                            borderWidth: highlightMarker && crop.id == highlightMarker.detailId ? 4 : 2,
+                            borderColor: highlightMarker && crop.id == highlightMarker.detailId ? '#FF4444' : '#22C55E',
+                            borderRadius: 25,
+                            padding: 4,
+                            backgroundColor: highlightMarker && crop.id == highlightMarker.detailId ? '#FFF5F5' : '#fff',
+                            shadowColor: highlightMarker && crop.id == highlightMarker.detailId ? '#FF4444' : '#22C55E',
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.5,
+                            shadowRadius: 5,
+                            elevation: 5
+                        }}>
+                            <Text style={[
+                                styles.cropMarker,
+                                highlightMarker && crop.id == highlightMarker.detailId && { transform: [{ scale: 1.2 }] }
+                            ]}>☘️</Text>
+                        </View>
                     </Marker>
                 ))}
 

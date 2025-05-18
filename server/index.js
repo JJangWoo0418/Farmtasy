@@ -1907,14 +1907,7 @@ app.get('/api/cropdetail/:id', async (req, res) => {
       return res.status(404).json({ error: '해당 작물 상세 정보를 찾을 수 없습니다.' });
     }
 
-    // detail_qr_code에서 숫자만 추출
-    const qr = results[0].detail_qr_code || '';
-    const onlyNumber = qr.replace(/[^0-9]/g, '');
-
-    res.json({
-      ...results[0],
-      detail_qr_code: onlyNumber
-    });
+    res.json(results[0]);
   } catch (error) {
     console.error('특정 작물 상세 정보 조회 중 오류:', error);
     res.status(500).json({ error: '작물 상세 정보 조회에 실패했습니다.' });
