@@ -200,7 +200,7 @@ export default function CropDetailMemoPage() {
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.container}>
                 {/* 상단 헤더 */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn}>
@@ -264,8 +264,12 @@ export default function CropDetailMemoPage() {
                 {/* 버튼 아래 구분선 */}
                 <View style={styles.divider} />
 
-                {/* 여러 개의 메모 카드 */}
-                <View style={styles.memoCardWrapper}>
+                {/* 메모 카드만 스크롤 */}
+                <ScrollView
+                    style={styles.memoCardWrapper}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {memos.map((memo, idx) => (
                         <View key={idx} style={styles.memoCard}>
                             <View style={styles.memoHeader}>
@@ -290,7 +294,8 @@ export default function CropDetailMemoPage() {
                             />
                         </View>
                     ))}
-                </View>
+                </ScrollView>
+
                 {/* 일반 버튼 */}
                 <TouchableOpacity
                     style={{
@@ -331,7 +336,7 @@ export default function CropDetailMemoPage() {
                         </View>
                     </View>
                 </Modal>
-            </ScrollView>
+            </View>
         </TouchableWithoutFeedback>
     );
 }
