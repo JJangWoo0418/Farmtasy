@@ -152,11 +152,11 @@ export default function CropDetailMemoPage() {
     };
 
     // 메모 DB 저장 함수
-    const saveMemosToDB = async () => {
+    const saveMemosToDB = async (memosToSave = memos) => {
         if (!params.detailId) return;
         try {
             // 각 메모의 title, content 마지막 글자가 공백이 아니면 공백 추가
-            const memosToSave = memos.map(memo => ({
+            const memosWithSpace = memosToSave.map(memo => ({
                 ...memo,
                 title: memo.title && !memo.title.endsWith(' ') ? memo.title + ' ' : memo.title,
                 content: memo.content && !memo.content.endsWith(' ') ? memo.content + ' ' : memo.content,
@@ -164,7 +164,7 @@ export default function CropDetailMemoPage() {
             await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ memo: memosToSave }),
+                body: JSON.stringify({ memo: memosWithSpace }),
             });
         } catch (e) {
             // 에러 처리
@@ -185,6 +185,15 @@ export default function CropDetailMemoPage() {
         setMemos(prev => {
             const next = prev.map((memo, i) => i === idx ? { ...memo, [key]: value } : memo);
             setTimeout(saveMemosToDB, 0);
+            return next;
+        });
+    };
+
+    // 메모 카드 삭제 함수
+    const handleDeleteMemoCard = (idx) => {
+        setMemos(prev => {
+            const next = prev.filter((_, i) => i !== idx);
+            saveMemosToDB(next); // 삭제된 배열을 바로 저장
             return next;
         });
     };
@@ -267,8 +276,8 @@ export default function CropDetailMemoPage() {
                                     placeholder="제목을 입력하세요"
                                     placeholderTextColor="#aaa"
                                 />
-                                <TouchableOpacity>
-                                    <Text style={styles.dotsText}>⋯</Text>
+                                <TouchableOpacity onPress={() => handleDeleteMemoCard(idx)}>
+                                    <Text style={styles.dotsText}>삭제</Text>
                                 </TouchableOpacity>
                             </View>
                             <TextInput

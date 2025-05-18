@@ -114,9 +114,9 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     dotsText: {
-        fontSize: 22,
-        color: '#888',
+        fontSize: 13,
         fontWeight: 'bold',
+        color: '#888',
         paddingHorizontal: 4,
         paddingVertical: 0,
     },
