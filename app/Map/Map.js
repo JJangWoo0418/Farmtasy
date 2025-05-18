@@ -1019,9 +1019,7 @@ const Map = () => {
                 )}
 
                 {/* 농장 영역(Polygon) 표시 */}
-                {loadingFarms ? (
-                    <ActivityIndicator size="large" color="#22C55E" />
-                ) : farmAreas
+                {loadingFarms ? null : farmAreas
                     .filter(area => area.id !== modifyingAreaId)
                     .map((area, index) => (
                         <React.Fragment key={`farm-area-${area.id}-${index}`}>
@@ -1061,9 +1059,7 @@ const Map = () => {
                     ))}
 
                 {/* 관리 작물 핀 표시 */}
-                {loadingCrops ? (
-                    <ActivityIndicator size="large" color="#22C55E" />
-                ) : managedCrops.map((crop, index) => {
+                {loadingCrops ? null : managedCrops.map((crop, index) => {
                     // 이름이 같으면 하이라이트 (2초간만)
                     const isHighlighted = crop.name && highlightedName && crop.name === highlightedName;
                     return (
@@ -1287,9 +1283,9 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         position: 'absolute',
-        top: 50,
-        left: 15,
-        right: 15,
+        top: 61,
+        left: 8,
+        right: 8,
         flexDirection: 'row',
         backgroundColor: 'white',
         borderRadius: 25,
