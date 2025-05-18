@@ -1906,8 +1906,8 @@ app.get('/api/cropdetail/:id', async (req, res) => {
       return res.status(404).json({ error: '해당 작물 상세 정보를 찾을 수 없습니다.' });
     }
     const detail = results[0];
-    // memo가 있으면 JSON 파싱
-    if (detail.memo) {
+    // memo가 문자열이면 JSON 파싱, 객체면 그대로
+    if (detail.memo && typeof detail.memo === 'string') {
       try {
         detail.memo = JSON.parse(detail.memo);
       } catch (e) {
@@ -1923,12 +1923,20 @@ app.get('/api/cropdetail/:id', async (req, res) => {
 // cropdetail 정보(메모 포함) 수정 API
 app.put('/api/cropdetail/:id', async (req, res) => {
   const { id } = req.params;
-  const { memo, detail_image_url } = req.body;
+  let { memo, detail_image_url } = req.body;
 
   let updateFields = [];
   let updateValues = [];
 
+  // memo가 배열이면 각 항목의 title, content 마지막 글자에 공백 추가
   if (memo !== undefined) {
+    if (Array.isArray(memo)) {
+      memo = memo.map(m => ({
+        ...m,
+        title: m.title && !m.title.endsWith(' ') ? m.title + ' ' : m.title,
+        content: m.content && !m.content.endsWith(' ') ? m.content + ' ' : m.content,
+      }));
+    }
     updateFields.push('memo = ?');
     updateValues.push(JSON.stringify(memo));
   }

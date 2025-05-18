@@ -31,7 +31,14 @@ export default function CropDetailMemoPage() {
                 const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
                 const data = await res.json();
                 if (data.memo) {
-                    setMemos(Array.isArray(data.memo) ? data.memo : [{ title: '', content: data.memo }]);
+                    setMemos(Array.isArray(data.memo)
+                        ? data.memo.map(memo => ({
+                            ...memo,
+                            title: memo.title ? memo.title.trimEnd() : '',
+                            content: memo.content ? memo.content.trimEnd() : '',
+                        }))
+                        : [{ title: '', content: (data.memo || '').trimEnd() }]
+                    );
                 }
                 setQrCode(data.detail_qr_code || '');
                 if (data.latitude && data.longitude) {
@@ -47,6 +54,15 @@ export default function CropDetailMemoPage() {
         };
         fetchDetail();
     }, [params.detailId]);
+
+    useEffect(() => {
+        const keyboardHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            saveMemosToDB();
+        });
+        return () => {
+            keyboardHideListener.remove();
+        };
+    }, [memos]);
 
     // 이미지 변경 시 DB 업데이트 함수
     const updateDetailImage = async (newImageUrl) => {
@@ -139,10 +155,16 @@ export default function CropDetailMemoPage() {
     const saveMemosToDB = async () => {
         if (!params.detailId) return;
         try {
+            // 각 메모의 title, content 마지막 글자가 공백이 아니면 공백 추가
+            const memosToSave = memos.map(memo => ({
+                ...memo,
+                title: memo.title && !memo.title.endsWith(' ') ? memo.title + ' ' : memo.title,
+                content: memo.content && !memo.content.endsWith(' ') ? memo.content + ' ' : memo.content,
+            }));
             await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ memo: memos }),
+                body: JSON.stringify({ memo: memosToSave }),
             });
         } catch (e) {
             // 에러 처리
