@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Modal, TextInput, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Modal, TextInput, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/Memo/cropdetailmemopagestyle';
 import * as ImagePicker from 'expo-image-picker';
@@ -198,6 +198,29 @@ export default function CropDetailMemoPage() {
         });
     };
 
+    // 상세 작물 삭제 함수 (cropdetail_id 또는 detailId 사용)
+    const handleDeleteCropDetail = async () => {
+        const cropdetail_id = params.cropdetail_id || params.detailId;
+        if (!cropdetail_id) {
+            Alert.alert('오류', '상세작물 ID가 없습니다.');
+            return;
+        }
+        try {
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${cropdetail_id}`, {
+                method: 'DELETE',
+            });
+            const data = await res.json();
+            if (res.ok) {
+                Alert.alert('삭제 완료', '상세 작물이 삭제되었습니다.');
+                router.back();
+            } else {
+                Alert.alert('삭제 실패', data.error || '삭제에 실패했습니다.');
+            }
+        } catch (e) {
+            Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
+        }
+    };
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.container}>
@@ -207,7 +230,10 @@ export default function CropDetailMemoPage() {
                         <Image source={require('../../assets/gobackicon.png')} style={styles.headerIcon} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{cropName}</Text>
-                    <TouchableOpacity style={styles.headerIconBtn}>
+                    <TouchableOpacity
+                        style={styles.headerIconBtn}
+                        onPress={handleDeleteCropDetail}
+                    >
                         <Image source={require('../../assets/deleteicon.png')} style={styles.headerIcon} />
                     </TouchableOpacity>
                 </View>
