@@ -19,6 +19,8 @@ export default function CropDetailMemoPage() {
     const [memos, setMemos] = useState([
         { title: '', content: '' }
     ]);
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [deleteSuccessModalVisible, setDeleteSuccessModalVisible] = useState(false);
 
     // 예시 데이터 (실제 데이터는 props나 API로 받아오세요)
     const cropName = params.name || '나의 소중한 감자밭 1호';
@@ -211,8 +213,7 @@ export default function CropDetailMemoPage() {
             });
             const data = await res.json();
             if (res.ok) {
-                Alert.alert('삭제 완료', '상세 작물이 삭제되었습니다.');
-                router.back();
+                setDeleteSuccessModalVisible(true);
             } else {
                 Alert.alert('삭제 실패', data.error || '삭제에 실패했습니다.');
             }
@@ -232,7 +233,7 @@ export default function CropDetailMemoPage() {
                     <Text style={styles.headerTitle}>{cropName}</Text>
                     <TouchableOpacity
                         style={styles.headerIconBtn}
-                        onPress={handleDeleteCropDetail}
+                        onPress={() => setDeleteModalVisible(true)}
                     >
                         <Image source={require('../../assets/deleteicon.png')} style={styles.headerIcon} />
                     </TouchableOpacity>
@@ -358,6 +359,62 @@ export default function CropDetailMemoPage() {
                             )}
                             <TouchableOpacity onPress={() => setQrModalVisible(false)} style={{ backgroundColor: '#22C55E', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 20 }}>
                                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>닫기</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* 삭제 확인 모달 */}
+                <Modal
+                    visible={deleteModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setDeleteModalVisible(false)}
+                >
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>상세 작물 삭제</Text>
+                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>이 상세 작물을 삭제하시겠습니까?</Text>
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <TouchableOpacity
+                                    onPress={() => setDeleteModalVisible(false)}
+                                    style={{ backgroundColor: '#E5E7EB', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
+                                >
+                                    <Text style={{ color: '#374151', fontWeight: 'bold', fontSize: 16 }}>취소</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setDeleteModalVisible(false);
+                                        handleDeleteCropDetail();
+                                    }}
+                                    style={{ backgroundColor: '#EF4444', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
+                                >
+                                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>삭제</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                {/* 삭제 완료 모달 */}
+                <Modal
+                    visible={deleteSuccessModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setDeleteSuccessModalVisible(false)}
+                >
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>삭제 완료</Text>
+                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>상세 작물이 삭제되었습니다.</Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setDeleteSuccessModalVisible(false);
+                                    router.back();
+                                }}
+                                style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
