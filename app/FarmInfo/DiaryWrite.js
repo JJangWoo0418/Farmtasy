@@ -18,12 +18,49 @@ const popularCrops = [
 
 const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
 
+// 날짜 파싱 보정 함수 추가
+function parseDiaryDate(date) {
+  if (!date) return new Date();
+  if (typeof date === 'string') {
+    if (date.includes('T')) {
+      // ISO 포맷
+      return new Date(date);
+    } else if (date.match(/^\d{4}\.\d{1,2}\.\d{1,2}$/)) {
+      // 점(.)포맷 → 하이픈(-)으로 변환 후 new Date
+      return new Date(date.replace(/\./g, '-'));
+    }
+  }
+  // 그 외: 오늘 날짜
+  return new Date();
+}
+
 export default function DiaryWrite() {
   const navigation = useNavigation();
   const route = useRoute();
   const { editMode, diaryData, diaryIndex } = route.params || {};
+  const [phoneState, setPhoneState] = useState(null);
   
-  const [selectedDate, setSelectedDate] = useState(editMode ? new Date(diaryData.date.replace(/\./g, '-')) : new Date());
+  // phone 값 초기화
+  useEffect(() => {
+    const loadPhone = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user && user.phone) {
+            setPhoneState(user.phone);
+            console.log('DiaryWrite에서 불러온 phone:', user.phone);
+          }
+        }
+      } catch (e) {
+        console.error('phone 불러오기 실패:', e);
+      }
+    };
+    loadPhone();
+  }, []);
+
+  // 날짜 파싱 보정 적용
+  const [selectedDate, setSelectedDate] = useState(editMode ? parseDiaryDate(diaryData.date) : new Date());
   const [calendarModal, setCalendarModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -340,20 +377,32 @@ export default function DiaryWrite() {
             Alert.alert('알림', '모든 항목을 입력해주세요.');
             return;
         }
-
-        const newDiary = {
-            date: selectedDate,
-            crop: selectedVariety,
-            content: content
-        };
-
-        const saved = await AsyncStorage.getItem('farmDiary');
-        const list = saved ? JSON.parse(saved) : [];
-        list.push(newDiary);
-        await AsyncStorage.setItem('farmDiary', JSON.stringify(list));
-
-        Alert.alert('알림', '영농일지가 저장되었습니다.');
-        navigation.goBack();
+        // phone 값이 없으면 저장 시도하지 않음
+        if (!phoneState) {
+            Alert.alert('오류', '사용자 전화번호 정보가 없습니다.');
+            return;
+        }
+        console.log('저장 시도하는 phone 값:', phoneState);
+        const API_URL = 'http://192.168.35.144:3000';
+        const response = await fetch(`${API_URL}/diary/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            diary_date: selectedDate.toISOString(),
+            crop_type: selectedVariety,
+            content: content,
+            user_phone: phoneState // 반드시 포함
+          })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          Alert.alert('알림', '영농일지가 저장되었습니다.');
+          navigation.goBack();
+        } else {
+          Alert.alert('오류', result.error || '영농일지 저장에 실패했습니다.');
+        }
     } catch (e) {
         console.error('영농일지 저장 실패:', e);
         Alert.alert('오류', '영농일지 저장에 실패했습니다.');

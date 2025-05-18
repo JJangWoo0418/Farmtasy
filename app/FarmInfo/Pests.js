@@ -3,8 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Alert } fro
 import { useNavigation } from '@react-navigation/native';
 import styles from '../Components/Css/FarmInfo/PestsStyle';
 import itemCodeData from '../Components/Utils/item_code_data.json';
-import { PEST_API_KEY } from '../Components/API/apikey';
+import { PEST_API_KEY, PEST_AI_API_KEY, SERVER_URL } from '../Components/API/apikey';
 import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
 
 // 인기작물 TOP 21 (이모지 포함, MarketPriceScreen.js와 동일)
 const popularCrops = [
@@ -114,61 +115,101 @@ const Pests = () => {
     ? symptomCategories
     : symptomCategories.filter(cat => cat.name.includes(symptomSearch));
 
-  // 병해충 API 요청
-  const handleSubmit = async () => {
+  // 사진 첨부 함수: 사진을 선택하고 base64로 변환하여 image state에 저장
+  const handlePickImage = async () => {
     try {
-      // 병 검색(사진1) API 메뉴얼에 맞는 파라미터로 수정
-      const cleanParams = {
-        apiKey: PEST_API_KEY,
-        serviceCode: 'SVC01',
-        serviceType: 'AA003',
-        cropName: crop.trim(),
-        displayCount: 10,
-        startPoint: 1,
-        format: 'json'
-      };
-
-      const url = 'https://ncpms.rda.go.kr/npmsAPI/service';
-      console.log('API 요청 URL:', url);
-      console.log('API 요청 파라미터:', cleanParams);
-      console.log('사용자 입력 정보:', {
-        작물: crop,
-        발병부위: partName,
-        증상: symptomName,
-        상세설명: detail
-      });
-
-      const res = await axios.get(url, {
-        params: cleanParams,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000 // 10초 타임아웃
-      });
-
-      // HTML 응답인 경우 에러 처리
-      if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) {
-        console.error('API가 HTML을 반환했습니다:', res.data);
-        Alert.alert('API 오류', '서버 응답이 올바르지 않습니다. 잠시 후 다시 시도해주세요.');
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('권한 필요', '앨범 접근 권한이 필요합니다.');
         return;
       }
-
-      console.log('병해충검색 API 응답:', res.data);
-
-      if (res.data.service?.list?.item) {
-        const diseaseList = res.data.service.list.item;
-        console.log('병 목록:', diseaseList);
-        Alert.alert('API 응답 확인', JSON.stringify(diseaseList).slice(0, 300));
-      } else {
-        Alert.alert('검색 결과', '검색 조건에 맞는 병해충 정보가 없습니다.');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true, // base64 데이터 포함
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setImage(result.assets[0].base64); // base64 데이터 저장
+        Alert.alert('사진 첨부 완료', '사진이 첨부되었습니다.');
       }
     } catch (e) {
-      console.error('API 오류:', e);
-      if (e.code === 'ECONNABORTED') {
-        Alert.alert('API 오류', '서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+      Alert.alert('에러', '사진 선택 중 오류가 발생했습니다: ' + e.message);
+    }
+  };
+
+  // 병해충 AI(Gemini) API 요청
+  const handleSubmit = async () => {
+    try {
+      // 요청 내용 터미널에 출력
+      console.log('\n=== AI 요청 내용 ===');
+      console.log('작물:', crop);
+      console.log('발병부위:', partName);
+      console.log('증상:', symptomName);
+      console.log('상세설명:', detail);
+      console.log('이미지 첨부:', image ? '있음' : '없음');
+      console.log('===================\n');
+
+      // 서버 URL 확인
+      if (!SERVER_URL) {
+        throw new Error('서버 URL이 설정되지 않았습니다.');
+      }
+
+      // 서버 API 호출
+      const response = await axios.post(`${SERVER_URL}/api/ai/pest-diagnosis`, {
+        crop,
+        partName,
+        symptomName,
+        detail,
+        image
+      });
+
+      if (response.data.success) {
+        console.log('\n=== AI 응답 ===');
+        console.log(response.data.result);
+        console.log('===============\n');
+
+        Alert.alert('AI 진단 결과', response.data.result);
       } else {
-        Alert.alert('API 오류', '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        throw new Error(response.data.message);
+      }
+
+    } catch (error) {
+      console.error('AI API 오류:', error);
+      
+      if (error.message === '서버 URL이 설정되지 않았습니다.') {
+        Alert.alert(
+          '설정 오류',
+          '서버 URL이 설정되지 않았습니다.\n관리자에게 문의해주세요.',
+          [{ text: '확인' }]
+        );
+      } else if (error.response?.status === 429) {
+        Alert.alert(
+          'AI 사용 제한',
+          '현재 AI 요청이 너무 많아 잠시 차단되었습니다.\n\n' +
+          '1분 후에 다시 시도해주세요.',
+          [{ text: '확인' }]
+        );
+      } else if (error.message === 'Network Error') {
+        Alert.alert(
+          '네트워크 오류',
+          '서버에 연결할 수 없습니다.\n\n' +
+          '다음을 확인해주세요:\n' +
+          '1. 인터넷 연결 상태\n' +
+          '2. 서버가 실행 중인지 확인\n' +
+          '3. 잠시 후 다시 시도',
+          [{ text: '확인' }]
+        );
+      } else {
+        Alert.alert(
+          'AI 오류',
+          'AI 서버 연결에 실패했습니다.\n\n' +
+          '문제가 지속되면 다음을 확인해주세요:\n' +
+          '1. 인터넷 연결 상태\n' +
+          '2. 잠시 후 다시 시도\n' +
+          '3. 관리자에게 문의',
+          [{ text: '확인' }]
+        );
       }
     }
   };
@@ -249,12 +290,18 @@ const Pests = () => {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>발병 부위 선택</Text>
+          <TextInput
+            style={[styles.input, { fontSize: 18, marginBottom: 8 }]}
+            placeholder="부위명 입력"
+            value={partSearch}
+            onChangeText={setPartSearch}
+          />
           <ScrollView
             style={{ maxHeight: 240, alignSelf: 'stretch', width: '100%' }}
             contentContainerStyle={{ flexGrow: 1, alignItems: 'stretch' }}
             showsVerticalScrollIndicator={true}
           >
-            {partCategories.map((cat) => (
+            {filteredParts.map((cat) => (
               <TouchableOpacity
                 key={cat.code}
                 style={{
@@ -287,12 +334,18 @@ const Pests = () => {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>병해충 증상 선택</Text>
+          <TextInput
+            style={[styles.input, { fontSize: 18, marginBottom: 8 }]}
+            placeholder="증상 입력"
+            value={symptomSearch}
+            onChangeText={setSymptomSearch}
+          />
           <ScrollView
             style={{ maxHeight: 240, alignSelf: 'stretch', width: '100%' }}
             contentContainerStyle={{ flexGrow: 1, alignItems: 'stretch' }}
             showsVerticalScrollIndicator={true}
           >
-            {symptomCategories.map((cat) => (
+            {filteredSymptoms.map((cat) => (
               <TouchableOpacity
                 key={cat.code}
                 style={{
@@ -374,14 +427,19 @@ const Pests = () => {
       {renderSymptomModal()}
       <TextInput
         style={styles.textarea}
-        placeholder={"병해충 증상을 자세히 입력해 주세요.\n사진 첨부시 더욱 정확한 답변이 가능해요."}
+        placeholder={"병해충 증상과 의심되는 병명을 함께 입력해 주세요.\n사진 첨부시 더욱 정확한 답변이 가능해요."}
         value={detail}
         onChangeText={setDetail}
         multiline
       />
-      <TouchableOpacity style={styles.photoButton}>
+      {/* 사진 첨부 버튼: 실제로 사진을 선택하고 base64로 저장 */}
+      <TouchableOpacity style={styles.photoButton} onPress={handlePickImage}>
         <Text style={styles.photoButtonText}>📷 사진 첨부</Text>
       </TouchableOpacity>
+      {/* 사진 미리보기 (선택 시) */}
+      {image && (
+        <Text style={{ color: '#4CAF50', marginBottom: 8 }}>사진이 첨부되었습니다.</Text>
+      )}
       <TouchableOpacity style={[styles.submitButton, !isFormFilled && styles.submitButtonDisabled]} disabled={!isFormFilled} onPress={handleSubmit}>
         <Text style={styles.submitButtonText}>등록</Text>
       </TouchableOpacity>

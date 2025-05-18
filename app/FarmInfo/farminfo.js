@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import { Link } from 'expo-router';
 import { useWeather } from '../context/WeatherContext';
@@ -9,8 +9,9 @@ import Weather from './Weather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../Components/Css/FarmInfo/FarmInfoStyle';
 
-const FarmInfoContent = () => {
+const FarmInfoContent = (props) => {
     const navigation = useNavigation();
+    const route = useRoute();
     const {
         isLoading,
         weatherData,
@@ -19,27 +20,86 @@ const FarmInfoContent = () => {
         locationName
     } = useWeather();
     const [diaryList, setDiaryList] = useState([]);
+    const [phone, setPhone] = useState(null);
+
+    // phone 값 초기화
+    useEffect(() => {
+        const loadPhone = async () => {
+            try {
+                const userStr = await AsyncStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    if (user && user.phone) {
+                        setPhone(user.phone);
+                        console.log('FarmInfoContent에서 불러온 phone:', user.phone);
+                    }
+                }
+            } catch (e) {
+                console.error('phone 불러오기 실패:', e);
+            }
+        };
+        loadPhone();
+    }, []);
+
+    // 일지 삭제 함수 수정: diary_id로 서버에 삭제 요청
+    const handleDeleteDiary = async (diary_id) => {
+        try {
+            Alert.alert(
+                '일지 삭제',
+                '정말로 이 일지를 삭제하시겠습니까?',
+                [
+                    {
+                        text: '취소',
+                        style: 'cancel'
+                    },
+                    {
+                        text: '삭제',
+                        style: 'destructive',
+                        onPress: async () => {
+                            const API_URL = 'http://192.168.35.144:3000';
+                            if (!phone) return;
+                            const response = await fetch(`${API_URL}/diary/${diary_id}?user_phone=${phone}`, {
+                                method: 'DELETE'
+                            });
+                            if (response.ok) {
+                                // 삭제 후 목록 갱신
+                                setDiaryList(prev => prev.filter(d => d.diary_id !== diary_id));
+                                Alert.alert('알림', '일지가 삭제되었습니다.');
+                            } else {
+                                Alert.alert('오류', '일지 삭제에 실패했습니다.');
+                            }
+                        }
+                    }
+                ]
+            );
+        } catch (e) {
+            console.error('일지 삭제 실패:', e);
+            Alert.alert('오류', '일지 삭제에 실패했습니다.');
+        }
+    };
 
     useEffect(() => {
         const loadDiary = async () => {
             try {
-                const saved = await AsyncStorage.getItem('farmDiary');
-                if (saved) {
-                    const list = JSON.parse(saved);
-                    // 날짜 기준으로 정렬 (최신순)
-                    const sortedList = list.sort((a, b) => {
-                        const dateA = new Date(a.date.replace(/\./g, '-'));
-                        const dateB = new Date(b.date.replace(/\./g, '-'));
-                        return dateB - dateA;
-                    });
+                // 서버에서 모든 영농일지 불러오기
+                const API_URL = 'http://192.168.35.144:3000';
+                if (!phone) return;
+                const response = await fetch(`${API_URL}/diary/list?user_phone=${phone}`);
+                if (response.ok) {
+                    const list = await response.json();
+                    // diary_date 기준으로 최신순 정렬
+                    const sortedList = list.sort((a, b) => new Date(b.diary_date) - new Date(a.diary_date));
                     setDiaryList(sortedList);
+                } else {
+                    setDiaryList([]);
                 }
             } catch (e) {
                 console.error('영농일지 불러오기 실패:', e);
+                setDiaryList([]);
             }
         };
         loadDiary();
-    }, []);
+    }, [phone]);
 
     return (
         <View style={styles.container}>
@@ -84,30 +144,36 @@ const FarmInfoContent = () => {
                         diaryList.map((diary, index) => {
                             // 날짜 포맷 함수
                             let dateStr = '';
-                            if (typeof diary.date === 'string' && diary.date.includes('T')) {
-                                // ISO 포맷 처리
-                                const d = new Date(diary.date);
+                            if (diary.diary_date) {
+                                const d = new Date(diary.diary_date);
                                 dateStr = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
-                            } else {
-                                dateStr = diary.date;
                             }
                             return (
                                 <View key={index} style={{width:'100%', maxWidth:340, backgroundColor:'#f8f8f8', borderRadius:12, padding:18, marginBottom:16}}>
                                     <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
                                         <Text style={{fontWeight:'bold', fontSize:16}}>{dateStr}</Text>
-                                        <TouchableOpacity 
-                                            onPress={() => navigation.navigate('FarmInfo/DiaryWrite', { 
-                                                editMode: true,
-                                                diaryData: diary,
-                                                diaryIndex: index
-                                            })}
-                                            style={{backgroundColor:'#4A90E2', borderRadius:6, paddingVertical:6, paddingHorizontal:12}}
-                                        >
-                                            <Text style={{color:'#fff', fontSize:14}}>수정하기</Text>
-                                        </TouchableOpacity>
+                                        <View style={{flexDirection: 'row', gap: 8}}>
+                                            <TouchableOpacity 
+                                                onPress={() => navigation.navigate('FarmInfo/DiaryWrite', { 
+                                                    editMode: true,
+                                                    diaryData: diary,
+                                                    diaryIndex: index,
+                                                    phone: phone
+                                                })}
+                                                style={{backgroundColor:'#4A90E2', borderRadius:6, paddingVertical:6, paddingHorizontal:12, marginRight:8}}
+                                            >
+                                                <Text style={{color:'#fff', fontSize:14}}>수정하기</Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity 
+                                                onPress={() => handleDeleteDiary(diary.diary_id)}
+                                                style={{backgroundColor:'#f44336', borderRadius:6, paddingVertical:6, paddingHorizontal:12}}
+                                            >
+                                                <Text style={{color:'#fff', fontSize:14}}>삭제하기</Text>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
-                                    {/* 품목(작물/품종) */}
-                                    <Text style={{fontSize:15, marginBottom:4}}>{diary.crop}</Text>
+                                    {/* 작물명 */}
+                                    <Text style={{fontSize:15, marginBottom:4}}>{diary.crop_type}</Text>
                                     {/* 작성내용 */}
                                     <Text style={{fontSize:15, marginBottom:4}}>{diary.content}</Text>
                                 </View>
@@ -120,7 +186,10 @@ const FarmInfoContent = () => {
             {/* 일지 작성하기 버튼: 우측 하단에 고정, 아이콘 포함 */}
             <TouchableOpacity 
                 style={styles.writeButton} 
-                onPress={()=>navigation.navigate('FarmInfo/DiaryWrite')}
+                onPress={() => {
+                    console.log('DiaryWrite로 이동 시 phone 값:', phone);
+                    navigation.navigate('FarmInfo/DiaryWrite', { phone: phone });
+                }}
             >
                 <Text style={styles.writeButtonText}>일지 작성하기</Text>
                 <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
@@ -141,9 +210,30 @@ const FarmInfoContent = () => {
 };
 
 export default function FarmInfo() {
+    const route = useRoute();
+    const [phone, setPhone] = React.useState(route.params?.phone);
+    React.useEffect(() => {
+        if (!phone) {
+            AsyncStorage.getItem('user').then(userStr => {
+                if (userStr) {
+                    try {
+                        const user = JSON.parse(userStr);
+                        if (user && user.phone) {
+                            setPhone(user.phone);
+                            console.log('AsyncStorage에서 불러온 phone:', user.phone);
+                        }
+                    } catch (e) {
+                        console.log('user 파싱 오류:', e);
+                    }
+                }
+            });
+        } else {
+            console.log('route.params에서 받은 phone:', phone);
+        }
+    }, [route.params, phone]);
     return (
         <WeatherProvider>
-            <FarmInfoContent />
+            <FarmInfoContent phone={phone} />
         </WeatherProvider>
     );
 }

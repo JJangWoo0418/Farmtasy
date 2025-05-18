@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import API_CONFIG from '../DB/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API 기본 설정
 const api = axios.create({
@@ -45,6 +46,9 @@ const Login = () => {
 
             if (response.data.success) {
                 console.log('사용자 정보:', response.data.user);
+                // AsyncStorage에 user 정보 저장
+                await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+                //여기까지
                 router.push({
                     pathname: "/Homepage/Home/homepage",
                     params: {
