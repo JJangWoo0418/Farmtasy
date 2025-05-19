@@ -56,6 +56,39 @@ export default function CropDetailMemoPage() {
         };
     }, [memos]);
 
+    useEffect(() => {
+        if (params.detail_qr_code) {
+            setQrCode(params.detail_qr_code);
+        } else if (params.detailId) {
+            fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`)
+                .then(res => res.json())
+                .then(data => {
+                    setQrCode(data.detail_qr_code || '');
+                })
+                .catch(() => setQrCode(''));
+        } else {
+            setQrCode('');
+        }
+    }, [params.detail_qr_code, params.detailId]);
+
+    useEffect(() => {
+        if (params.detailId) {
+            fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.latitude && data.longitude) {
+                        setLocation({
+                            latitude: Number(data.latitude),
+                            longitude: Number(data.longitude)
+                        });
+                    } else {
+                        setLocation(null);
+                    }
+                })
+                .catch(() => setLocation(null));
+        }
+    }, [params.detailId]);
+
     // 이미지 변경 시 DB 업데이트 함수
     const updateDetailImage = async (newImageUrl) => {
         try {
