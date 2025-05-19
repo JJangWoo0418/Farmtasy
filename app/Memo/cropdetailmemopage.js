@@ -222,6 +222,8 @@ export default function CropDetailMemoPage() {
         }
     };
 
+    const isValidS3Image = image && typeof image === 'string' && image.startsWith('https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/');
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={styles.container}>
@@ -260,11 +262,11 @@ export default function CropDetailMemoPage() {
 
                 {/* 사진 추가 */}
                 <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
-                    {image ? (
+                    {isValidS3Image ? (
                         <Image source={{ uri: image }} style={styles.photo} resizeMode="cover" />
                     ) : (
                         <>
-                            <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} />
+                            <Image source={require('../../assets/galleryicon2.png')} style={styles.icon} resizeMode="cover" />
                             <Text style={styles.photoText}>사진 추가</Text>
                         </>
                     )}

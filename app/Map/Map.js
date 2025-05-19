@@ -431,13 +431,7 @@ const Map = () => {
                         throw new Error(data.error || '농장 정보 저장에 실패했습니다.');
                     }
 
-                    setFarmAreas(prev => [...prev, { 
-                        id: data.farm_id, 
-                        name, 
-                        coordinates: coordinates,
-                        address: shortAddress // 기본 주소도 address 필드에 저장
-                    }]);
-                    // ★ 드래그로 농장 생성 시에만 지도 이동 ★
+                    await fetchFarms();
                     setRegion({
                         latitude: lat,
                         longitude: lng,

@@ -138,6 +138,7 @@ const styles = StyleSheet.create({
         borderColor: 'black',
     },
     photo: { width: '120%', height: '120%', borderRadius: 16 },
+    photo2: { width: '50%', height: '50%', borderRadius: 16 },
     icon: { width: 60, height: 60, marginBottom: 8 },
     photoText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
     divider: {

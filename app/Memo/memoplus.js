@@ -136,9 +136,6 @@ export default function MemoPlus() {
             <Image source={gobackIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.title}>상세작물추가</Text>
-          <TouchableOpacity onPress={handleDelete}>
-            <Image source={require('../../assets/deleteicon.png')} style={styles.deleteIcon} />
-          </TouchableOpacity>
         </View>
 
         {/* 사진 추가 */}
@@ -257,9 +254,9 @@ export default function MemoPlus() {
 
 const styles = StyleSheet.create({
   container: { backgroundColor: '#fff', padding: 16, flexGrow: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'space-between' },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'space-between', marginTop: -15 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  title: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 },
+  title: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 , marginRight: 20},
   deleteIcon: { width: 22, height: 22, resizeMode: 'contain', marginRight: 4 },
   photoBox: {
     width: '100%',
