@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Animated, StyleSheet, Image, Alert, Platform, ActivityIndicator, Keyboard, Modal, ScrollView } from 'react-native';
 import MapView, { Polygon, Polyline, Marker } from 'react-native-maps';
 import Geocoder from 'react-native-geocoding';
 import debounce from 'lodash.debounce';
@@ -14,7 +14,7 @@ import API_CONFIG from '../DB/api';
 // Geocoder 초기화 (API 키 확인)
 Geocoder.init('AIzaSyB7uysOUsyE_d6xdLLJx7YxC-Ux7giVNdc'); // 여기에 실제 API 키를 넣어주세요
 
-const locationIcon = '📍';  // 이미지 대신 이모지 사용
+const locationIcon = require('../../assets/farmicon.png');  // 이미지 대신 이모지 사용
 
 const Map = () => {
     const navigation = useNavigation();
@@ -60,6 +60,7 @@ const Map = () => {
     const highlightTimerRef = useRef(null);
     const highlightDelayRef = useRef(null);
     const [highlightedName, setHighlightedName] = useState(null);
+    const [isFarmModalVisible, setIsFarmModalVisible] = useState(false);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -1081,7 +1082,7 @@ const Map = () => {
                                 shadowRadius: 5,
                                 elevation: 5
                             }}>
-                                <Text style={styles.cropMarker}>☘️</Text>
+                                <Image source={require('../../assets/planticon2.png')} style={{ width: 30, height: 30 }} />
                             </View>
                         </Marker>
                     );
@@ -1127,7 +1128,7 @@ const Map = () => {
                 />
                 <TouchableOpacity style={[styles.shovelButton, isDrawingMode && styles.shovelButtonActive]} onPress={handleShovelPress}>
                     <Image
-                        source={require('../../assets/shovel_icon.png')}
+                        source={require('../../assets/shovelicon.png')}
                         style={styles.shovelIcon}
                     />
                 </TouchableOpacity>
@@ -1189,13 +1190,67 @@ const Map = () => {
                 </>
             )}
 
-            {/* 현재 위치 버튼 */}
+            {/* 농장 목록 버튼 (팝오버 활성화 시 X 아이콘으로 변경) */}
             <TouchableOpacity
                 style={styles.locationButton}
-                onPress={moveToCurrentLocation}
+                onPress={() => setIsFarmModalVisible(v => !v)}
             >
-                <Text style={styles.locationIcon}>{locationIcon}</Text>
+                <Image
+                    source={
+                        isFarmModalVisible
+                            ? require('../../assets/Xicon.png') // X 아이콘
+                            : locationIcon // 원래 농장 아이콘
+                    }
+                    style={
+                        isFarmModalVisible
+                            ? { width: 48, height: 48,} // X 아이콘만 별도 스타일
+                            : { width: 28, height: 28 }
+                    }
+                />
             </TouchableOpacity>
+
+            {/* 버튼 위에 뜨는 작은 사각형 팝오버 */}
+            {isFarmModalVisible && (
+                <TouchableOpacity
+                    style={styles.farmPopoverOverlay}
+                    activeOpacity={1}
+                    onPress={() => setIsFarmModalVisible(false)}
+                >
+                    <View style={styles.farmPopover}>
+                        <View style={styles.farmPopoverHeader}>
+                            <Text style={styles.farmPopoverTitle}>내 농장 목록</Text>
+                        </View>
+                        <ScrollView style={{ maxHeight: 180 }}>
+                            {farmAreas.length === 0 ? (
+                                <Text style={styles.noFarmText}>등록된 농장이 없습니다.</Text>
+                            ) : (
+                                farmAreas.map(farm => (
+                                    <TouchableOpacity
+                                        key={farm.id}
+                                        style={styles.farmItem}
+                                        onPress={() => {
+                                            if (farm.coordinates && farm.coordinates.length > 0) {
+                                                setRegion({
+                                                    latitude: farm.coordinates[0].latitude,
+                                                    longitude: farm.coordinates[0].longitude,
+                                                    latitudeDelta: 0.005,
+                                                    longitudeDelta: 0.005,
+                                                });
+                                            }
+                                            setIsFarmModalVisible(false);
+                                        }}
+                                    >
+                                        <Text style={styles.farmName}>{farm.name}</Text>
+                                        {farm.address && (
+                                            <Text style={styles.farmAddress}>{farm.address}</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                        </ScrollView>
+                    </View>
+                </TouchableOpacity>
+            )}
 
             {locationError && (
                 <View style={styles.errorContainer}>
@@ -1309,16 +1364,18 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     shovelButton: {
-        backgroundColor: '#eee',
+        backgroundColor: 'white',
         borderRadius: 15,
         marginLeft: 5,
         width: 44,
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'black',
     },
     shovelButtonActive: {
-        backgroundColor: 'green',
+        backgroundColor: '#68FF68',
     },
     shovelIcon: {
         width: 28,
@@ -1479,7 +1536,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 138,
         left: 16,
-        backgroundColor: '#2196F3',
+        backgroundColor: '#2ECC71',
         borderRadius: 30,
         width: 48,
         height: 48,
@@ -1523,6 +1580,62 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 14,
+    },
+    farmPopoverOverlay: {
+        position: 'absolute',
+        left: 16,
+        bottom: 200, // 버튼 위에 뜨도록 조정
+        zIndex: 100,
+        width: 240,
+        alignItems: 'flex-start',
+    },
+    farmPopover: {
+        backgroundColor: 'white',
+        borderRadius: 14,
+        padding: 12,
+        width: 220,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 8,
+    },
+    farmPopoverHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    farmPopoverTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    farmPopoverClose: {
+        fontSize: 18,
+        color: '#888',
+        paddingHorizontal: 4,
+    },
+    farmItem: {
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    farmName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 5,
+    },
+    farmAddress: {
+        fontSize: 14,
+        color: '#666',
+    },
+    noFarmText: {
+        textAlign: 'center',
+        color: '#666',
+        fontSize: 16,
+        padding: 20,
     },
 });
 
