@@ -180,16 +180,12 @@ const Map = () => {
             const cropDetailData = await cropDetailResponse.json();
             if (cropDetailResponse.ok) {
                 const formattedCrops = cropDetailData.map(crop => ({
-                    id: crop.detail_id,
+                    ...crop,
+                    id: crop.cropdetail_id,
+                    detail_id: crop.cropdetail_id,
+                    detailId: crop.cropdetail_id,
                     name: crop.detail_name,
-                    latitude: Number(crop.latitude),
-                    longitude: Number(crop.longitude),
                     image: crop.detail_image_url,
-                    qrCode: crop.detail_qr_code,
-                    crop_id: crop.crop_id,         // 추가!
-                    farm_id: crop.farm_id,         // 추가!
-                    farm_name: crop.farm_name,     // 추가! (없으면 생략)
-                    memo: crop.memo,
                 }));
                 setManagedCrops(formattedCrops);
             }
@@ -730,13 +726,15 @@ const Map = () => {
 
     // 작물 핀 터치 핸들러
     const handleCropPress = (crop) => {
-        console.log('handleCropPress crop:', crop);
-        setSelectedCrop({
+        const selected = {
             ...crop,
-            cropId: crop.crop_id || crop.cropId || crop.id, // 다양한 필드명 대응
+            cropId: crop.crop_id || crop.cropId || crop.id,
             farmId: crop.farm_id || crop.farmId || params.farmId,
             farmName: crop.farm_name || crop.farmName || params.farmName,
-        });
+            detailId: crop.detail_id,
+        };
+        console.log('handleCropPress selected:', selected);
+        setSelectedCrop(selected);
         setShowCropActionModal(true);
     };
 
@@ -910,9 +908,10 @@ const Map = () => {
                 setSaving(false);
                 return;
             }
+            console.log('관리 버튼 selectedCrop:', selectedCrop);
             // 저장 성공 시 memolist로 이동
             const navigationParams = {
-                detailId: selectedCrop.id || params.detailId,
+                detailId: selectedCrop.detailId || selectedCrop.detail_id || selectedCrop.id || params.detailId,
                 name: selectedCrop.name || params.name,
                 image: selectedCrop.image || params.image,
                 cropId: selectedCrop.cropId || params.cropId,
@@ -922,8 +921,11 @@ const Map = () => {
                 userData: params.userData,
                 region: params.region,
                 introduction: params.introduction,
-                memo: JSON.stringify(selectedCrop.memo || []), // memo를 문자열로 전달
             };
+            console.log('관리 버튼 navigationParams:', navigationParams);
+            if (selectedCrop.memo && Array.isArray(selectedCrop.memo) && selectedCrop.memo.length > 0) {
+                navigationParams.memo = JSON.stringify(selectedCrop.memo);
+            }
             console.log('관리 버튼 params:', navigationParams);
 
             router.push({

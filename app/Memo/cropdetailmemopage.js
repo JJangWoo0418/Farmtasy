@@ -25,7 +25,7 @@ export default function CropDetailMemoPage() {
     const cropImage = 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc';
 
     useEffect(() => {
-        if (params.memo) {
+        if (params.memo && params.memo !== '[]') {
             try {
                 setMemos(JSON.parse(params.memo));
             } catch (e) {
@@ -163,31 +163,64 @@ export default function CropDetailMemoPage() {
         }
     };
 
-    // 메모 추가 버튼 클릭 시 저장도 함께 수행
-    const handleAddMemoCard = () => {
-        setMemos(prev => {
-            const next = [...prev, { title: '', content: '' }];
-            setTimeout(saveMemosToDB, 0); // 비동기 반영 후 저장
-            return next;
+    const handleUpdateMemo = async (idx, key, value) => {
+        const updatedMemos = memos.map((memo, i) => 
+            i === idx ? { ...memo, [key]: value } : memo
+        );
+        setMemos(updatedMemos);
+    
+        // 디버깅 로그 추가
+        console.log('메모 저장 요청:', {
+            detailId: params.detailId,
+            memo: updatedMemos
         });
+    
+        try {
+            const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ memo: updatedMemos }),
+            });
+            const data = await res.json();
+            console.log('메모 저장 응답:', data);
+        } catch (e) {
+            console.error('메모 저장 실패:', e);
+            Alert.alert('오류', '메모 저장에 실패했습니다.');
+        }
     };
 
-    // 메모 수정 시 저장
-    const handleUpdateMemo = (idx, key, value) => {
-        setMemos(prev => {
-            const next = prev.map((memo, i) => i === idx ? { ...memo, [key]: value } : memo);
-            setTimeout(saveMemosToDB, 0);
-            return next;
-        });
+    // 메모 추가 버튼 클릭 시 저장도 함께 수행
+    const handleAddMemoCard = async () => {
+        const newMemos = [...memos, { title: '', content: '' }];
+        setMemos(newMemos);
+        
+        try {
+            await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ memo: newMemos }),
+            });
+        } catch (e) {
+            console.error('메모 추가 실패:', e);
+            Alert.alert('오류', '메모 추가에 실패했습니다.');
+        }
     };
 
     // 메모 카드 삭제 함수
-    const handleDeleteMemoCard = (idx) => {
-        setMemos(prev => {
-            const next = prev.filter((_, i) => i !== idx);
-            saveMemosToDB(next); // 삭제된 배열을 바로 저장
-            return next;
-        });
+    const handleDeleteMemoCard = async (idx) => {
+        const newMemos = memos.filter((_, i) => i !== idx);
+        setMemos(newMemos);
+        
+        try {
+            await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ memo: newMemos }),
+            });
+        } catch (e) {
+            console.error('메모 삭제 실패:', e);
+            Alert.alert('오류', '메모 삭제에 실패했습니다.');
+        }
     };
 
     // 상세 작물 삭제 함수 (cropdetail_id 또는 detailId 사용)
