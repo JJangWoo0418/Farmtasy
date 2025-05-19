@@ -335,7 +335,27 @@ export default function FarmEdit() {
               style={styles.cropCardImage}
             />
             <Text style={styles.cropCardText}>{item.name}</Text>
-            <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
+            <TouchableOpacity
+              onPress={() => {
+                router.push({
+                  pathname: '/Memo/cropsetting',
+                  params: {
+                    cropId: item.cropId,
+                    name: item.name,
+                    image: item.image,
+                    farmId: farmId,
+                    farmName: params.farmName,
+                    userData: params.userData,
+                    phone: params.phone,
+                    region: params.region,
+                    introduction: params.introduction,
+                    // 필요시 추가 정보 전달
+                  }
+                });
+              }}
+            >
+              <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListFooterComponent={
