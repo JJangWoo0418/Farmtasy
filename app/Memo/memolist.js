@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import API_CONFIG from '../DB/api';
+import defaultImage from '../../assets/cropdetailicon.png';
 
 export default function MemoList() {
   const params = useLocalSearchParams();
@@ -167,7 +168,14 @@ export default function MemoList() {
               });
             }}
           >
-            <Image source={{ uri: item.image }} style={styles.cropCardImage} />
+            <Image
+              source={
+                item.image && item.image.startsWith('https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/')
+                  ? { uri: item.image }
+                  : defaultImage
+              }
+              style={styles.cropCardImage}
+            />
             <Text style={styles.cropCardText}>{item.name}</Text>
             <TouchableOpacity
               onPress={() => {

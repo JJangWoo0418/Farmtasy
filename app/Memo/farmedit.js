@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import gobackIcon from '../../assets/gobackicon.png';
 import API_CONFIG from '../DB/api';
+import defaultImage from '../../assets/cropdetailicon.png';
 
 export default function FarmEdit() {
   const { farmName } = useLocalSearchParams();
@@ -325,7 +326,14 @@ export default function FarmEdit() {
               });
             }}
           >
-            <Image source={{ uri: item.image }} style={styles.cropCardImage} />
+            <Image
+              source={
+                item.image && item.image.startsWith('https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/')
+                  ? { uri: item.image }
+                  : defaultImage
+              }
+              style={styles.cropCardImage}
+            />
             <Text style={styles.cropCardText}>{item.name}</Text>
             <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
           </TouchableOpacity>
@@ -473,7 +481,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.10,
     shadowRadius: 3,
     elevation: 3,
-    borderWidth: 1,
     borderColor: '#ddd',
     backgroundColor: '#fafafa',
   },
