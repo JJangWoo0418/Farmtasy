@@ -1883,9 +1883,9 @@ app.get('/api/cropdetail', async (req, res) => {
 
         const farmIds = farms.map(farm => farm.farm_id);
 
-        // 해당 농장들의 작물 ID 목록 조회
+        // 해당 농장들의 작물 ID 및 farm_id, farm_name 조회
         const [crops] = await pool.query(
-            'SELECT crop_id FROM crop WHERE farm_id IN (?)',
+            'SELECT crop_id, farm_id, crop_name FROM crop WHERE farm_id IN (?)',
             [farmIds]
         );
 
@@ -1894,6 +1894,26 @@ app.get('/api/cropdetail', async (req, res) => {
         }
 
         const cropIds = crops.map(crop => crop.crop_id);
+        // crop_id -> farm_id, crop_name, farm_name 매핑
+        const cropIdToFarmId = {};
+        const cropIdToCropName = {};
+        const cropIdToFarmName = {};
+        for (const crop of crops) {
+            cropIdToFarmId[crop.crop_id] = crop.farm_id;
+            cropIdToCropName[crop.crop_id] = crop.crop_name;
+        }
+        // farm_id -> farm_name 매핑
+        const [farmRows] = await pool.query(
+            'SELECT farm_id, farm_name FROM farm WHERE farm_id IN (?)',
+            [farmIds]
+        );
+        for (const farm of farmRows) {
+            for (const crop of crops) {
+                if (crop.farm_id === farm.farm_id) {
+                    cropIdToFarmName[crop.crop_id] = farm.farm_name;
+                }
+            }
+        }
 
         // 작물 상세 정보 조회
         const [results] = await pool.query(
@@ -1901,8 +1921,17 @@ app.get('/api/cropdetail', async (req, res) => {
             [cropIds]
         );
 
-        console.log('조회된 작물 상세 정보:', results);
-        res.json(results);
+        // crop_id, farm_id, farm_name, crop_name을 각 상세에 추가
+        const resultsWithFarmInfo = results.map(detail => ({
+            ...detail,
+            crop_id: detail.crop_id,
+            farm_id: cropIdToFarmId[detail.crop_id] || null,
+            farm_name: cropIdToFarmName[detail.crop_id] || null,
+            crop_name: cropIdToCropName[detail.crop_id] || null,
+        }));
+
+        console.log('조회된 작물 상세 정보:', resultsWithFarmInfo);
+        res.json(resultsWithFarmInfo);
     } catch (error) {
         console.error('작물 상세 정보 조회 중 오류:', error);
         res.status(500).json({

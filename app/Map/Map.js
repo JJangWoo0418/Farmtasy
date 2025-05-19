@@ -61,6 +61,8 @@ const Map = () => {
     const highlightDelayRef = useRef(null);
     const [highlightedName, setHighlightedName] = useState(null);
     const [isFarmModalVisible, setIsFarmModalVisible] = useState(false);
+    const [showCropActionModal, setShowCropActionModal] = useState(false);
+    const [selectedCrop, setSelectedCrop] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -183,7 +185,10 @@ const Map = () => {
                     latitude: Number(crop.latitude),
                     longitude: Number(crop.longitude),
                     image: crop.detail_image_url,
-                    qrCode: crop.detail_qr_code
+                    qrCode: crop.detail_qr_code,
+                    crop_id: crop.crop_id,         // 추가!
+                    farm_id: crop.farm_id,         // 추가!
+                    farm_name: crop.farm_name,     // 추가! (없으면 생략)
                 }));
                 setManagedCrops(formattedCrops);
             }
@@ -360,7 +365,7 @@ const Map = () => {
         try {
             // 중심 좌표로 주소 가져오기
             const geocodeResponse = await Geocoder.from(lat, lng);
-            
+
             if (geocodeResponse.results && geocodeResponse.results.length > 0) {
                 formattedAddress = geocodeResponse.results[0]?.formatted_address || '';
                 shortAddress = formattedAddress.split(' ').slice(1).join(' ');
@@ -390,9 +395,9 @@ const Map = () => {
             }
 
             // 성공 시 지도에 반영
-            setFarmAreas(prev => [...prev, { 
-                id: data.farm_id, 
-                name, 
+            setFarmAreas(prev => [...prev, {
+                id: data.farm_id,
+                name,
                 coordinates: coordinates,
                 address: shortAddress // 간단 주소를 address 필드에 저장
             }]);
@@ -409,7 +414,7 @@ const Map = () => {
             if (error.code === 4) {
                 formattedAddress = `위도: ${lat.toFixed(6)}, 경도: ${lng.toFixed(6)}`;
                 shortAddress = formattedAddress;
-                
+
                 try {
                     const farmData = {
                         user_phone: phone,
@@ -574,13 +579,13 @@ const Map = () => {
                                     }
 
                                     // 성공 시 상태 업데이트
-                                    setFarmAreas(prev => prev.map(area => 
-                                        area.id === modifyingAreaId 
-                                            ? { 
-                                                ...area, 
+                                    setFarmAreas(prev => prev.map(area =>
+                                        area.id === modifyingAreaId
+                                            ? {
+                                                ...area,
                                                 coordinates: drawnPath,
                                                 address: shortAddress
-                                            } 
+                                            }
                                             : area
                                     ));
 
@@ -724,17 +729,13 @@ const Map = () => {
 
     // 작물 핀 터치 핸들러
     const handleCropPress = (crop) => {
-        Alert.alert(
-            `작물: ${crop.name}`,
-            "작업을 선택하세요.",
-            [
-                { text: "취소", style: "cancel" },
-                { text: "관리", onPress: () => manageCrop(crop.id), style: "default" },
-                { text: "위치 수정", onPress: () => startModifyCropLocation(crop.id), style: "default" },
-                { text: "이름 수정", onPress: () => promptForCropName(crop.id, crop.name), style: "default" },
-                { text: "삭제", onPress: () => deleteCrop(crop.id), style: "destructive" },
-            ]
-        );
+        setSelectedCrop({
+            ...crop,
+            cropId: crop.crop_id || crop.cropId || crop.id, // 다양한 필드명 대응
+            farmId: crop.farm_id || crop.farmId || params.farmId,
+            farmName: crop.farm_name || crop.farmName || params.farmName,
+        });
+        setShowCropActionModal(true);
     };
 
     // 작물 관리 (임시)
@@ -841,11 +842,11 @@ const Map = () => {
                     console.log('Geocoder 검색 시작:', route.params.farmAddress);
                     const response = await Geocoder.from(route.params.farmAddress);
                     console.log('Geocoder 응답:', response);
-                    
+
                     if (response.results.length > 0) {
                         const location = response.results[0].geometry.location;
                         console.log('검색된 위치:', location);
-                        
+
                         const region = {
                             latitude: location.lat,
                             longitude: location.lng,
@@ -853,11 +854,11 @@ const Map = () => {
                             longitudeDelta: 0.002,
                         };
                         console.log('설정할 region:', region);
-                        
+
                         setInitialRegion(region);
                         setRegion(region);
                         console.log('농장 위치로 이동 완료:', response.results[0].formatted_address);
-                        
+
                         // 지도 이동 완료 후 작물 추가 모드 활성화
                         setTimeout(() => {
                             activateAddCropMode();  // activateAddCropMode 함수 호출
@@ -1192,7 +1193,7 @@ const Map = () => {
                                 )}
                             </View>
                             {/* 표시하기 버튼 추가 */}
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.showLocationButton}
                                 onPress={handleSaveCropDetail}
                                 disabled={saving}
@@ -1217,7 +1218,7 @@ const Map = () => {
                     }
                     style={
                         isFarmModalVisible
-                            ? { width: 48, height: 48,} // X 아이콘만 별도 스타일
+                            ? { width: 48, height: 48, } // X 아이콘만 별도 스타일
                             : { width: 28, height: 28 }
                     }
                 />
@@ -1268,6 +1269,51 @@ const Map = () => {
                     <Text style={styles.errorText}>{locationError}</Text>
                 </View>
             )}
+
+            <Modal
+                visible={showCropActionModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowCropActionModal(false)}
+            >
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>
+                            {selectedCrop ? `작물: ${selectedCrop.name}` : ''}
+                        </Text>
+                        <View style={{ width: '100%' }}>
+                            <TouchableOpacity onPress={() => {
+                                setShowCropActionModal(false);
+
+                                // selectedCrop과 params를 모두 활용해서 값이 없으면 fallback 처리
+                                const navigationParams = {
+                                    detailId: selectedCrop.id || params.detailId,
+                                    name: selectedCrop.name || params.name,
+                                    image: selectedCrop.image || params.image,
+                                    cropId: selectedCrop.cropId || params.cropId,
+                                    phone: params.phone,
+                                    farmId: selectedCrop.farmId || params.farmId,
+                                    farmName: selectedCrop.farmName || params.farmName,
+                                    userData: params.userData,
+                                    region: params.region,
+                                    introduction: params.introduction,
+                                };
+                                console.log('관리 버튼 params:', navigationParams);
+
+                                router.push({
+                                    pathname: '/Memo/cropdetailmemopage',
+                                    params: navigationParams
+                                });
+                            }} style={{ paddingVertical: 12, alignItems: 'center' }}>
+                                <Text style={{ fontSize: 16 }}>관리</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => { setShowCropActionModal(false); startModifyCropLocation(selectedCrop.id); }} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>위치 수정</Text></TouchableOpacity>
+                            <TouchableOpacity onPress={() => setShowCropActionModal(false)} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>취소</Text></TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <BottomTabNavigator
                 currentTab="내 농장"
                 onTabPress={(tab) => {

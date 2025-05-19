@@ -366,22 +366,6 @@ export default function FarmEdit() {
         }
       />
 
-      <TouchableOpacity
-        style={styles.confirmButton}
-        onPress={() => {
-          router.replace({
-            pathname: '/Memo/farmedit',
-            params: {
-              newCropName: name,
-              newCropImage: image,
-              editIndex: editIndex,
-            }
-          });
-        }}
-      >
-        <Text style={styles.confirmButtonText}>확인</Text>
-      </TouchableOpacity>
-
       {/* 주소 모달 */}
       <Modal
         animationType="fade"

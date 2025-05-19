@@ -6,7 +6,9 @@ import defaultImage from '../../assets/cropdetailicon.png';
 
 export default function MemoList() {
   const params = useLocalSearchParams();
+  console.log('memolist params:', params);
   const router = useRouter();
+  
 
   // 관리작물 리스트 (초기에는 빈 배열)
   const [managedCrops, setManagedCrops] = useState([]);
@@ -120,20 +122,23 @@ export default function MemoList() {
       {/* 상단 제목 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => {
-          router.push({
+          console.log('memolist에서 farmedit으로 전달할 params:', params);  // params 로깅
+          const navigationParams = {
+            farmName: params.farmName,
+            userData: params.userData,
+            phone: params.phone,
+            name: params.name,
+            region: params.region,
+            introduction: params.introduction,
+            farmId: params.farmId,
+            detailId: params.detailId,
+            image: params.image,
+            cropId: params.cropId,
+          };
+          console.log('memolist에서 farmedit으로 전달할 navigationParams:', navigationParams);  // 전달할 params 로깅
+          router.replace({
             pathname: '/Memo/farmedit',
-            params: {
-              farmName: params.farmName,
-              userData: params.userData,
-              phone: params.phone,
-              name: params.name,
-              region: params.region,
-              introduction: params.introduction,
-              farmId: params.farmId,
-              detailId: params.detailId,
-              image: params.image,
-              cropId: params.cropId,
-            }
+            params: navigationParams
           });
         }}>
           <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
@@ -149,7 +154,18 @@ export default function MemoList() {
           <TouchableOpacity
             style={styles.cropCard}
             onPress={() => {
-              console.log('카드 클릭 detailId:', item.detailId);
+              console.log('카드 클릭 params:', {
+                detailId: item.detailId,
+                name: item.name,
+                image: item.image,
+                cropId: item.cropId,
+                phone: params.phone,
+                farmId: params.farmId,
+                farmName: params.farmName,
+                userData: params.userData,
+                region: params.region,
+                introduction: params.introduction,
+              });
               router.push({
                 pathname: '/Memo/cropdetailmemopage',
                 params: {
@@ -163,7 +179,6 @@ export default function MemoList() {
                   userData: params.userData,
                   region: params.region,
                   introduction: params.introduction,
-                  // 필요시 추가 정보 전달
                 }
               });
             }}

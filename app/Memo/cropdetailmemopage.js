@@ -9,6 +9,7 @@ import QRCode from 'react-native-qrcode-svg';
 export default function CropDetailMemoPage() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    console.log('cropdetailmemopage params:', params);
     const [image, setImage] = useState(params.detail_image_url || params.image || null);
     const [qrModalVisible, setQrModalVisible] = useState(false);
     const [qrCode, setQrCode] = useState('');
@@ -231,20 +232,23 @@ export default function CropDetailMemoPage() {
                 <View style={styles.header}>
                     <TouchableOpacity
                         onPress={() => {
-                            router.push({
+                            console.log('전달할 params:', params);
+                            const navigationParams = {
+                                detailId: params.detailId,
+                                name: params.name,
+                                image: params.image,
+                                cropId: params.cropId,
+                                phone: params.phone,
+                                farmId: params.farmId,
+                                farmName: params.farmName,
+                                userData: params.userData,
+                                region: params.region,
+                                introduction: params.introduction,
+                            };
+                            console.log('전달할 navigationParams:', navigationParams);
+                            router.replace({
                                 pathname: '/Memo/memolist',
-                                params: {
-                                    detailId: params.detailId,
-                                    name: params.name,
-                                    image: params.image,
-                                    cropId: params.cropId,
-                                    phone: params.phone,
-                                    farmId: params.farmId,
-                                    farmName: params.farmName,
-                                    userData: params.userData,
-                                    region: params.region,
-                                    introduction: params.introduction,
-                                }
+                                params: navigationParams
                             });
                         }}
                         style={styles.headerIconBtn}
