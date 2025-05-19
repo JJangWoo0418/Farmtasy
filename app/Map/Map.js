@@ -63,6 +63,7 @@ const Map = () => {
     const [isFarmModalVisible, setIsFarmModalVisible] = useState(false);
     const [showCropActionModal, setShowCropActionModal] = useState(false);
     const [selectedCrop, setSelectedCrop] = useState(null);
+    const [createSuccessModalVisible, setCreateSuccessModalVisible] = useState(false);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -908,32 +909,12 @@ const Map = () => {
                 setSaving(false);
                 return;
             }
-            console.log('관리 버튼 selectedCrop:', selectedCrop);
-            // 저장 성공 시 memolist로 이동
-            const navigationParams = {
-                detailId: selectedCrop.detailId || selectedCrop.detail_id || selectedCrop.id || params.detailId,
-                name: selectedCrop.name || params.name,
-                image: selectedCrop.image || params.image,
-                cropId: selectedCrop.cropId || params.cropId,
-                phone: params.phone,
-                farmId: selectedCrop.farmId || params.farmId,
-                farmName: selectedCrop.farmName || params.farmName,
-                userData: params.userData,
-                region: params.region,
-                introduction: params.introduction,
-            };
-            console.log('관리 버튼 navigationParams:', navigationParams);
-            if (selectedCrop.memo && Array.isArray(selectedCrop.memo) && selectedCrop.memo.length > 0) {
-                navigationParams.memo = JSON.stringify(selectedCrop.memo);
-            }
-            console.log('관리 버튼 params:', navigationParams);
-
-            router.push({
-                pathname: '/Memo/cropdetailmemopage',
-                params: navigationParams
-            });
+            // 저장 성공 시 성공 모달 표시
+            setCreateSuccessModalVisible(true);
+            setSaving(false);
+            return;
         } catch (e) {
-            alert('오류가 발생했습니다.');
+            console.error(e);
         } finally {
             setSaving(false);
         }
@@ -1024,6 +1005,34 @@ const Map = () => {
             if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
         };
     }, [params.detailId]);
+
+    const handleManagePress = () => {
+        if (!selectedCrop) {
+            Alert.alert('오류', '작물 정보가 없습니다. 마커를 다시 선택해 주세요.');
+            return;
+        }
+        console.log('관리 버튼 selectedCrop:', selectedCrop);
+        const navigationParams = {
+            detailId: (selectedCrop && (selectedCrop.detailId || selectedCrop.detail_id || selectedCrop.id)) || params.detailId,
+            name: (selectedCrop && selectedCrop.name) || params.name,
+            image: (selectedCrop && selectedCrop.image) || params.image,
+            cropId: (selectedCrop && selectedCrop.cropId) || params.cropId,
+            phone: params.phone,
+            farmId: (selectedCrop && selectedCrop.farmId) || params.farmId,
+            farmName: (selectedCrop && selectedCrop.farmName) || params.farmName,
+            userData: params.userData,
+            region: params.region,
+            introduction: params.introduction,
+        };
+        if (selectedCrop && selectedCrop.memo && Array.isArray(selectedCrop.memo) && selectedCrop.memo.length > 0) {
+            navigationParams.memo = JSON.stringify(selectedCrop.memo);
+        }
+        console.log('관리 버튼 navigationParams:', navigationParams);
+        router.push({
+            pathname: '/Memo/cropdetailmemopage',
+            params: navigationParams
+        });
+    };
 
     return (
         <View style={styles.container}>
@@ -1298,41 +1307,56 @@ const Map = () => {
                 animationType="fade"
                 onRequestClose={() => setShowCropActionModal(false)}
             >
+                {selectedCrop && selectedCrop.name ? (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>
+                                {`작물: ${selectedCrop.name}`}
+                            </Text>
+                            <View style={{ width: '100%' }}>
+                                <TouchableOpacity onPress={handleManagePress} style={{ paddingVertical: 12, alignItems: 'center' }}>
+                                    <Text style={{ fontSize: 16 }}>관리</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => { setShowCropActionModal(false); startModifyCropLocation(selectedCrop.id); }} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>위치 수정</Text></TouchableOpacity>
+                                <TouchableOpacity onPress={() => setShowCropActionModal(false)} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>취소</Text></TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                ) : null}
+            </Modal>
+
+            <Modal
+                visible={createSuccessModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setCreateSuccessModalVisible(false)}
+            >
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
                     <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>
-                            {selectedCrop ? `작물: ${selectedCrop.name}` : ''}
-                        </Text>
-                        <View style={{ width: '100%' }}>
-                            <TouchableOpacity onPress={() => {
-                                setShowCropActionModal(false);
-
-                                // selectedCrop과 params를 모두 활용해서 값이 없으면 fallback 처리
-                                const navigationParams = {
-                                    detailId: selectedCrop.id || params.detailId,
-                                    name: selectedCrop.name || params.name,
-                                    image: selectedCrop.image || params.image,
-                                    cropId: selectedCrop.cropId || params.cropId,
-                                    phone: params.phone,
-                                    farmId: selectedCrop.farmId || params.farmId,
-                                    farmName: selectedCrop.farmName || params.farmName,
-                                    userData: params.userData,
-                                    region: params.region,
-                                    introduction: params.introduction,
-                                    memo: JSON.stringify(selectedCrop.memo || []), // memo를 문자열로 전달
-                                };
-                                console.log('관리 버튼 params:', navigationParams);
-
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>상세작물 생성 완료</Text>
+                        <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>상세작물이 성공적으로 생성되었습니다.</Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setCreateSuccessModalVisible(false);
                                 router.push({
-                                    pathname: '/Memo/cropdetailmemopage',
-                                    params: navigationParams
+                                    pathname: '/Memo/memolist',
+                                    params: {
+                                        userData: params.userData,
+                                        phone: params.phone,
+                                        name: params.name,
+                                        region: params.region,
+                                        introduction: params.introduction,
+                                        farmId: params.farmId,
+                                        farmName: params.farmName,
+                                        cropId: params.cropId,
+                                        detailId: params.detailId,
+                                    }
                                 });
-                            }} style={{ paddingVertical: 12, alignItems: 'center' }}>
-                                <Text style={{ fontSize: 16 }}>관리</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => { setShowCropActionModal(false); startModifyCropLocation(selectedCrop.id); }} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>위치 수정</Text></TouchableOpacity>
-                            <TouchableOpacity onPress={() => setShowCropActionModal(false)} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>취소</Text></TouchableOpacity>
-                        </View>
+                            }}
+                            style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>

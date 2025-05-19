@@ -340,20 +340,26 @@ export default function CropDetailMemoPage() {
                                 alert('작물 위치 정보가 없습니다.');
                                 return;
                             }
-                            router.push({
-                                pathname: '/Map/Map',
-                                params: {
-                                    latitude: location.latitude,
-                                    longitude: location.longitude,
-                                    detailId: params.detailId,
-                                    userData: params.userData,
-                                    phone: params.phone,
-                                    name: params.name,
-                                    region: params.region,
-                                    introduction: params.introduction,
-                                    shouldHighlight: true,
-                                }
-                            });
+                            const navigationParams = {
+                                latitude: location.latitude,
+                                longitude: location.longitude,
+                                detailId: params.detailId,
+                                name: params.name,
+                                userData: params.userData,
+                                phone: params.phone,
+                                region: params.region,
+                                introduction: params.introduction,
+                                shouldHighlight: true,
+                            };
+                            console.log('작물 위치 이동 params:', navigationParams);
+                            try {
+                                router.push({
+                                    pathname: '/Map/Map',
+                                    params: navigationParams
+                                });
+                            } catch (e) {
+                                console.error(e);
+                            }
                         }}
                     >
                         <Image source={require('../../assets/planticon.png')} style={styles.actionIcon} />
