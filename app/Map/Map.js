@@ -64,6 +64,7 @@ const Map = () => {
     const [showCropActionModal, setShowCropActionModal] = useState(false);
     const [selectedCrop, setSelectedCrop] = useState(null);
     const [createSuccessModalVisible, setCreateSuccessModalVisible] = useState(false);
+    const [farmActionModal, setFarmActionModal] = useState({ visible: false, area: null });
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -458,13 +459,7 @@ const Map = () => {
     const handleAreaPress = (areaId) => {
         const area = farmAreas.find(a => a.id === areaId);
         if (!area) return;
-        Alert.alert(`농장: ${area.name}`, "작업을 선택하세요.",
-            [
-                { text: "취소", style: "cancel" },
-                { text: "삭제", onPress: () => handleDeleteArea(areaId), style: "destructive" },
-                { text: "토지 수정", onPress: () => handleModifyAreaStart(areaId) },
-            ]
-        );
+        setFarmActionModal({ visible: true, area });
     };
 
     const handleModifyAreaStart = (areaId) => {
@@ -1357,6 +1352,47 @@ const Map = () => {
                         >
                             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                visible={farmActionModal.visible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setFarmActionModal({ visible: false, area: null })}
+            >
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>
+                            {farmActionModal.area ? `농장: ${farmActionModal.area.name}` : ''}
+                        </Text>
+                        <View style={{ width: '100%' }}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setFarmActionModal({ visible: false, area: null });
+                                    handleDeleteArea(farmActionModal.area.id);
+                                }}
+                                style={{ paddingVertical: 12, alignItems: 'center' }}
+                            >
+                                <Text style={{ fontSize: 16, color: '#EF4444' }}>삭제</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setFarmActionModal({ visible: false, area: null });
+                                    handleModifyAreaStart(farmActionModal.area.id);
+                                }}
+                                style={{ paddingVertical: 12, alignItems: 'center' }}
+                            >
+                                <Text style={{ fontSize: 16 }}>토지 수정</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setFarmActionModal({ visible: false, area: null })}
+                                style={{ paddingVertical: 12, alignItems: 'center' }}
+                            >
+                                <Text style={{ fontSize: 16 }}>취소</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
