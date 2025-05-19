@@ -193,25 +193,38 @@ export default function CropSetting() {
                 crop_name: name,
                 crop_type: selectedCrop,
                 crop_image_url: image,
-                crop_area_m2: parseFloat(area),
-                crop_planting_date: formatDate(new Date(plantDate)),
-                crop_harvest_date: formatDate(new Date(harvestDate)),
-                crop_yield_kg: parseFloat(amount)
+                crop_area_m2: Number(area),
+                crop_planting_date: plantDate,
+                crop_harvest_date: harvestDate,
+                crop_yield_kg: Number(amount)
             };
 
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/crop`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(cropData)
-            });
+            let response;
+            if (params.cropId) {
+                // 수정(업데이트)
+                response = await fetch(`${API_CONFIG.BASE_URL}/api/crop/${params.cropId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(cropData)
+                });
+            } else {
+                // 신규 등록(기존 코드)
+                response = await fetch(`${API_CONFIG.BASE_URL}/api/crop`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(cropData)
+                });
+            }
 
             if (!response.ok) {
                 throw new Error('작물 정보 저장에 실패했습니다.');
             }
 
-            Alert.alert('성공', '작물 정보가 저장되었습니다.');
+            Alert.alert('성공', params.cropId ? '작물 정보가 수정되었습니다.' : '작물 정보가 저장되었습니다.');
             router.replace({
                 pathname: '/Memo/farmedit',
                 params: {
@@ -463,7 +476,7 @@ export default function CropSetting() {
                     style={styles.confirmButton}
                     onPress={handleConfirm}
                 >
-                    <Text style={styles.confirmButtonText}>저장</Text>
+                    <Text style={styles.confirmButtonText}>수정</Text>
                 </TouchableOpacity>
 
                 {/* 작물 선택 모달 */}
