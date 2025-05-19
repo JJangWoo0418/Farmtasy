@@ -65,6 +65,11 @@ const Map = () => {
     const [selectedCrop, setSelectedCrop] = useState(null);
     const [createSuccessModalVisible, setCreateSuccessModalVisible] = useState(false);
     const [farmActionModal, setFarmActionModal] = useState({ visible: false, area: null });
+    // 위치 수정 모드 관련 상태
+    const [isModifyingLocation, setIsModifyingLocation] = useState(false);
+    const [modifyingTarget, setModifyingTarget] = useState(null);
+    const [modifyingLocation, setModifyingLocation] = useState(null);
+    const [modifySuccessModalVisible, setModifySuccessModalVisible] = useState(false);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -734,33 +739,38 @@ const Map = () => {
         setShowCropActionModal(true);
     };
 
-    // 작물 관리 (임시)
-    const manageCrop = (cropId) => {
-        Alert.alert("관리", "작물 관리 기능은 아직 구현되지 않았습니다.");
+    // 위치 수정 진입: cropdetail_id만 사용
+    const startModifyCropLocation = (crop) => {
+        if (!crop || !crop.cropdetail_id) {
+            console.error('상세작물 cropdetail_id 없음:', crop);
+            return;
+        }
+        setIsModifyingLocation(true);
+        setModifyingTarget(crop.cropdetail_id); // cropdetail_id만 사용
+        setModifyingLocation({ latitude: Number(crop.latitude), longitude: Number(crop.longitude) });
+        setShowCropActionModal(false);
     };
 
-    // 작물 위치 수정 시작 (임시)
-    const startModifyCropLocation = (cropId) => {
-        Alert.alert("위치 수정", "작물 위치 수정 기능은 아직 구현되지 않았습니다.");
-        // TODO: 위치 수정 모드 구현 필요
-    };
-
-    // 작물 삭제
-    const deleteCrop = (cropId) => {
-        Alert.alert(
-            "작물 삭제",
-            "정말로 이 작물을 삭제하시겠습니까?",
-            [
-                { text: "취소", style: "cancel" },
-                {
-                    text: "삭제",
-                    onPress: () => {
-                        setManagedCrops(prevCrops => prevCrops.filter(crop => crop.id !== cropId));
-                    },
-                    style: "destructive"
-                },
-            ]
-        );
+    // 위치 수정 저장 함수 (region 중심 좌표 사용)
+    const handleSaveModifiedLocation = async () => {
+        if (!modifyingTarget) return;
+        try {
+            await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${modifyingTarget}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    latitude: region.latitude,
+                    longitude: region.longitude,
+                }),
+            });
+            setModifySuccessModalVisible(true);
+            setIsModifyingLocation(false);
+            setModifyingTarget(null);
+            setModifyingLocation(null);
+            fetchCrops();
+        } catch (e) {
+            console.error('위치 수정 실패:', e);
+        }
     };
 
     // GPS 위치 권한 요청 및 위치 추적 설정
@@ -1102,6 +1112,8 @@ const Map = () => {
 
                 {/* 관리 작물 핀 표시 */}
                 {loadingCrops ? null : managedCrops.map((crop, index) => {
+                    // 위치 수정 모드에서 수정 대상 마커(빨간색 핑 포함)는 숨김
+                    if (isModifyingLocation && crop.id === modifyingTarget) return null;
                     // 이름이 같으면 하이라이트 (2초간만)
                     const isHighlighted = crop.name && highlightedName && crop.name === highlightedName;
                     return (
@@ -1151,6 +1163,62 @@ const Map = () => {
                         strokeColor={modifyingAreaId ? "orange" : "rgba(0, 255, 0, 0.8)"}
                         strokeWidth={4}
                     />
+                )}
+
+                {/* 위치 수정 모드일 때 memoplus와 동일한 UI */}
+                {isModifyingLocation && (
+                    <>
+                        {/* 중앙 조준점 */}
+                        <Animated.View style={[styles.centerPinContainer, pinAnimatedStyle]} pointerEvents="none">
+                            <Text style={styles.centerPinEmoji}>📍</Text>
+                        </Animated.View>
+
+                        {/* 하단 주소+버튼 박스 */}
+                        <View style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 32,
+                            alignItems: 'center',
+                            zIndex: 99,
+                        }}>
+                            <View style={{
+                                backgroundColor: 'rgba(255,255,255,0.95)',
+                                borderRadius: 18,
+                                paddingHorizontal: 18,
+                                paddingVertical: 12,
+                                alignItems: 'center',
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.15,
+                                shadowRadius: 8,
+                                elevation: 8,
+                                flexDirection: 'column',
+                                minWidth: 220,
+                                bottom: 40,
+                            }}>
+                                <Text style={{ fontSize: 15, color: '#222', marginBottom: 0 }}>
+                                    {centerAddress || "주소 정보를 불러오는 중..."}
+                                </Text>
+
+                            </View>
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: '#22CC6B',
+                                    borderRadius: 20,
+                                    paddingVertical: 12,
+                                    paddingHorizontal: 20,
+                                    alignItems: 'center',
+                                    minWidth: 120,
+                                    elevation: 2,
+                                    bottom: 3,
+                                }}
+                                onPress={handleSaveModifiedLocation}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>위치 저장</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </>
                 )}
             </MapView>
 

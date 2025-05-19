@@ -2045,6 +2045,34 @@ app.delete('/api/cropdetail/:cropdetail_id', async (req, res) => {
     }
 });
 
+
+// 상세작물 위치(위도, 경도)만 독립적으로 수정하는 API
+app.put('/api/cropdetail/location/:id', async (req, res) => {
+    const { id } = req.params;
+    const { latitude, longitude } = req.body;
+
+    if (latitude === undefined || longitude === undefined) {
+        return res.status(400).json({ error: 'latitude, longitude는 필수입니다.' });
+    }
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE cropdetail SET latitude = ?, longitude = ? WHERE cropdetail_id = ?',
+            [latitude, longitude, id]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: '해당 상세작물을 찾을 수 없습니다.' });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({
+            error: '상세작물 위치 수정에 실패했습니다.',
+            details: error.message,
+            sqlMessage: error.sqlMessage
+        });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
@@ -2150,5 +2178,6 @@ app.get('/api/cropdetail', async (req, res) => {
         if (connection) connection.release();
     }
 });
+
 
 
