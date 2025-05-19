@@ -1726,20 +1726,23 @@ app.put('/api/crop/:crop_id', async (req, res) => {
 app.delete('/api/crop/:crop_id', async (req, res) => {
     try {
         const { crop_id } = req.params;
-
-        // 작물 존재 여부 확인
-        const [crops] = await pool.query('SELECT crop_id FROM crop WHERE crop_id = ?', [crop_id]);
-        if (crops.length === 0) {
-            return res.status(404).json({ error: 'Crop not found' });
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            // 1. cropdetail 삭제
+            await connection.query('DELETE FROM cropdetail WHERE crop_id = ?', [crop_id]);
+            // 2. crop 삭제
+            await connection.query('DELETE FROM crop WHERE crop_id = ?', [crop_id]);
+            await connection.commit();
+            res.json({ message: 'Crop 및 관련 상세작물이 삭제되었습니다.' });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
         }
-
-        // 작물 삭제
-        await pool.query('DELETE FROM crop WHERE crop_id = ?', [crop_id]);
-
-        res.json({ message: 'Crop deleted successfully' });
     } catch (error) {
-        console.error('작물 삭제 실패:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Crop 삭제 실패', details: error.message });
     }
 });
 

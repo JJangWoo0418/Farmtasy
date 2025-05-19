@@ -233,6 +233,9 @@ export default function CropSetting() {
                     farmId: farmId,
                     newCropName: name,
                     newCropImage: image,
+                    userData: params.userData,
+                    region: params.region,
+                    introduction: params.introduction,
                 }
             });
         } catch (error) {
@@ -278,16 +281,40 @@ export default function CropSetting() {
     ];
 
     // 삭제 처리 함수
-    const handleDelete = () => {
-        setShowDeleteConfirmModal(false);
-        setShowDeleteCompleteModal(true);
+    const handleDelete = async () => {
+        if (!params.cropId) {
+            showWarningModal('삭제할 작물 정보가 없습니다.');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/crop/${params.cropId}`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                setShowDeleteCompleteModal(true);
+            } else {
+                showWarningModal('삭제 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            showWarningModal('삭제 중 오류가 발생했습니다.');
+        }
     };
     // 삭제 완료 모달 닫기 및 목록으로 이동
     const handleDeleteComplete = () => {
         setShowDeleteCompleteModal(false);
         router.replace({
             pathname: '/Memo/farmedit',
-            params: { deleteCrop: true, editIndex: editIndex }
+            params: {
+                deleteCrop: true,
+                editIndex: editIndex,
+                phone: params.phone,
+                farmName: params.farmName,
+                farmId: farmId,
+                userData: params.userData,
+                region: params.region,
+                introduction: params.introduction,
+                // 필요시 추가 정보 전달
+            }
         });
     };
     // 모달 표시 함수
@@ -325,6 +352,12 @@ export default function CropSetting() {
 
         fetchCropInfo();
     }, [params.cropId]);
+
+    // 삭제 확인 모달 닫기 및 삭제 실행
+    const handleDeleteConfirm = async () => {
+        setShowDeleteConfirmModal(false);
+        await handleDelete();
+    };
 
     return (
         <KeyboardAvoidingView
@@ -617,7 +650,7 @@ export default function CropSetting() {
                                     <Text style={{ color: '#374151', fontWeight: 'bold', fontSize: 16 }}>취소</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    onPress={handleDelete}
+                                    onPress={handleDeleteConfirm}
                                     style={{ backgroundColor: '#EF4444', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
                                 >
                                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>삭제</Text>
