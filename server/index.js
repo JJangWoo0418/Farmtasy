@@ -1922,13 +1922,25 @@ app.get('/api/cropdetail', async (req, res) => {
         );
 
         // crop_id, farm_id, farm_name, crop_name을 각 상세에 추가
-        const resultsWithFarmInfo = results.map(detail => ({
-            ...detail,
-            crop_id: detail.crop_id,
-            farm_id: cropIdToFarmId[detail.crop_id] || null,
-            farm_name: cropIdToFarmName[detail.crop_id] || null,
-            crop_name: cropIdToCropName[detail.crop_id] || null,
-        }));
+        const resultsWithFarmInfo = results.map(detail => {
+            // memo가 문자열이면 파싱
+            let parsedMemo = detail.memo;
+            if (parsedMemo && typeof parsedMemo === 'string') {
+                try {
+                    parsedMemo = JSON.parse(parsedMemo);
+                } catch (e) {
+                    parsedMemo = [];
+                }
+            }
+            return {
+                ...detail,
+                crop_id: detail.crop_id,
+                farm_id: cropIdToFarmId[detail.crop_id] || null,
+                farm_name: cropIdToFarmName[detail.crop_id] || null,
+                crop_name: cropIdToCropName[detail.crop_id] || null,
+                memo: parsedMemo,
+            };
+        });
 
         console.log('조회된 작물 상세 정보:', resultsWithFarmInfo);
         res.json(resultsWithFarmInfo);

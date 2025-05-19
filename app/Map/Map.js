@@ -189,6 +189,7 @@ const Map = () => {
                     crop_id: crop.crop_id,         // 추가!
                     farm_id: crop.farm_id,         // 추가!
                     farm_name: crop.farm_name,     // 추가! (없으면 생략)
+                    memo: crop.memo,
                 }));
                 setManagedCrops(formattedCrops);
             }
@@ -729,6 +730,7 @@ const Map = () => {
 
     // 작물 핀 터치 핸들러
     const handleCropPress = (crop) => {
+        console.log('handleCropPress crop:', crop);
         setSelectedCrop({
             ...crop,
             cropId: crop.crop_id || crop.cropId || crop.id, // 다양한 필드명 대응
@@ -909,7 +911,25 @@ const Map = () => {
                 return;
             }
             // 저장 성공 시 memolist로 이동
-            router.replace({ pathname: '/Memo/memolist', params: { ...params } });
+            const navigationParams = {
+                detailId: selectedCrop.id || params.detailId,
+                name: selectedCrop.name || params.name,
+                image: selectedCrop.image || params.image,
+                cropId: selectedCrop.cropId || params.cropId,
+                phone: params.phone,
+                farmId: selectedCrop.farmId || params.farmId,
+                farmName: selectedCrop.farmName || params.farmName,
+                userData: params.userData,
+                region: params.region,
+                introduction: params.introduction,
+                memo: JSON.stringify(selectedCrop.memo || []), // memo를 문자열로 전달
+            };
+            console.log('관리 버튼 params:', navigationParams);
+
+            router.push({
+                pathname: '/Memo/cropdetailmemopage',
+                params: navigationParams
+            });
         } catch (e) {
             alert('오류가 발생했습니다.');
         } finally {
@@ -1297,6 +1317,7 @@ const Map = () => {
                                     userData: params.userData,
                                     region: params.region,
                                     introduction: params.introduction,
+                                    memo: JSON.stringify(selectedCrop.memo || []), // memo를 문자열로 전달
                                 };
                                 console.log('관리 버튼 params:', navigationParams);
 

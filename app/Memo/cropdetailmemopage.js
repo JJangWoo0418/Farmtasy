@@ -9,7 +9,6 @@ import QRCode from 'react-native-qrcode-svg';
 export default function CropDetailMemoPage() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    console.log('cropdetailmemopage params:', params);
     const [image, setImage] = useState(params.detail_image_url || params.image || null);
     const [qrModalVisible, setQrModalVisible] = useState(false);
     const [qrCode, setQrCode] = useState('');
@@ -17,9 +16,7 @@ export default function CropDetailMemoPage() {
     const [newMemo, setNewMemo] = useState('');
     const [memoContent, setMemoContent] = useState('');
     const [memoTitle, setMemoTitle] = useState('');
-    const [memos, setMemos] = useState([
-        { title: '', content: '' }
-    ]);
+    const [memos, setMemos] = useState([]);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteSuccessModalVisible, setDeleteSuccessModalVisible] = useState(false);
 
@@ -28,35 +25,27 @@ export default function CropDetailMemoPage() {
     const cropImage = 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc';
 
     useEffect(() => {
-        const fetchDetail = async () => {
-            if (!params.detailId) return;
+        if (params.memo) {
             try {
-                const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
-                const data = await res.json();
-                if (data.memo) {
-                    setMemos(Array.isArray(data.memo)
-                        ? data.memo.map(memo => ({
-                            ...memo,
-                            title: memo.title ? memo.title.trimEnd() : '',
-                            content: memo.content ? memo.content.trimEnd() : '',
-                        }))
-                        : [{ title: '', content: (data.memo || '').trimEnd() }]
-                    );
-                }
-                setQrCode(data.detail_qr_code || '');
-                if (data.latitude && data.longitude) {
-                    setLocation({
-                        latitude: data.latitude,
-                        longitude: data.longitude
-                    });
-                }
+                setMemos(JSON.parse(params.memo));
             } catch (e) {
-                setQrCode('');
-                setLocation(null);
+                setMemos([]);
             }
-        };
-        fetchDetail();
-    }, [params.detailId]);
+        } else if (params.detailId) {
+            fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.memo) {
+                        setMemos(typeof data.memo === 'string' ? JSON.parse(data.memo) : data.memo);
+                    } else {
+                        setMemos([]);
+                    }
+                })
+                .catch(() => setMemos([]));
+        } else {
+            setMemos([]);
+        }
+    }, [params.memo, params.detailId]);
 
     useEffect(() => {
         const keyboardHideListener = Keyboard.addListener('keyboardDidHide', () => {
