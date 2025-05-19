@@ -1935,7 +1935,7 @@ app.get('/api/cropdetail/:id', async (req, res) => {
 // cropdetail 정보(메모 포함) 수정 API
 app.put('/api/cropdetail/:id', async (req, res) => {
     const { id } = req.params;
-    let { memo, detail_image_url } = req.body;
+    let { memo, detail_image_url, name, detail_qr_code } = req.body;
 
     let updateFields = [];
     let updateValues = [];
@@ -1956,6 +1956,14 @@ app.put('/api/cropdetail/:id', async (req, res) => {
         updateFields.push('detail_image_url = ?');
         updateValues.push(detail_image_url);
     }
+    if (name !== undefined) {
+        updateFields.push('detail_name = ?');
+        updateValues.push(name);
+    }
+    if (detail_qr_code !== undefined) {
+        updateFields.push('detail_qr_code = ?');
+        updateValues.push(detail_qr_code);
+    }
     if (updateFields.length === 0) {
         return res.status(400).json({ error: '수정할 필드가 없습니다.' });
     }
@@ -1968,7 +1976,11 @@ app.put('/api/cropdetail/:id', async (req, res) => {
         );
         res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ error: '작물 상세 정보 수정에 실패했습니다.' });
+        res.status(500).json({ 
+            error: '작물 상세 정보 수정에 실패했습니다.',
+            details: error.message,
+            sqlMessage: error.sqlMessage
+        });
     }
 });
 

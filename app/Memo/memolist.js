@@ -169,7 +169,28 @@ export default function MemoList() {
           >
             <Image source={{ uri: item.image }} style={styles.cropCardImage} />
             <Text style={styles.cropCardText}>{item.name}</Text>
-            <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
+            <TouchableOpacity
+              onPress={() => {
+                router.push({
+                  pathname: '/Memo/memosetting',
+                  params: {
+                    detailId: item.detailId,
+                    name: item.name,
+                    image: item.image,
+                    cropId: item.cropId,
+                    phone: params.phone,
+                    farmId: params.farmId,
+                    farmName: params.farmName,
+                    userData: params.userData,
+                    region: params.region,
+                    introduction: params.introduction,
+                    // 필요시 추가 정보 전달
+                  }
+                });
+              }}
+            >
+              <Image source={require('../../assets/settingicon.png')} style={styles.settingIcon} />
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListFooterComponent={
