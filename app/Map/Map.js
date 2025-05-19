@@ -396,6 +396,13 @@ const Map = () => {
                 coordinates: coordinates,
                 address: shortAddress // 간단 주소를 address 필드에 저장
             }]);
+            // ★ 드래그로 농장 생성 시에만 지도 이동 ★
+            setRegion({
+                latitude: lat,
+                longitude: lng,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+            });
             Alert.alert('성공', '농장이 등록되었습니다.');
         } catch (error) {
             // Geocoder 오류가 발생해도 기본 주소로 저장 시도
@@ -430,6 +437,13 @@ const Map = () => {
                         coordinates: coordinates,
                         address: shortAddress // 기본 주소도 address 필드에 저장
                     }]);
+                    // ★ 드래그로 농장 생성 시에만 지도 이동 ★
+                    setRegion({
+                        latitude: lat,
+                        longitude: lng,
+                        latitudeDelta: 0.005,
+                        longitudeDelta: 0.005,
+                    });
                     Alert.alert('성공', '농장이 등록되었습니다. (기본 주소 사용)');
                 } catch (retryError) {
                     Alert.alert('오류', '농장 정보 저장에 실패했습니다.');
@@ -480,6 +494,12 @@ const Map = () => {
 
             // 성공적으로 삭제되면 상태 업데이트
             setFarmAreas(prev => prev.filter(area => area.id !== areaId));
+
+            // 작물(마커 등)도 즉시 상태에서 제거 (farm_id가 crop에 있다면)
+            setManagedCrops(prev => prev.filter(crop => crop.farm_id !== areaId));
+            // 만약 crop에 farm_id가 없다면 아래 fetchCrops를 사용하세요.
+            // await fetchCrops();
+
             Alert.alert('성공', '농장이 삭제되었습니다.');
         } catch (error) {
             console.error('농장 삭제 중 오류:', error);
@@ -1241,9 +1261,6 @@ const Map = () => {
                                         }}
                                     >
                                         <Text style={styles.farmName}>{farm.name}</Text>
-                                        {farm.address && (
-                                            <Text style={styles.farmAddress}>{farm.address}</Text>
-                                        )}
                                     </TouchableOpacity>
                                 ))
                             )}

@@ -1443,21 +1443,33 @@ app.delete('/api/farm/:farmId', async (req, res) => {
     const { farmId } = req.params;
     console.log('DELETE /api/farm/:farmId 호출됨, farmId:', farmId);
 
+    const connection = await pool.getConnection();
     try {
-        // 농장 존재 여부 확인
-        const [farm] = await pool.query('SELECT * FROM farm WHERE farm_id = ?', [farmId]);
-        if (farm.length === 0) {
-            return res.status(404).json({ error: '해당 농장을 찾을 수 없습니다.' });
+        await connection.beginTransaction();
+
+        // 1. 해당 농장의 crop_id 목록 조회
+        const [crops] = await connection.query('SELECT crop_id FROM crop WHERE farm_id = ?', [farmId]);
+        const cropIds = crops.map(crop => crop.crop_id);
+
+        // 2. cropdetail 삭제 (해당 crop_id들)
+        if (cropIds.length > 0) {
+            await connection.query('DELETE FROM cropdetail WHERE crop_id IN (?)', [cropIds]);
         }
 
-        // 농장 삭제
-        await pool.query('DELETE FROM farm WHERE farm_id = ?', [farmId]);
-        console.log('농장 삭제 완료:', farmId);
+        // 3. crop 삭제
+        await connection.query('DELETE FROM crop WHERE farm_id = ?', [farmId]);
 
-        res.json({ message: '농장이 성공적으로 삭제되었습니다.' });
+        // 4. farm 삭제
+        await connection.query('DELETE FROM farm WHERE farm_id = ?', [farmId]);
+
+        await connection.commit();
+        res.json({ message: '농장 및 관련 작물/상세작물이 성공적으로 삭제되었습니다.' });
     } catch (error) {
-        console.error('Error deleting farm:', error);
-        res.status(500).json({ error: '농장 삭제에 실패했습니다.' });
+        await connection.rollback();
+        console.error('농장 삭제 중 오류:', error);
+        res.status(500).json({ error: '농장 및 관련 데이터 삭제에 실패했습니다.' });
+    } finally {
+        connection.release();
     }
 });
 
