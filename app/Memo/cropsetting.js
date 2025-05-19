@@ -303,6 +303,7 @@ export default function CropSetting() {
                     setPlantDate(formatDateString(data.crop_planting_date));
                     setHarvestDate(formatDateString(data.crop_harvest_date));
                     setAmount(formatNumberString(data.crop_yield_kg));
+                    setSelectedCrop(data.crop_type || '');
                 }
             } catch (error) {
                 console.error('작물 정보 불러오기 실패:', error);
@@ -358,23 +359,26 @@ export default function CropSetting() {
 
                 {/* 작물 선택 버튼 */}
                 <Text style={styles.label}>작물</Text>
-                <TouchableOpacity
-                    onPress={() => setIsCropModalVisible(true)}
-                    activeOpacity={0.7}
-                >
-                    {selectedCrop ? (
-                        <View style={styles.selectedCropBox}>
-                            {selectedCropImage && (
-                                <Image source={selectedCropImage} style={styles.cropGridImage2} />
-                            )}
-                            <Text style={styles.selectedCropText}>{selectedCrop}</Text>
-                        </View>
-                    ) : (
-                        <View style={styles.cropSelectButton}>
-                            <Text style={styles.cropSelectButtonText}>작물 선택하기</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
+                {selectedCrop ? (
+                    <TouchableOpacity onPress={() => setIsCropModalVisible(true)} activeOpacity={0.7} style={styles.selectedCropBox}>
+                        <Image
+                            source={(() => {
+                                const found = popularCrops.find(crop => crop.name === selectedCrop);
+                                return found ? found.image : defaultCropImage;
+                            })()}
+                            style={styles.cropGridImage2}
+                        />
+                        <Text style={styles.selectedCropText}>{selectedCrop}</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        onPress={() => setIsCropModalVisible(true)}
+                        activeOpacity={0.7}
+                        style={styles.cropSelectButton}
+                    >
+                        <Text style={styles.cropSelectButtonText}>작물 선택하기</Text>
+                    </TouchableOpacity>
+                )}
 
                 {/* 재배 면적 */}
                 <Text style={styles.label}>재배 면적</Text>
