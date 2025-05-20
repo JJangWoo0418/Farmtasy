@@ -7,6 +7,7 @@ import * as Location from 'expo-location';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 
 
 
@@ -46,6 +47,8 @@ const Map = () => {
     const [locationError, setLocationError] = useState(null);
     const route = useRoute();
     const { userData, phone, name} = useLocalSearchParams();
+    const [isScanning, setIsScanning] = useState(false);
+    const [hasCameraPermission, setHasCameraPermission] = useState(null);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -330,7 +333,15 @@ const Map = () => {
     };
 
     const handleQrScanPress = () => {
-        router.push('Map/qrscan');
+        if (hasCameraPermission === null) {
+            Alert.alert("알림", "카메라 권한을 요청중입니다.");
+            return;
+        }
+        if (hasCameraPermission === false) {
+            Alert.alert("알림", "카메라 접근 권한이 필요합니다.");
+            return;
+        }
+        setIsScanning(true);
     };
 
     const handleWeatherPress = () => console.log('날씨 버튼 클릭됨');
@@ -564,229 +575,276 @@ const Map = () => {
         }
     };
 
+    // 카메라 권한 요청
+    useEffect(() => {
+        (async () => {
+            const { status } = await BarCodeScanner.requestPermissionsAsync();
+            setHasCameraPermission(status === 'granted');
+        })();
+    }, []);
+
+    const handleBarCodeScanned = ({ type, data }) => {
+        setIsScanning(false);
+        Alert.alert(
+            "QR 코드 스캔 완료",
+            `스캔된 데이터: ${data}`,
+            [
+                {
+                    text: "다시 스캔",
+                    onPress: () => setIsScanning(true),
+                },
+                {
+                    text: "확인",
+                    onPress: () => setIsScanning(false),
+                }
+            ]
+        );
+    };
+
     return (
         <View style={styles.container}>
-            <MapView
-                ref={mapRef}
-                style={styles.map}
-                region={region}
-                scrollEnabled={!isDrawingMode}
-                zoomEnabled={!isDrawingMode}
-                onRegionChangeStart={handleRegionChangeStart}
-                onRegionChangeComplete={handleRegionChangeComplete}
-                onPanDrag={handlePanDrag}
-                onTouchStart={handleMapTouchStart}
-                onTouchEnd={handleMapTouchEnd}
-            >
-                {userLocation && (
-                    <Marker
-                        coordinate={userLocation}
-                        title="현재 위치"
-                        pinColor="blue"
-                        opacity={isAddingCropMode ? 0.5 : 1}
+            {isScanning ? (
+                <View style={styles.scannerContainer}>
+                    <View style={styles.scannerHeader}>
+                        <TouchableOpacity onPress={() => setIsScanning(false)}>
+                            <Text style={styles.backButton}>←</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.scannerTitle}>QR 코드 스캔</Text>
+                        <View style={{ width: 24 }} />
+                    </View>
+                    <BarCodeScanner
+                        onBarCodeScanned={handleBarCodeScanned}
+                        style={styles.scanner}
                     />
-                )}
-                {drawnPath.length > 0 && (
-                    <Polyline
-                        coordinates={drawnPath}
-                        strokeColor="green"
-                        strokeWidth={4}
-                    />
-                )}
-
-                {farmAreas
-                    .filter(area => area.id !== modifyingAreaId)
-                    .map((area) => (
-                        <React.Fragment key={area.id}>
-                            <Polygon
-                                coordinates={area.coordinates}
-                                strokeColor="green"
-                                strokeWidth={3}
-                                fillColor="rgba(0, 255, 0, 0.1)"
-                                tappable={true}
-                                onPress={() => router.push({ pathname: 'Memo/farmedit', params: { farmName: area.name } })}
-                            />
-                            {area.coordinates.length > 0 && (
-                                 <Marker
-                                     coordinate={area.coordinates[0]}
-                                     anchor={{ x: 0.5, y: 1 }}
-                                     onPress={() => handleAreaPress(area.id)}
-                                 >
-                                     <View style={styles.areaNameContainer}>
-                                         <Text style={styles.areaNameText}>{area.name}</Text>
-                                     </View>
-                                 </Marker>
-                            )}
-                        </React.Fragment>
-                    ))}
-
-                {isDrawingMode && drawnPath.length > 0 && (
-                    <Polyline
-                        coordinates={drawnPath}
-                        strokeColor={modifyingAreaId ? "orange" : "rgba(0, 255, 0, 0.8)"}
-                        strokeWidth={4}
-                    />
-                )}
-
-                {/* 관리 작물 핀 표시 */}
-                {managedCrops.map((crop) => (
-                    <Marker
-                        key={crop.id}
-                        coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
-                        onPress={() => handleCropPress(crop)}
-                        anchor={{ x: 0.5, y: 0.5 }}
+                    <View style={styles.scanOverlay}>
+                        <View style={styles.scanArea} />
+                    </View>
+                </View>
+            ) : (
+                <>
+                    <MapView
+                        ref={mapRef}
+                        style={styles.map}
+                        region={region}
+                        scrollEnabled={!isDrawingMode}
+                        zoomEnabled={!isDrawingMode}
+                        onRegionChangeStart={handleRegionChangeStart}
+                        onRegionChangeComplete={handleRegionChangeComplete}
+                        onPanDrag={handlePanDrag}
+                        onTouchStart={handleMapTouchStart}
+                        onTouchEnd={handleMapTouchEnd}
                     >
-                        <Text style={styles.cropMarker}>☘️</Text>
-                    </Marker>
-                ))}
-            </MapView>
+                        {userLocation && (
+                            <Marker
+                                coordinate={userLocation}
+                                title="현재 위치"
+                                pinColor="blue"
+                                opacity={isAddingCropMode ? 0.5 : 1}
+                            />
+                        )}
+                        {drawnPath.length > 0 && (
+                            <Polyline
+                                coordinates={drawnPath}
+                                strokeColor="green"
+                                strokeWidth={4}
+                            />
+                        )}
 
-            <View style={styles.searchContainer}>
-                <TouchableOpacity style={styles.searchIcon} disabled={isDrawingMode} onPress={handleSearch}>
-                    <Text>🔍</Text>
-                </TouchableOpacity>
-                <TextInput
-                    style={styles.searchInput}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholder="주소 검색"
-                    editable={!isDrawingMode}
-                    onSubmitEditing={handleSearch}
-                    returnKeyType="search"
-                />
-                <TouchableOpacity style={[styles.shovelButton, isDrawingMode && styles.shovelButtonActive]} onPress={handleShovelPress}>
-                    <Image
-                        source={require('../../assets/shovel_icon.png')}
-                        style={styles.shovelIcon}
-                    />
-                </TouchableOpacity>
-            </View>
+                        {farmAreas
+                            .filter(area => area.id !== modifyingAreaId)
+                            .map((area) => (
+                                <React.Fragment key={area.id}>
+                                    <Polygon
+                                        coordinates={area.coordinates}
+                                        strokeColor="green"
+                                        strokeWidth={3}
+                                        fillColor="rgba(0, 255, 0, 0.1)"
+                                        tappable={true}
+                                        onPress={() => router.push({ pathname: 'Memo/farmedit', params: { farmName: area.name } })}
+                                    />
+                                    {area.coordinates.length > 0 && (
+                                         <Marker
+                                             coordinate={area.coordinates[0]}
+                                             anchor={{ x: 0.5, y: 1 }}
+                                             onPress={() => handleAreaPress(area.id)}
+                                         >
+                                             <View style={styles.areaNameContainer}>
+                                                 <Text style={styles.areaNameText}>{area.name}</Text>
+                                             </View>
+                                         </Marker>
+                                    )}
+                                </React.Fragment>
+                            ))}
 
-            {/* 하단 서랍 메뉴 (레이아웃 및 애니메이션 수정) */}
-            {!isDrawingMode && (
-                <Animated.View style={[
-                    styles.drawerContainer, // 새로운 서랍 컨테이너 스타일
-                    { transform: [{ translateX: drawerTranslateX }], opacity: menuOpacity }
-                ]}>
-                    {/* 서랍 핸들 (화살표 버튼) */}
-                    <TouchableOpacity style={styles.drawerHandle} onPress={toggleMenu}>
-                        <Text style={styles.arrowIcon}>{isMenuOpen ? '▶' : '◀'}</Text>
-                    </TouchableOpacity>
+                        {isDrawingMode && drawnPath.length > 0 && (
+                            <Polyline
+                                coordinates={drawnPath}
+                                strokeColor={modifyingAreaId ? "orange" : "rgba(0, 255, 0, 0.8)"}
+                                strokeWidth={4}
+                            />
+                        )}
 
-                    {/* 메뉴 버튼들 */}
-                    <TouchableOpacity style={styles.menuButton} onPress={handleQrScanPress}>
-                        <Text style={styles.menuButtonText}>QR스캔</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuButton} onPress={handleWeatherPress}>
-                        <Text style={styles.menuButtonText}>날씨</Text>
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
+                        {/* 관리 작물 핀 표시 */}
+                        {managedCrops.map((crop) => (
+                            <Marker
+                                key={crop.id}
+                                coordinate={{ latitude: crop.latitude, longitude: crop.longitude }}
+                                onPress={() => handleCropPress(crop)}
+                                anchor={{ x: 0.5, y: 0.5 }}
+                            >
+                                <Text style={styles.cropMarker}>☘️</Text>
+                            </Marker>
+                        ))}
+                    </MapView>
 
-            {/* 중앙 고정 핀 (작물 추가 모드일 때만 표시) */}
-            {!isDrawingMode && isAddingCropMode && (
-                <Animated.View style={[styles.centerPinContainer, pinAnimatedStyle]} pointerEvents="none">
-                    <Text style={styles.centerPinEmoji}>📍</Text>
-                </Animated.View>
-            )}
+                    <View style={styles.searchContainer}>
+                        <TouchableOpacity style={styles.searchIcon} disabled={isDrawingMode} onPress={handleSearch}>
+                            <Text>🔍</Text>
+                        </TouchableOpacity>
+                        <TextInput
+                            style={styles.searchInput}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="주소 검색"
+                            editable={!isDrawingMode}
+                            onSubmitEditing={handleSearch}
+                            returnKeyType="search"
+                        />
+                        <TouchableOpacity style={[styles.shovelButton, isDrawingMode && styles.shovelButtonActive]} onPress={handleShovelPress}>
+                            <Image
+                                source={require('../../assets/shovel_icon.png')}
+                                style={styles.shovelIcon}
+                            />
+                        </TouchableOpacity>
+                    </View>
 
-            {/* 하단 버튼 또는 주소 표시 (작물 추가 모드에 따라 분기) */}
-            {!isDrawingMode && (
-                 <>
-                    {!isAddingCropMode ? (
-                        // 초기 상태: 작물 추가 버튼 (Animated.View 추가 및 스타일 수정)
+                    {/* 하단 서랍 메뉴 (레이아웃 및 애니메이션 수정) */}
+                    {!isDrawingMode && (
                         <Animated.View style={[
-                            styles.addCropButtonContainer, // 기본 위치 스타일 (bottom: 40)
-                            { transform: [{ translateY: addButtonOffsetY }] } // Y축 오프셋 애니메이션 적용
+                            styles.drawerContainer, // 새로운 서랍 컨테이너 스타일
+                            { transform: [{ translateX: drawerTranslateX }], opacity: menuOpacity }
                         ]}>
-                            <TouchableOpacity onPress={activateAddCropMode}>
-                                <View style={styles.addCropButton}>
-                                    <Text style={styles.addCropButtonText}>여기를 눌러 작물을 추가해보세요!</Text>
-                                </View>
+                            {/* 서랍 핸들 (화살표 버튼) */}
+                            <TouchableOpacity style={styles.drawerHandle} onPress={toggleMenu}>
+                                <Text style={styles.arrowIcon}>{isMenuOpen ? '▶' : '◀'}</Text>
+                            </TouchableOpacity>
+
+                            {/* 메뉴 버튼들 */}
+                            <TouchableOpacity style={styles.menuButton} onPress={handleQrScanPress}>
+                                <Text style={styles.menuButtonText}>QR스캔</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.menuButton} onPress={handleWeatherPress}>
+                                <Text style={styles.menuButtonText}>날씨</Text>
                             </TouchableOpacity>
                         </Animated.View>
-                    ) : (
-                        // 작물 추가 모드: 주소 표시 영역 (위치 조정 필요시 addButtonOffsetY 적용 가능)
-                        <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
-                            {/* 현재는 주소 영역 위치 고정 */}
-                            <View style={styles.centerAddressContainer}>
-                                {isFetchingAddress ? (
-                                    <ActivityIndicator size="small" color="#0000ff" />
-                                ) : (
-                                    <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
-                                        {centerAddress || "주소 정보를 불러오는 중..."}
-                                    </Text>
-                                )}
-                            </View>
-                        </TouchableOpacity>
                     )}
+
+                    {/* 중앙 고정 핀 (작물 추가 모드일 때만 표시) */}
+                    {!isDrawingMode && isAddingCropMode && (
+                        <Animated.View style={[styles.centerPinContainer, pinAnimatedStyle]} pointerEvents="none">
+                            <Text style={styles.centerPinEmoji}>📍</Text>
+                        </Animated.View>
+                    )}
+
+                    {/* 하단 버튼 또는 주소 표시 (작물 추가 모드에 따라 분기) */}
+                    {!isDrawingMode && (
+                         <>
+                            {!isAddingCropMode ? (
+                                // 초기 상태: 작물 추가 버튼 (Animated.View 추가 및 스타일 수정)
+                                <Animated.View style={[
+                                    styles.addCropButtonContainer, // 기본 위치 스타일 (bottom: 40)
+                                    { transform: [{ translateY: addButtonOffsetY }] } // Y축 오프셋 애니메이션 적용
+                                ]}>
+                                    <TouchableOpacity onPress={activateAddCropMode}>
+                                        <View style={styles.addCropButton}>
+                                            <Text style={styles.addCropButtonText}>여기를 눌러 작물을 추가해보세요!</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            ) : (
+                                // 작물 추가 모드: 주소 표시 영역 (위치 조정 필요시 addButtonOffsetY 적용 가능)
+                                <TouchableOpacity style={styles.centerAddressTouchable} onPress={handleAddCropPress}>
+                                    {/* 현재는 주소 영역 위치 고정 */}
+                                    <View style={styles.centerAddressContainer}>
+                                        {isFetchingAddress ? (
+                                            <ActivityIndicator size="small" color="#0000ff" />
+                                        ) : (
+                                            <Text style={styles.centerAddressText} numberOfLines={1} ellipsizeMode="tail">
+                                                {centerAddress || "주소 정보를 불러오는 중..."}
+                                            </Text>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
+
+                    {/* 현재 위치 버튼 */}
+                    <TouchableOpacity
+                        style={styles.locationButton}
+                        onPress={moveToCurrentLocation}
+                    >
+                        <Text style={styles.locationIcon}>{locationIcon}</Text>
+                    </TouchableOpacity>
+
+                    {locationError && (
+                        <View style={styles.errorContainer}>
+                            <Text style={styles.errorText}>{locationError}</Text>
+                        </View>
+                    )}
+                    <BottomTabNavigator
+                        currentTab="내 농장"
+                        onTabPress={(tab) => {
+                            if (tab === '질문하기') {
+                                router.push({ pathname: '/Chatbot/questionpage', params: {
+                                    userData: route.params?.userData,
+                                    phone: route.params?.phone,
+                                    name: route.params?.name,
+                                    region: route.params?.region,
+                                    introduction: route.params?.introduction
+                                } });
+                            } else if (tab === '홈') {
+                                router.push({ pathname: '/Homepage/Home/homepage', params: {
+                                    userData: route.params?.userData,
+                                    phone: route.params?.phone,
+                                    name: route.params?.name,
+                                    region: route.params?.region,
+                                    introduction: route.params?.introduction
+                                } });
+                            }
+                            else if (tab === '정보') {
+                                router.push({ pathname: '/FarmInfo/farminfo', params: {
+                                    userData: route.params?.userData,
+                                    phone: route.params?.phone,
+                                    name: route.params?.name,
+                                    region: route.params?.region,
+                                    introduction: route.params?.introduction
+                                } });
+                                // 필요시 다른 탭도 추가
+                            }
+                            else if (tab === '장터') {
+                                router.push({ pathname: '/Market/market', params: {
+                                    userData: route.params?.userData,
+                                    phone: route.params?.phone,
+                                    name: route.params?.name,
+                                    region: route.params?.region,
+                                    introduction: route.params?.introduction
+                                } });
+                            }
+                            else if (tab === '내 농장') {
+                                router.push({ pathname: '/Map/Map', params: {
+                                    userData: route.params?.userData,
+                                    phone: route.params?.phone,
+                                    name: route.params?.name,
+                                    region: route.params?.region,
+                                    introduction: route.params?.introduction
+                                } });
+                            }
+                        }
+                        }
+                    />
                 </>
             )}
-
-            {/* 현재 위치 버튼 */}
-            <TouchableOpacity
-                style={styles.locationButton}
-                onPress={moveToCurrentLocation}
-            >
-                <Text style={styles.locationIcon}>{locationIcon}</Text>
-            </TouchableOpacity>
-
-            {locationError && (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{locationError}</Text>
-                </View>
-            )}
-            <BottomTabNavigator
-                currentTab="내 농장"
-                onTabPress={(tab) => {
-                    if (tab === '질문하기') {
-                        router.push({ pathname: '/Chatbot/questionpage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
-                    } else if (tab === '홈') {
-                        router.push({ pathname: '/Homepage/Home/homepage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
-                    }
-                    else if (tab === '정보') {
-                        router.push({ pathname: '/FarmInfo/farminfo', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
-                        // 필요시 다른 탭도 추가
-                    }
-                    else if (tab === '장터') {
-                        router.push({ pathname: '/Market/market', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
-                    }
-                    else if (tab === '내 농장') {
-                        router.push({ pathname: '/Map/Map', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
-                    }
-                }
-                }
-            />
         </View>
     );
 };
@@ -1039,6 +1097,43 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 14,
+    },
+    scannerContainer: {
+        flex: 1,
+        backgroundColor: '#000',
+    },
+    scannerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        backgroundColor: '#fff',
+    },
+    backButton: {
+        fontSize: 24,
+        color: '#000',
+        padding: 8,
+    },
+    scannerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+    scanner: {
+        flex: 1,
+    },
+    scanOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scanArea: {
+        width: 250,
+        height: 250,
+        borderWidth: 2,
+        borderColor: '#fff',
+        backgroundColor: 'transparent',
     },
 });
 
