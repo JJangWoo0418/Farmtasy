@@ -617,7 +617,9 @@ const Map = () => {
         router.push('Map/qrscan');
     };
 
-    const handleWeatherPress = () => console.log('날씨 버튼 클릭됨');
+    const handleWeatherPress = () => {
+      router.push('/FarmInfo');
+    };
 
     const handleSearch = async () => {
         if (!searchQuery) return;
