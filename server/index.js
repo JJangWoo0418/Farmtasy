@@ -1978,51 +1978,67 @@ app.get('/api/cropdetail/:id', async (req, res) => {
 
 // cropdetail 정보(메모 포함) 수정 API
 app.put('/api/cropdetail/:id', async (req, res) => {
-    console.log('위치 수정 API 호출됨:', {
+    console.log('cropdetail 수정 API 호출됨:', {
         id: req.params.id,
         body: req.body
     });
 
     try {
         const { id } = req.params;
-        const { latitude, longitude, cropdetail_id, detail_id, updated_at } = req.body;
+        const { latitude, longitude, memo, detail_image_url } = req.body;
 
         console.log('수정할 데이터:', {
             id,
             latitude,
             longitude,
-            cropdetail_id,
-            detail_id,
-            updated_at
+            memo,
+            detail_image_url
         });
 
-        // 필수 필드 확인
-        if (!latitude || !longitude) {
-            console.log('필수 필드 누락:', { latitude, longitude });
-            return res.status(400).json({ error: '위도와 경도는 필수입니다.' });
+        // 메모 데이터를 JSON 문자열로 변환
+        const memoJson = memo ? JSON.stringify(memo) : null;
+
+        // 기존 데이터 조회
+        const [existingData] = await pool.query(
+            'SELECT latitude, longitude, detail_image_url FROM cropdetail WHERE cropdetail_id = ?',
+            [id]
+        );
+
+        if (existingData.length === 0) {
+            return res.status(404).json({ error: '수정할 작물을 찾을 수 없습니다.' });
         }
 
-        // updated_at을 MySQL datetime 형식으로 변환
-        const mysqlDateTime = updated_at ? new Date(updated_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+        // latitude, longitude, detail_image_url이 제공되지 않은 경우 기존 값 사용
+        const finalLatitude = latitude ?? existingData[0].latitude;
+        const finalLongitude = longitude ?? existingData[0].longitude;
+        const finalDetailImageUrl = detail_image_url ?? existingData[0].detail_image_url;
 
         // 데이터베이스 업데이트
         const [result] = await pool.query(
-            'UPDATE cropdetail SET latitude = ?, longitude = ?, updated_at = ? WHERE cropdetail_id = ?',
-            [latitude, longitude, mysqlDateTime, id]
+            'UPDATE cropdetail SET latitude = ?, longitude = ?, memo = ?, detail_image_url = ?, updated_at = NOW() WHERE cropdetail_id = ?',
+            [finalLatitude, finalLongitude, memoJson, finalDetailImageUrl, id]
         );
 
         console.log('데이터베이스 업데이트 결과:', result);
 
-        if (result.affectedRows === 0) {
-            console.log('업데이트된 행이 없음');
-            return res.status(404).json({ error: '수정할 작물을 찾을 수 없습니다.' });
-        }
-
-        console.log('위치 수정 성공');
-        res.json({ message: '위치가 성공적으로 수정되었습니다.' });
+        console.log('수정 성공');
+        res.json({ 
+            success: true,
+            message: '작물 정보가 성공적으로 수정되었습니다.',
+            updatedData: {
+                latitude: finalLatitude,
+                longitude: finalLongitude,
+                memo: memoJson,
+                detail_image_url: finalDetailImageUrl
+            }
+        });
     } catch (error) {
-        console.error('위치 수정 중 오류 발생:', error);
-        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+        console.error('수정 중 오류 발생:', error);
+        res.status(500).json({ 
+            success: false,
+            error: '서버 오류가 발생했습니다.',
+            details: error.message
+        });
     }
 });
 
