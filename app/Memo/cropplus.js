@@ -107,6 +107,13 @@ export default function CropPlus() {
     }
   };
 
+  function formatDateString(dateString) {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (isNaN(d)) return '';
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   // 날짜 포맷 함수
   const formatDate = (date) => {
     if (!date) return '';
@@ -179,8 +186,8 @@ export default function CropPlus() {
         crop_type: selectedCrop,
         crop_image_url: image,
         crop_area_m2: parseFloat(area),
-        crop_planting_date: formatDate(new Date(plantDate)),
-        crop_harvest_date: formatDate(new Date(harvestDate)),
+        crop_planting_date: plantDate.replace(/\./g, '-'),  // "2025.05.20" -> "2025-05-20"
+        crop_harvest_date: harvestDate.replace(/\./g, '-'), // "2025.05.20" -> "2025-05-20"
         crop_yield_kg: parseFloat(amount)
       };
 
@@ -212,6 +219,13 @@ export default function CropPlus() {
       setErrorModalVisible(true);
     }
   };
+
+  function formatDateString(dateString) {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    if (isNaN(d)) return '';
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+  }
 
   const [isCropModalVisible, setIsCropModalVisible] = useState(false);
   const [isDirectInputModalVisible, setIsDirectInputModalVisible] = useState(false);
@@ -266,29 +280,6 @@ export default function CropPlus() {
             <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>작물 종류 추가</Text>
-          <TouchableOpacity
-            onPress={() => {
-              Alert.alert(
-                "정말 삭제하시겠습니까?",
-                "이 작물 정보를 삭제하면 되돌릴 수 없습니다.",
-                [
-                  { text: "취소", style: "cancel" },
-                  {
-                    text: "삭제",
-                    style: "destructive",
-                    onPress: () => {
-                      router.replace({
-                        pathname: '/Memo/farmedit',
-                        params: { deleteCrop: true, editIndex: editIndex }
-                      });
-                    }
-                  }
-                ]
-              );
-            }}
-          >
-            <Image source={require('../../assets/deleteicon.png')} style={styles.deleteIcon} />
-          </TouchableOpacity>
         </View>
 
         {/* 이미지 추가 */}
@@ -370,6 +361,7 @@ export default function CropPlus() {
             setPlantDatePickerVisible(false);
           }}
           onCancel={() => setPlantDatePickerVisible(false)}
+          locale="ko"
         />
 
         {/* 수확 시기 */}
@@ -394,6 +386,7 @@ export default function CropPlus() {
             setHarvestDatePickerVisible(false);
           }}
           onCancel={() => setHarvestDatePickerVisible(false)}
+          locale="ko"
         />
 
         {/* 수확량 */}
@@ -545,7 +538,7 @@ export default function CropPlus() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: -15 },
-  headerTitle: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 },
+  headerTitle: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1, marginRight: 25 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
   deleteIcon: { width: 25, height: 25, resizeMode: 'contain', marginRight: 4 },
   imageBox: {
