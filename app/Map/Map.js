@@ -810,7 +810,18 @@ const Map = () => {
             const result = await response.json();
             console.log('위치 수정 성공:', result);
 
-            // UI 즉시 업데이트
+            // 성공 모달 표시
+            setModifySuccessModalVisible(true);
+            
+            // 상태 초기화
+            setIsModifyingLocation(false);
+            setModifyingTarget(null);
+            setModifyingLocation(null);
+
+            // 지도 패치 먼저 실행
+            await fetchCrops();
+
+            // 패치 완료 후 UI 업데이트
             setManagedCrops(prevCrops => 
                 prevCrops.map(crop => 
                     crop.cropdetail_id === modifyingTarget
@@ -823,13 +834,6 @@ const Map = () => {
                 )
             );
 
-            setModifySuccessModalVisible(true);
-            setIsModifyingLocation(false);
-            setModifyingTarget(null);
-            setModifyingLocation(null);
-            
-            // 작물 목록 새로고침
-            await fetchCrops();
         } catch (e) {
             console.error('위치 수정 중 오류 발생:', e);
             Alert.alert('오류', e.message || '위치 수정에 실패했습니다.');
@@ -1524,6 +1528,27 @@ const Map = () => {
                                 <Text style={{ fontSize: 16 }}>취소</Text>
                             </TouchableOpacity>
                         </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* 위치 수정 성공 모달 */}
+            <Modal
+                visible={modifySuccessModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setModifySuccessModalVisible(false)}
+            >
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>위치 수정 완료</Text>
+                        <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>위치가 성공적으로 수정되었습니다.</Text>
+                        <TouchableOpacity
+                            onPress={() => setModifySuccessModalVisible(false)}
+                            style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
