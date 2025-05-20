@@ -1942,7 +1942,7 @@ app.get('/api/cropdetail', async (req, res) => {
             };
         });
 
-        console.log('조회된 작물 상세 정보:', resultsWithFarmInfo);
+        // console.log('조회된 작물 상세 정보:', resultsWithFarmInfo);
         res.json(resultsWithFarmInfo);
     } catch (error) {
         console.error('작물 상세 정보 조회 중 오류:', error);
@@ -1978,56 +1978,53 @@ app.get('/api/cropdetail/:id', async (req, res) => {
 
 // cropdetail 정보(메모 포함) 수정 API
 app.put('/api/cropdetail/:id', async (req, res) => {
-    const { id } = req.params;
-    let { memo, detail_image_url, name, detail_qr_code } = req.body;
-
-    let updateFields = [];
-    let updateValues = [];
-
-    // memo가 배열이면 각 항목의 title, content 마지막 글자에 공백 추가
-    if (memo !== undefined) {
-        if (Array.isArray(memo)) {
-            memo = memo.map(m => ({
-                ...m,
-                title: m.title && !m.title.endsWith(' ') ? m.title + ' ' : m.title,
-                content: m.content && !m.content.endsWith(' ') ? m.content + ' ' : m.content,
-            }));
-        }
-        updateFields.push('memo = ?');
-        updateValues.push(JSON.stringify(memo));
-    }
-    if (detail_image_url !== undefined) {
-        updateFields.push('detail_image_url = ?');
-        updateValues.push(detail_image_url);
-    }
-    if (name !== undefined) {
-        updateFields.push('detail_name = ?');
-        updateValues.push(name);
-    }
-    if (detail_qr_code !== undefined) {
-        updateFields.push('detail_qr_code = ?');
-        updateValues.push(detail_qr_code);
-    }
-    if (updateFields.length === 0) {
-        return res.status(400).json({ error: '수정할 필드가 없습니다.' });
-    }
-    updateValues.push(id);
+    console.log('위치 수정 API 호출됨:', {
+        id: req.params.id,
+        body: req.body
+    });
 
     try {
-        const [result] = await pool.query(
-            `UPDATE cropdetail SET ${updateFields.join(', ')} WHERE cropdetail_id = ?`,
-            updateValues
-        );
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ 
-            error: '작물 상세 정보 수정에 실패했습니다.',
-            details: error.message,
-            sqlMessage: error.sqlMessage
+        const { id } = req.params;
+        const { latitude, longitude, cropdetail_id, detail_id, updated_at } = req.body;
+
+        console.log('수정할 데이터:', {
+            id,
+            latitude,
+            longitude,
+            cropdetail_id,
+            detail_id,
+            updated_at
         });
+
+        // 필수 필드 확인
+        if (!latitude || !longitude) {
+            console.log('필수 필드 누락:', { latitude, longitude });
+            return res.status(400).json({ error: '위도와 경도는 필수입니다.' });
+        }
+
+        // updated_at을 MySQL datetime 형식으로 변환
+        const mysqlDateTime = updated_at ? new Date(updated_at).toISOString().slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        // 데이터베이스 업데이트
+        const [result] = await pool.query(
+            'UPDATE cropdetail SET latitude = ?, longitude = ?, updated_at = ? WHERE cropdetail_id = ?',
+            [latitude, longitude, mysqlDateTime, id]
+        );
+
+        console.log('데이터베이스 업데이트 결과:', result);
+
+        if (result.affectedRows === 0) {
+            console.log('업데이트된 행이 없음');
+            return res.status(404).json({ error: '수정할 작물을 찾을 수 없습니다.' });
+        }
+
+        console.log('위치 수정 성공');
+        res.json({ message: '위치가 성공적으로 수정되었습니다.' });
+    } catch (error) {
+        console.error('위치 수정 중 오류 발생:', error);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
-
 
 // cropdetail 삭제 API (cropdetail_id 기준, 에러 핸들러 바로 위에 위치)
 app.delete('/api/cropdetail/:cropdetail_id', async (req, res) => {
@@ -2051,7 +2048,15 @@ app.put('/api/cropdetail/location/:id', async (req, res) => {
     const { id } = req.params;
     const { latitude, longitude } = req.body;
 
+    console.log('위치 수정 요청 받음:', {
+        id,
+        latitude,
+        longitude,
+        body: req.body
+    });
+
     if (latitude === undefined || longitude === undefined) {
+        console.error('위치 수정 실패: 필수 값 누락', { latitude, longitude });
         return res.status(400).json({ error: 'latitude, longitude는 필수입니다.' });
     }
 
@@ -2060,11 +2065,26 @@ app.put('/api/cropdetail/location/:id', async (req, res) => {
             'UPDATE cropdetail SET latitude = ?, longitude = ? WHERE cropdetail_id = ?',
             [latitude, longitude, id]
         );
+        
+        console.log('위치 수정 결과:', {
+            affectedRows: result.affectedRows,
+            id,
+            newLocation: { latitude, longitude }
+        });
+
         if (result.affectedRows === 0) {
+            console.error('위치 수정 실패: 해당 상세작물을 찾을 수 없음', { id });
             return res.status(404).json({ error: '해당 상세작물을 찾을 수 없습니다.' });
         }
         res.json({ success: true });
     } catch (error) {
+        console.error('위치 수정 중 오류 발생:', {
+            error: error.message,
+            sqlMessage: error.sqlMessage,
+            id,
+            latitude,
+            longitude
+        });
         res.status(500).json({
             error: '상세작물 위치 수정에 실패했습니다.',
             details: error.message,

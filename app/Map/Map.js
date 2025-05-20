@@ -117,24 +117,26 @@ const Map = () => {
 
     // 지도 움직임 종료 시 핀 애니메이션 및 (조건부) 주소 가져오기
     const handleRegionChangeComplete = (newRegion) => {
-        if (!isAddingCropMode && !isMapMoving) return; // 상태 확인 추가 (불필요할 수 있음)
+        if (!isAddingCropMode && !isMapMoving && !isModifyingLocation) return;
 
         setIsMapMoving(false);
         pinAnimation.stopAnimation();
         Animated.timing(pinAnimation, {
             toValue: 0,
             duration: 150,
-            useNativeDriver: true, // 네이티브 드라이버 사용으로 복원
+            useNativeDriver: true,
         }).start();
 
-        // isDrawingMode가 아니고, isAddingCropMode일 때만 주소 가져오기
-        if (!isDrawingMode && isAddingCropMode) { // 조건 확인: isAddingCropMode 확실히 체크
-            setRegion(newRegion);
+        // region 상태 업데이트
+        setRegion(newRegion);
+
+        // 위치 수정 모드일 때는 주소 가져오기
+        if (isModifyingLocation) {
             debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
         }
-        // 작물 추가 모드가 아닐 때도 region은 업데이트 (선택 사항)
-        else if (!isDrawingMode) {
-            setRegion(newRegion);
+        // 작물 추가 모드일 때도 주소 가져오기
+        else if (!isDrawingMode && isAddingCropMode) {
+            debouncedFetchCenterAddress(newRegion.latitude, newRegion.longitude);
         }
     };
 
@@ -193,11 +195,14 @@ const Map = () => {
                     detailId: crop.cropdetail_id,
                     name: crop.detail_name,
                     image: crop.detail_image_url,
+                    latitude: Number(crop.latitude),
+                    longitude: Number(crop.longitude)
                 }));
+                console.log('새로고침된 작물 목록:', formattedCrops);
                 setManagedCrops(formattedCrops);
             }
         } catch (error) {
-            // 에러 무시
+            console.error('작물 목록 불러오기 실패:', error);
         } finally {
             setLoadingCrops(false);
         }
@@ -727,49 +732,107 @@ const Map = () => {
 
     // 작물 핀 터치 핸들러
     const handleCropPress = (crop) => {
+        console.log('handleCropPress crop:', JSON.stringify(crop, null, 2));
         const selected = {
             ...crop,
             cropId: crop.crop_id || crop.cropId || crop.id,
             farmId: crop.farm_id || crop.farmId || params.farmId,
             farmName: crop.farm_name || crop.farmName || params.farmName,
-            detailId: crop.detail_id,
+            detailId: crop.detail_id || crop.cropdetail_id || crop.id,
+            cropdetail_id: crop.cropdetail_id || crop.detail_id || crop.id,
+            latitude: crop.latitude,
+            longitude: crop.longitude
         };
-        console.log('handleCropPress selected:', selected);
+        console.log('handleCropPress selected:', JSON.stringify(selected, null, 2));
         setSelectedCrop(selected);
         setShowCropActionModal(true);
     };
 
-    // 위치 수정 진입: cropdetail_id만 사용
+    // 위치 수정 진입
     const startModifyCropLocation = (crop) => {
+        console.log('startModifyCropLocation crop:', JSON.stringify(crop, null, 2));
         if (!crop || !crop.cropdetail_id) {
-            console.error('상세작물 cropdetail_id 없음:', crop);
+            console.error('상세작물 cropdetail_id 없음:', JSON.stringify(crop, null, 2));
             return;
         }
         setIsModifyingLocation(true);
-        setModifyingTarget(crop.cropdetail_id); // cropdetail_id만 사용
-        setModifyingLocation({ latitude: Number(crop.latitude), longitude: Number(crop.longitude) });
+        setModifyingTarget(crop.cropdetail_id);
+        setModifyingLocation({ 
+            latitude: Number(crop.latitude), 
+            longitude: Number(crop.longitude) 
+        });
+        // 현재 위치로 지도 이동
+        setRegion({
+            latitude: Number(crop.latitude),
+            longitude: Number(crop.longitude),
+            latitudeDelta: 0.002,
+            longitudeDelta: 0.002,
+        });
         setShowCropActionModal(false);
     };
 
-    // 위치 수정 저장 함수 (region 중심 좌표 사용)
+    // 위치 수정 저장 함수
     const handleSaveModifiedLocation = async () => {
-        if (!modifyingTarget) return;
+        if (!modifyingTarget) {
+            console.error('modifyingTarget이 없습니다.');
+            return;
+        }
+
+        console.log('위치 수정 시도:', {
+            target: modifyingTarget,
+            newLocation: {
+                latitude: region.latitude,
+                longitude: region.longitude
+            }
+        });
+
         try {
-            await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${modifyingTarget}`, {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/location/${modifyingTarget}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({
                     latitude: region.latitude,
-                    longitude: region.longitude,
+                    longitude: region.longitude
                 }),
             });
+
+            console.log('서버 응답:', response.status, response.statusText);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('위치 수정 실패:', errorData);
+                throw new Error(errorData.error || '위치 수정에 실패했습니다.');
+            }
+
+            const result = await response.json();
+            console.log('위치 수정 성공:', result);
+
+            // UI 즉시 업데이트
+            setManagedCrops(prevCrops => 
+                prevCrops.map(crop => 
+                    crop.cropdetail_id === modifyingTarget
+                        ? {
+                            ...crop,
+                            latitude: region.latitude,
+                            longitude: region.longitude
+                        }
+                        : crop
+                )
+            );
+
             setModifySuccessModalVisible(true);
             setIsModifyingLocation(false);
             setModifyingTarget(null);
             setModifyingLocation(null);
-            fetchCrops();
+            
+            // 작물 목록 새로고침
+            await fetchCrops();
         } catch (e) {
-            console.error('위치 수정 실패:', e);
+            console.error('위치 수정 중 오류 발생:', e);
+            Alert.alert('오류', e.message || '위치 수정에 실패했습니다.');
         }
     };
 
@@ -1380,7 +1443,7 @@ const Map = () => {
                                 <TouchableOpacity onPress={handleManagePress} style={{ paddingVertical: 12, alignItems: 'center' }}>
                                     <Text style={{ fontSize: 16 }}>관리</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={() => { setShowCropActionModal(false); startModifyCropLocation(selectedCrop.id); }} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>위치 수정</Text></TouchableOpacity>
+                                <TouchableOpacity onPress={() => { setShowCropActionModal(false); startModifyCropLocation(selectedCrop); }} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>위치 수정</Text></TouchableOpacity>
                                 <TouchableOpacity onPress={() => setShowCropActionModal(false)} style={{ paddingVertical: 12, alignItems: 'center' }}><Text style={{ fontSize: 16 }}>취소</Text></TouchableOpacity>
                             </View>
                         </View>
