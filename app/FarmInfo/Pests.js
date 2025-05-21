@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../Components/Css/FarmInfo/PestsStyle';
 import itemCodeData from '../Components/Utils/item_code_data.json';
 import { PEST_API_KEY, PEST_AI_API_KEY, SERVER_URL } from '../Components/API/apikey';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 
 // 인기작물 TOP 21 (이모지 포함, MarketPriceScreen.js와 동일)
 const popularCrops = [
@@ -55,7 +56,7 @@ const symptomCategories = [
   { code: '5', name: '균핵', desc: '흰색 또는 회색 곰팡이 또는 균핵이 발생하는 형태' },
   { code: '6', name: '부패', desc: '줄기나 과실이 물러지며 썩거나 갈색으로 변함' },
   { code: '7', name: '점무늬', desc: '흑색 또는 갈색의 작은 점처럼 나타나는 병반' },
-  { code: '8', name: '구멍', desc: '조직 일부가 괴사되어 구멍이 생김 (예: 천공병)' },
+  { code: '8', name: '구멍', desc: '조직 일부가 괴사되어 구멍이 생기는 증상' },
   { code: '9', name: '탈색', desc: '정상 엽록소 소실로 인해 잎이 노랗게 변함' },
   { code: '10', name: '생장 이상', desc: '과도한 생장, 왜소화, 줄기 비대 등' },
   { code: '11', name: '해충 피해', desc: '해충의 흡즙, 식해 등으로 인한 물리적 손상' },
@@ -65,6 +66,7 @@ const symptomCategories = [
 
 const Pests = () => {
   const navigation = useNavigation();
+  const router = useRouter();
   const [crop, setCrop] = useState('');
   const [part, setPart] = useState('');
   const [symptom, setSymptom] = useState('');
@@ -82,6 +84,27 @@ const Pests = () => {
   const [symptomSearch, setSymptomSearch] = useState('');
   const [partName, setPartName] = useState('');
   const [symptomName, setSymptomName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingDots, setLoadingDots] = useState('');
+
+  // 로딩 애니메이션 효과
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      let count = 0;
+      interval = setInterval(() => {
+        count = (count + 1) % 4;
+        setLoadingDots('.'.repeat(count));
+      }, 500);
+    } else {
+      setLoadingDots('');
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [loading]);
 
   // 모달 오픈/닫기
   const openModal = () => {
@@ -140,6 +163,12 @@ const Pests = () => {
 
   // 병해충 AI(Gemini) API 요청
   const handleSubmit = async () => {
+    if (!crop || !part || !symptom || !detail) {
+      Alert.alert('알림', '모든 항목을 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);  // 로딩 시작
     try {
       // 요청 내용 터미널에 출력
       console.log('\n=== AI 요청 내용 ===');
@@ -157,11 +186,11 @@ const Pests = () => {
 
       // 서버 API 호출
       const response = await axios.post(`${SERVER_URL}/api/ai/pest-diagnosis`, {
-        crop,
-        partName,
-        symptomName,
-        detail,
-        image
+        crop: crop,
+        partName: partName,
+        symptomName: symptomName,
+        detail: detail,
+        image: image
       });
 
       if (response.data.success) {
@@ -169,7 +198,13 @@ const Pests = () => {
         console.log(response.data.result);
         console.log('===============\n');
 
-        Alert.alert('AI 진단 결과', response.data.result);
+        router.push({
+          pathname: '/FarmInfo/PestDiagnosisResult',
+          params: { 
+            result: response.data.result,
+            similarImages: JSON.stringify(response.data.similarImages || [])
+          }
+        });
       } else {
         throw new Error(response.data.message);
       }
@@ -211,6 +246,8 @@ const Pests = () => {
           [{ text: '확인' }]
         );
       }
+    } finally {
+      setLoading(false);  // 로딩 종료
     }
   };
 
@@ -440,8 +477,16 @@ const Pests = () => {
       {image && (
         <Text style={{ color: '#4CAF50', marginBottom: 8 }}>사진이 첨부되었습니다.</Text>
       )}
-      <TouchableOpacity style={[styles.submitButton, !isFormFilled && styles.submitButtonDisabled]} disabled={!isFormFilled} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>등록</Text>
+      <TouchableOpacity 
+        style={[styles.submitButton, loading && styles.submitButtonDisabled]} 
+        onPress={handleSubmit}
+        disabled={loading}
+      >
+        {loading ? (
+          <Text style={[styles.submitButtonText, { textAlign: 'center' }]}>답변하는중{loadingDots}</Text>
+        ) : (
+          <Text style={styles.submitButtonText}>질문하기</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );

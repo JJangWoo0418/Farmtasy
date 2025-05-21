@@ -150,7 +150,12 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#cccccc',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

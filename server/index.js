@@ -2,6 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
+const stream = require('stream');
+const util = require('util');
+const pipeline = util.promisify(stream.pipeline);
 require('dotenv').config();
 
 const app = express();
@@ -1434,6 +1438,27 @@ app.delete('/diary/:diary_id', async (req, res) => {
   }
 });
 
+// 이미지 S3 미러링 함수 (기존 코드에 영향 X)
+async function mirrorImageToS3(imageUrl) {
+    const fileName = `pest-ai/mirrored-${uuidv4()}.jpg`;
+    const response = await axios({
+        method: 'get',
+        url: imageUrl,
+        responseType: 'stream',
+        timeout: 10000
+    });
+    const passThrough = new stream.PassThrough();
+    response.data.pipe(passThrough);
+    const uploadResult = await s3.upload({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: fileName,
+        Body: passThrough,
+        ContentType: 'image/jpeg',
+        ACL: 'public-read'
+    }).promise();
+    return uploadResult.Location;
+}
+
 // AI 병해충 진단 API
 app.post('/api/ai/pest-diagnosis', async (req, res) => {
     try {
@@ -1458,7 +1483,10 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
         prompt += `9. 각 병해충의 피해 심각도를 구분해서 표시해줘 (경미/보통/심각).\n`;
         prompt += `10. 피해 심각도에 따라 추천 조치 방법을 표시해줘.\n`;
         prompt += `11. 답변은 다음 순서로 작성해:\n1) 주요 병해 정보\n2) 유사 병해 비교\n3) 진단 근거 설명\n4) 이미지 평가\n5) 피해 심각도와 조치 방법\n6) 전문가 상담 경고문\n`;
-
+        prompt += `12. 표 형식 대신 일반 텍스트로 작성해줘.\n`;
+        prompt += `13. 병명, 증상, 방제법, 추천 약품, 추천 비료, 주요 증상 차이점 등 중요한 정보는 반드시 **두 개의 별표(asterisk)**로 감싸서 답변해줘. 예시:\n`;
+        prompt += `- **병명:** **복숭아 세균성구멍병**\n- **증상:** **과실에 작은 갈색 반점이 생기며...**\n- **방제법:** **월동 병원균의 밀도를 낮추기 위해...**\n- **추천 약품:** **아그렙토마이신, 옥시테트라사이클린-동 복합제**\n- **주요 증상 차이점:** **구멍이 뚫리는 증상**\n`;
+        prompt += `14. 병 해충명은 한글만 사용해줘. 영어 병 해충명은 사용하지 말아줘.\n`;
 
         const requestBody = {
             contents: [
@@ -1481,7 +1509,32 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
             throw new Error('AI가 답변을 반환하지 않았습니다.');
         }
 
-        res.json({ success: true, result: aiText });
+        // 이미지 URL 추출
+        const imageUrls = [];
+        const lines = aiText.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('[이미지:')) {
+                const diseaseName = lines[i].match(/\[이미지:(.*?)\]/)[1];
+                if (lines[i + 1] && lines[i + 1].startsWith('URL:')) {
+                    const imageUrl = lines[i + 1].replace('URL:', '').trim();
+                    imageUrls.push({ diseaseName, imageUrl });
+                }
+            }
+        }
+        // === S3 미러링 적용 (기존 로직, 변수, 응답 구조 등 절대 건드리지 않음) ===
+        for (let i = 0; i < imageUrls.length; i++) {
+            try {
+                const mirroredUrl = await mirrorImageToS3(imageUrls[i].imageUrl);
+                imageUrls[i].imageUrl = mirroredUrl;
+            } catch (e) {
+                // 실패 시 원본 URL 유지
+            }
+        }
+        res.json({ 
+            success: true, 
+            result: aiText,
+            similarImages: imageUrls 
+        });
 
     } catch (error) {
         console.error('AI 진단 오류:', error);
