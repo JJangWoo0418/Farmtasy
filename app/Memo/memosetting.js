@@ -73,39 +73,66 @@ export default function MemoSetting() {
 
     // 이미지 선택
     const pickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
-        if (!result.canceled) {
-            const localUri = result.assets[0].uri;
-            const fileName = localUri.split('/').pop();
-
-            // S3 presigned URL 요청
-            const presignRes = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fileName,
-                    fileType: 'image/jpeg', // 실제 타입 필요시 동적으로 변경
-                }),
-            });
-            const { url: presignedUrl } = await presignRes.json();
-
-            // S3에 이미지 업로드
-            const img = await fetch(localUri);
-            const blob = await img.blob();
-            await fetch(presignedUrl, {
-                method: 'PUT',
-                body: blob,
-                headers: { 'Content-Type': 'image/jpeg' },
+        try {
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
             });
 
-            // S3 URL 생성
-            const s3Url = `https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/${fileName}`;
-            setImage(s3Url);
+            if (!result.canceled) {
+                const localUri = result.assets[0].uri;
+                const fileName = localUri.split('/').pop();
+                const timestamp = Date.now();
+                const uniqueFileName = `${timestamp}_${fileName}`;
+
+                console.log('이미지 선택됨:', {
+                    localUri,
+                    fileName: uniqueFileName
+                });
+
+                // S3 presigned URL 요청
+                const presignRes = await fetch(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fileName: uniqueFileName,
+                        fileType: 'image/jpeg',
+                    }),
+                });
+
+                if (!presignRes.ok) {
+                    throw new Error('Presigned URL 요청 실패');
+                }
+
+                const { url: presignedUrl } = await presignRes.json();
+                console.log('Presigned URL 받음:', presignedUrl);
+
+                // S3에 이미지 업로드
+                const img = await fetch(localUri);
+                const blob = await img.blob();
+                const uploadRes = await fetch(presignedUrl, {
+                    method: 'PUT',
+                    body: blob,
+                    headers: { 'Content-Type': 'image/jpeg' },
+                });
+
+                if (!uploadRes.ok) {
+                    throw new Error('S3 업로드 실패');
+                }
+
+                // S3 URL 생성
+                const s3Url = `https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/${uniqueFileName}`;
+                console.log('S3 URL 생성됨:', s3Url);
+
+                // 상태 업데이트
+                setImage(s3Url);
+                console.log('이미지 상태 업데이트됨:', s3Url);
+            }
+        } catch (error) {
+            console.error('이미지 업로드 중 오류:', error);
+            Alert.alert('오류', '이미지 업로드에 실패했습니다.');
         }
     };
 
@@ -237,9 +264,10 @@ export default function MemoSetting() {
             });
 
             const updateData = {
-                name: name,
+                detail_name: name,
                 detail_image_url: image,
-                detail_qr_code: qrValue
+                detail_qr_code: qrValue,
+                memo: null  // 기존 API와 호환성을 위해 추가
             };
             console.log('전송할 데이터:', updateData);
 
@@ -257,20 +285,30 @@ export default function MemoSetting() {
 
             if (response.ok) {
                 console.log('=== 상세작물 수정 성공 ===');
-                // 수정 성공 후 목록으로 이동
-                router.replace({
-                    pathname: '/Memo/memolist',
-                    params: {
-                        farmName: params.farmName,
-                        userData: params.userData,
-                        phone: params.phone,
-                        region: params.region,
-                        introduction: params.introduction,
-                        farmId: params.farmId,
-                        cropId: params.cropId,
-                        refresh: true // 목록 새로고침을 위한 플래그 추가
-                    }
-                });
+                Alert.alert(
+                    "수정 완료",
+                    "상세 작물 정보가 수정되었습니다.",
+                    [
+                        {
+                            text: "확인",
+                            onPress: () => {
+                                router.replace({
+                                    pathname: '/Memo/memolist',
+                                    params: {
+                                        farmName: params.farmName,
+                                        userData: params.userData,
+                                        phone: params.phone,
+                                        region: params.region,
+                                        introduction: params.introduction,
+                                        farmId: params.farmId,
+                                        cropId: params.cropId,
+                                        refresh: true // 목록 새로고침을 위한 플래그 추가
+                                    }
+                                });
+                            }
+                        }
+                    ]
+                );
             } else {
                 console.log('=== 상세작물 수정 실패 ===');
                 console.log('실패 응답:', data);

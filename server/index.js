@@ -1985,14 +1985,16 @@ app.put('/api/cropdetail/:id', async (req, res) => {
 
     try {
         const { id } = req.params;
-        const { latitude, longitude, memo, detail_image_url } = req.body;
+        const { latitude, longitude, memo, detail_image_url, detail_name, detail_qr_code } = req.body;
 
         console.log('수정할 데이터:', {
             id,
             latitude,
             longitude,
             memo,
-            detail_image_url
+            detail_image_url,
+            detail_name,
+            detail_qr_code
         });
 
         // 메모 데이터를 JSON 문자열로 변환
@@ -2000,7 +2002,7 @@ app.put('/api/cropdetail/:id', async (req, res) => {
 
         // 기존 데이터 조회
         const [existingData] = await pool.query(
-            'SELECT latitude, longitude, detail_image_url FROM cropdetail WHERE cropdetail_id = ?',
+            'SELECT latitude, longitude, detail_image_url, detail_name, detail_qr_code FROM cropdetail WHERE cropdetail_id = ?',
             [id]
         );
 
@@ -2008,15 +2010,17 @@ app.put('/api/cropdetail/:id', async (req, res) => {
             return res.status(404).json({ error: '수정할 작물을 찾을 수 없습니다.' });
         }
 
-        // latitude, longitude, detail_image_url이 제공되지 않은 경우 기존 값 사용
+        // 제공되지 않은 경우 기존 값 사용
         const finalLatitude = latitude ?? existingData[0].latitude;
         const finalLongitude = longitude ?? existingData[0].longitude;
         const finalDetailImageUrl = detail_image_url ?? existingData[0].detail_image_url;
+        const finalDetailName = detail_name ?? existingData[0].detail_name;
+        const finalDetailQrCode = detail_qr_code ?? existingData[0].detail_qr_code;
 
         // 데이터베이스 업데이트
         const [result] = await pool.query(
-            'UPDATE cropdetail SET latitude = ?, longitude = ?, memo = ?, detail_image_url = ?, updated_at = NOW() WHERE cropdetail_id = ?',
-            [finalLatitude, finalLongitude, memoJson, finalDetailImageUrl, id]
+            'UPDATE cropdetail SET latitude = ?, longitude = ?, memo = ?, detail_image_url = ?, detail_name = ?, detail_qr_code = ?, updated_at = NOW() WHERE cropdetail_id = ?',
+            [finalLatitude, finalLongitude, memoJson, finalDetailImageUrl, finalDetailName, finalDetailQrCode, id]
         );
 
         console.log('데이터베이스 업데이트 결과:', result);
@@ -2029,7 +2033,9 @@ app.put('/api/cropdetail/:id', async (req, res) => {
                 latitude: finalLatitude,
                 longitude: finalLongitude,
                 memo: memoJson,
-                detail_image_url: finalDetailImageUrl
+                detail_image_url: finalDetailImageUrl,
+                detail_name: finalDetailName,
+                detail_qr_code: finalDetailQrCode
             }
         });
     } catch (error) {
