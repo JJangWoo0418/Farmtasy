@@ -14,12 +14,8 @@ export default function MemoSetting() {
     const [name, setName] = useState(params.name || '');
     const [qrValue, setQrValue] = useState('');
     const [showQR, setShowQR] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [modalMessage, setModalMessage] = useState('');
     const [farmAddress, setFarmAddress] = useState('');
     const [farmId, setFarmId] = useState(null);
-    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-    const [showDeleteCompleteModal, setShowDeleteCompleteModal] = useState(false);
 
     // 농장 주소와 farmId 가져오기 (최초 렌더링 시)
     useEffect(() => {
@@ -113,53 +109,68 @@ export default function MemoSetting() {
         }
     };
 
-    // 삭제 처리 함수
+    // 삭제 확인 및 처리 함수
     const handleDelete = async () => {
-        try {
-            if (!params.detailId) {
-                showWarningModal('삭제할 작물 정보가 없습니다.');
-                return;
-            }
+        Alert.alert(
+            "상세 작물 삭제",
+            "이 상세 작물을 삭제하시겠습니까?",
+            [
+                {
+                    text: "취소",
+                    style: "cancel"
+                },
+                {
+                    text: "삭제",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            if (!params.detailId) {
+                                Alert.alert('오류', '삭제할 작물 정보가 없습니다.');
+                                return;
+                            }
 
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
+                            const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                }
+                            });
+
+                            if (response.ok) {
+                                Alert.alert(
+                                    "삭제 완료",
+                                    "상세 작물이 삭제되었습니다.",
+                                    [
+                                        {
+                                            text: "확인",
+                                            onPress: () => {
+                                                router.replace({
+                                                    pathname: '/Memo/memolist',
+                                                    params: {
+                                                        farmName: params.farmName,
+                                                        userData: params.userData,
+                                                        phone: params.phone,
+                                                        region: params.region,
+                                                        introduction: params.introduction,
+                                                        farmId: params.farmId,
+                                                        cropId: params.cropId
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    ]
+                                );
+                            } else {
+                                Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
+                            }
+                        } catch (error) {
+                            console.error('삭제 실패:', error);
+                            Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
+                        }
+                    }
                 }
-            });
-
-            if (response.ok) {
-                setShowDeleteCompleteModal(true);
-            } else {
-                showWarningModal('삭제 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('삭제 실패:', error);
-            showWarningModal('삭제 중 오류가 발생했습니다.');
-        }
-    };
-
-    // 삭제 확인 모달 닫기 및 삭제 실행
-    const handleDeleteConfirm = () => {
-        setShowDeleteConfirmModal(false);
-        handleDelete();
-    };
-
-    // 삭제 완료 모달 닫기 및 목록으로 이동
-    const handleDeleteComplete = () => {
-        setShowDeleteCompleteModal(false);
-        router.replace({
-            pathname: '/Memo/memolist',
-            params: {
-                farmName: params.farmName,
-                userData: params.userData,
-                phone: params.phone,
-                region: params.region,
-                introduction: params.introduction,
-                farmId: params.farmId,
-                cropId: params.cropId
-            }
-        });
+            ]
+        );
     };
 
     // QR코드 생성 함수
@@ -207,12 +218,12 @@ export default function MemoSetting() {
         if (!params.detailId) {
             console.log('=== 수정 실패 ===');
             console.log('detailId가 없습니다:', params.detailId);
-            showWarningModal('수정할 작물 정보가 없습니다.');
+            Alert.alert('오류', '수정할 작물 정보가 없습니다.');
             return;
         }
 
         if (!name.trim()) {
-            showWarningModal('작물 이름을 입력해주세요.');
+            Alert.alert('오류', '작물 이름을 입력해주세요.');
             return;
         }
 
@@ -263,19 +274,13 @@ export default function MemoSetting() {
             } else {
                 console.log('=== 상세작물 수정 실패 ===');
                 console.log('실패 응답:', data);
-                showWarningModal(data.error || '수정 중 오류가 발생했습니다.');
+                Alert.alert('오류', data.error || '수정 중 오류가 발생했습니다.');
             }
         } catch (error) {
             console.error('=== 상세작물 수정 실패 ===');
             console.error('에러 내용:', error);
-            showWarningModal('수정 중 오류가 발생했습니다.');
+            Alert.alert('오류', '수정 중 오류가 발생했습니다.');
         }
-    };
-
-    // 모달 표시 함수
-    const showWarningModal = (message) => {
-        setModalMessage(message);
-        setShowModal(true);
     };
 
     return (
@@ -291,7 +296,7 @@ export default function MemoSetting() {
                         <Image source={gobackIcon} style={styles.backIcon} />
                     </TouchableOpacity>
                     <Text style={styles.title}>상세작물설정</Text>
-                    <TouchableOpacity onPress={() => setShowDeleteConfirmModal(true)}>
+                    <TouchableOpacity onPress={handleDelete}>
                         <Image source={require('../../assets/deleteicon.png')} style={styles.deleteIcon} />
                     </TouchableOpacity>
                 </View>
@@ -349,56 +354,6 @@ export default function MemoSetting() {
                 >
                     <Text style={styles.locationButtonText}>수정 완료</Text>
                 </TouchableOpacity>
-
-                {/* 삭제 확인 모달 */}
-                <Modal
-                    visible={showDeleteConfirmModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowDeleteConfirmModal(false)}
-                >
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>상세 작물 삭제</Text>
-                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>이 상세 작물을 삭제하시겠습니까?</Text>
-                            <View style={{ flexDirection: 'row', gap: 12 }}>
-                                <TouchableOpacity
-                                    onPress={() => setShowDeleteConfirmModal(false)}
-                                    style={{ backgroundColor: '#E5E7EB', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                                >
-                                    <Text style={{ color: '#374151', fontWeight: 'bold', fontSize: 16 }}>취소</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleDeleteConfirm}
-                                    style={{ backgroundColor: '#EF4444', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                                >
-                                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>삭제</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
-
-                {/* 삭제 완료 모달 */}
-                <Modal
-                    visible={showDeleteCompleteModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowDeleteCompleteModal(false)}
-                >
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>삭제 완료</Text>
-                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>상세 작물이 삭제되었습니다.</Text>
-                            <TouchableOpacity
-                                onPress={handleDeleteComplete}
-                                style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
             </ScrollView>
         </KeyboardAvoidingView>
     );

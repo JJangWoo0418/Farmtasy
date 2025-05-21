@@ -119,7 +119,7 @@ export default function CropSetting() {
         if (!dateString) return '';
         const d = new Date(dateString);
         if (isNaN(d)) return '';
-        return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function formatNumberString(value) {
@@ -136,54 +136,41 @@ export default function CropSetting() {
         // ...기존 추가/수정 처리...
     }, [params?.deleteCrop, params?.editIndex]);
 
-    // 확인 버튼 클릭 시
-    const [errorModalVisible, setErrorModalVisible] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
-
     const handleConfirm = async () => {
-        if (!farmId) {
-            setErrorMessage('농장 정보를 찾을 수 없습니다.');
-            setErrorModalVisible(true);
+        if (!farmId){
+            Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
             return;
         }
         if (!name) {
-            setErrorMessage('이름을 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '이름을 입력해주세요.');
             return;
         }
         if (!selectedCrop) {
-            setErrorMessage('작물을 선택해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '작물을 선택해주세요.');
             return;
         }
         if (!area) {
-            setErrorMessage('재배 면적을 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '재배 면적을 입력해주세요.');
             return;
         }
         if (parseFloat(area) >= 100000) {
-            setErrorMessage('재배 면적은 99,999 이하로 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '재배 면적은 99,999 이하로 입력해주세요.');
             return;
         }
         if (!plantDate) {
-            setErrorMessage('정식 시기를 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '정식 시기를 입력해주세요.');
             return;
         }
         if (!harvestDate) {
-            setErrorMessage('수확 시기를 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '수확 시기를 입력해주세요.');
             return;
         }
         if (!amount) {
-            setErrorMessage('수확량을 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '수확량을 입력해주세요.');
             return;
         }
         if (parseFloat(amount) >= 10000000) {
-            setErrorMessage('수확량은 9,999,999Kg 이하로 입력해주세요.');
-            setErrorModalVisible(true);
+            Alert.alert('오류', '수확량은 9,999,999Kg 이하로 입력해주세요.');
             return;
         }
 
@@ -283,7 +270,7 @@ export default function CropSetting() {
     // 삭제 처리 함수
     const handleDelete = async () => {
         if (!params.cropId) {
-            showWarningModal('삭제할 작물 정보가 없습니다.');
+            Alert.alert('오류', '삭제할 작물 정보가 없습니다.');
             return;
         }
         try {
@@ -291,43 +278,52 @@ export default function CropSetting() {
                 method: 'DELETE',
             });
             if (response.ok) {
-                setShowDeleteCompleteModal(true);
+                Alert.alert('삭제 완료', '작물 정보가 삭제되었습니다.', [
+                    {
+                        text: '확인',
+                        onPress: () => {
+                            router.replace({
+                                pathname: '/Memo/farmedit',
+                                params: {
+                                    deleteCrop: true,
+                                    editIndex: editIndex,
+                                    phone: params.phone,
+                                    farmName: params.farmName,
+                                    farmId: farmId,
+                                    userData: params.userData,
+                                    region: params.region,
+                                    introduction: params.introduction,
+                                }
+                            });
+                        }
+                    }
+                ]);
             } else {
-                showWarningModal('삭제 중 오류가 발생했습니다.');
+                Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
             }
         } catch (error) {
-            showWarningModal('삭제 중 오류가 발생했습니다.');
+            Alert.alert('오류', '삭제 중 오류가 발생했습니다.');
         }
     };
-    // 삭제 완료 모달 닫기 및 목록으로 이동
-    const handleDeleteComplete = () => {
-        setShowDeleteCompleteModal(false);
-        router.replace({
-            pathname: '/Memo/farmedit',
-            params: {
-                deleteCrop: true,
-                editIndex: editIndex,
-                phone: params.phone,
-                farmName: params.farmName,
-                farmId: farmId,
-                userData: params.userData,
-                region: params.region,
-                introduction: params.introduction,
-                // 필요시 추가 정보 전달
-            }
-        });
-    };
-    // 모달 표시 함수
-    const showWarningModal = (message) => {
-        setModalMessage(message);
-        setShowModal(true);
-    };
 
-    // 확인 버튼 클릭 시
-    const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-    const [showDeleteCompleteModal, setShowDeleteCompleteModal] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [modalMessage, setModalMessage] = useState('');
+    // 삭제 확인 모달 닫기 및 삭제 실행
+    const handleDeleteConfirm = async () => {
+        Alert.alert(
+            '작물 삭제',
+            '이 작물 정보를 삭제하시겠습니까?',
+            [
+                {
+                    text: '취소',
+                    style: 'cancel'
+                },
+                {
+                    text: '삭제',
+                    style: 'destructive',
+                    onPress: handleDelete
+                }
+            ]
+        );
+    };
 
     useEffect(() => {
         if (!params.cropId) return;
@@ -353,12 +349,6 @@ export default function CropSetting() {
         fetchCropInfo();
     }, [params.cropId]);
 
-    // 삭제 확인 모달 닫기 및 삭제 실행
-    const handleDeleteConfirm = async () => {
-        setShowDeleteConfirmModal(false);
-        await handleDelete();
-    };
-
     return (
         <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -376,7 +366,7 @@ export default function CropSetting() {
                         <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>작물 종류 설정</Text>
-                    <TouchableOpacity onPress={() => setShowDeleteConfirmModal(true)}>
+                    <TouchableOpacity onPress={handleDeleteConfirm}>
                         <Image source={require('../../assets/deleteicon.png')} style={styles.deleteIcon} />
                     </TouchableOpacity>
                 </View>
@@ -447,7 +437,7 @@ export default function CropSetting() {
                     <TextInput
                         style={[styles.input, { flex: 1 }]}
                         value={plantDate}
-                        placeholder="YYYY.MM.DD"
+                        placeholder="YYYY-MM-DD"
                         editable={false}
                         placeholderTextColor="#888888"
                     />
@@ -471,7 +461,7 @@ export default function CropSetting() {
                     <TextInput
                         style={[styles.input, { flex: 1 }]}
                         value={harvestDate}
-                        placeholder="YYYY.MM.DD"
+                        placeholder="YYYY-MM-DD"
                         editable={false}
                         placeholderTextColor="#888888"
                     />
@@ -610,97 +600,6 @@ export default function CropSetting() {
                         </View>
                     </View>
                 </Modal>
-
-                {/* 입력 오류 모달 */}
-                <Modal
-                    visible={errorModalVisible}
-                    transparent={true}
-                    animationType="fade"
-                    onRequestClose={() => setErrorModalVisible(false)}
-                >
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.errorModalContent}>
-                            <Text style={styles.errorModalText}>{errorMessage}</Text>
-                            <TouchableOpacity
-                                style={styles.errorModalButton}
-                                onPress={() => setErrorModalVisible(false)}
-                            >
-                                <Text style={styles.errorModalButtonText}>닫기</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-
-                {/* 삭제 확인 모달 */}
-                <Modal
-                    visible={showDeleteConfirmModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowDeleteConfirmModal(false)}
-                >
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>작물 삭제</Text>
-                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>이 작물 정보를 삭제하시겠습니까?</Text>
-                            <View style={{ flexDirection: 'row', gap: 12 }}>
-                                <TouchableOpacity
-                                    onPress={() => setShowDeleteConfirmModal(false)}
-                                    style={{ backgroundColor: '#E5E7EB', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                                >
-                                    <Text style={{ color: '#374151', fontWeight: 'bold', fontSize: 16 }}>취소</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    onPress={handleDeleteConfirm}
-                                    style={{ backgroundColor: '#EF4444', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                                >
-                                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>삭제</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </Modal>
-
-                {/* 삭제 완료 모달 */}
-                <Modal
-                    visible={showDeleteCompleteModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowDeleteCompleteModal(false)}
-                >
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>삭제 완료</Text>
-                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>작물 정보가 삭제되었습니다.</Text>
-                            <TouchableOpacity
-                                onPress={handleDeleteComplete}
-                                style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-
-                {/* 경고/안내 모달 */}
-                <Modal
-                    visible={showModal}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setShowModal(false)}
-                >
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                            <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center', color: '#d32f2f', fontWeight: 'bold' }}>{modalMessage}</Text>
-                            <TouchableOpacity
-                                onPress={() => setShowModal(false)}
-                                style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
-
             </ScrollView>
         </KeyboardAvoidingView>
     );

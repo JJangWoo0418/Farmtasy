@@ -128,54 +128,41 @@ export default function CropPlus() {
     // ...기존 추가/수정 처리...
   }, [params?.deleteCrop, params?.editIndex]);
 
-  // 확인 버튼 클릭 시
-  const [errorModalVisible, setErrorModalVisible] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
   const handleConfirm = async () => {
     if (!farmId) {
-      setErrorMessage('농장 정보를 찾을 수 없습니다.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
       return;
     }
     if (!name) {
-      setErrorMessage('이름을 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '이름을 입력해주세요.');
       return;
     }
     if (!selectedCrop) {
-      setErrorMessage('작물을 선택해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '작물을 선택해주세요.');
       return;
     }
     if (!area) {
-      setErrorMessage('재배 면적을 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '재배 면적을 입력해주세요.');
       return;
     }
     if (parseFloat(area) >= 100000) {
-      setErrorMessage('재배 면적은 99,999 이하로 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '재배 면적은 99,999 이하로 입력해주세요.');
       return;
     }
     if (!plantDate) {
-      setErrorMessage('정식 시기를 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '정식 시기를 입력해주세요.');
       return;
     }
     if (!harvestDate) {
-      setErrorMessage('수확 시기를 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '수확 시기를 입력해주세요.');
       return;
     }
     if (!amount) {
-      setErrorMessage('수확량을 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '수확량을 입력해주세요.');
       return;
     }
     if (parseFloat(amount) >= 10000000) {
-      setErrorMessage('수확량은 9,999,999Kg 이하로 입력해주세요.');
-      setErrorModalVisible(true);
+      Alert.alert('오류', '수확량은 9,999,999Kg 이하로 입력해주세요.');
       return;
     }
 
@@ -345,7 +332,7 @@ export default function CropPlus() {
           <TextInput
             style={[styles.input, { flex: 1 }]}
             value={plantDate}
-            placeholder="YYYY.MM.DD"
+            placeholder="YYYY-MM-DD"
             editable={false}
             placeholderTextColor="#888888"
           />
@@ -370,7 +357,7 @@ export default function CropPlus() {
           <TextInput
             style={[styles.input, { flex: 1 }]}
             value={harvestDate}
-            placeholder="YYYY.MM.DD"
+            placeholder="YYYY-MM-DD"
             editable={false}
             placeholderTextColor="#888888"
           />
@@ -507,26 +494,6 @@ export default function CropPlus() {
                   <Text style={styles.errorModalButtonText}>확인</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* 입력 오류 모달 */}
-        <Modal
-          visible={errorModalVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setErrorModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.errorModalContent}>
-              <Text style={styles.errorModalText}>{errorMessage}</Text>
-              <TouchableOpacity
-                style={styles.errorModalButton}
-                onPress={() => setErrorModalVisible(false)}
-              >
-                <Text style={styles.errorModalButtonText}>닫기</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Modal>

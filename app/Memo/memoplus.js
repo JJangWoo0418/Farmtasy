@@ -117,7 +117,7 @@ export default function MemoPlus() {
     });
   };
 
-  // 모달 표시 함수
+  // 모달 표시 함수 제거
   const showWarningModal = (message) => {
     setModalMessage(message);
     setShowModal(true);
@@ -192,15 +192,15 @@ export default function MemoPlus() {
           style={styles.locationButton}
           onPress={() => {
             if (!name.trim()) {
-              showWarningModal('작물의 이름을 입력해주세요.');
+              Alert.alert('오류', '작물의 이름을 입력해주세요.');
               return;
             }
             if (!qrValue) {
-              showWarningModal('QR코드를 먼저 생성해주세요.');
+              Alert.alert('오류', 'QR코드를 먼저 생성해주세요.');
               return;
             }
             if (!farmId) {
-              showWarningModal('농장 정보를 찾을 수 없습니다.');
+              Alert.alert('오류', '농장 정보를 찾을 수 없습니다.');
               return;
             }
             // cropdetail 저장 없이, 입력값만 Map 페이지로 전달
@@ -227,26 +227,6 @@ export default function MemoPlus() {
         >
           <Text style={styles.locationButtonText}>작물 위치 표시하기</Text>
         </TouchableOpacity>
-
-        {/* 경고 모달 */}
-        <Modal
-          visible={showModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalText}>{modalMessage}</Text>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowModal(false)}
-              >
-                <Text style={styles.modalButtonText}>확인</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </ScrollView>
     </KeyboardAvoidingView>
   );
