@@ -65,7 +65,7 @@ const ProfilePage = () => {
                 />
                 <View style={styles.profileInfo}>
                     <Text style={styles.profileName}>[{userData?.region || '지역 미설정'}] {userData?.name || '이름 없음'}</Text>
-                    <Text style={styles.profileLevel}>저는 {userData?.level || '초보자'}예요</Text>
+                    <Text style={styles.profileLevel}>{userData?.introduction || '소개 미설정'}</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.editBtn}
