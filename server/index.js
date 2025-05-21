@@ -779,7 +779,125 @@ app.get('/api/collection/user-posts', async (req, res) => {
                 u.profile_image,
                 CASE WHEN pb.id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
                 CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
-                (SELECT COUNT(*) FROM Comment c WHERE c.post_id = p.post_id) as commentCount
+                (SELECT COUNT(*) FROM Comment c WHERE c.post_id = p.post_id) as commentCount,
+                (
+                    SELECT c2.comment_content
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_content,
+                (
+                    SELECT u2.name
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_user,
+                (
+                    SELECT u2.profile_image
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_profile,
+                (
+                    SELECT c2.comment_created_at
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_time,
+                (
+                    SELECT u2.region
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_region,
+                (
+                    SELECT u2.introduction
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_introduction
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             LEFT JOIN post_bookmarks pb ON p.post_id = pb.post_id AND pb.user_phone = ?
@@ -1108,7 +1226,125 @@ app.get('/api/comment/user-posts', async (req, res) => {
                 u.profile_image,
                 CASE WHEN pl2.id IS NOT NULL THEN 1 ELSE 0 END as is_liked,
                 CASE WHEN pb.id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-                (SELECT COUNT(*) FROM Comment c2 WHERE c2.post_id = p.post_id) as commentCount
+                (SELECT COUNT(*) FROM Comment c2 WHERE c2.post_id = p.post_id) as commentCount,
+                (
+                    SELECT c2.comment_content
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_content,
+                (
+                    SELECT u2.name
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_user,
+                (
+                    SELECT u2.profile_image
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_profile,
+                (
+                    SELECT c2.comment_created_at
+                    FROM Comment c2
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_time,
+                (
+                    SELECT u2.region
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_region,
+                (
+                    SELECT u2.introduction
+                    FROM Comment c2
+                    LEFT JOIN user u2 ON c2.phone = u2.phone
+                    WHERE c2.post_id = p.post_id AND c2.comment_parent_id IS NULL
+                    ORDER BY (
+                        (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c2.comment_id)
+                        +
+                        (SELECT IFNULL(SUM(sub_likes.like_count), 0)
+                         FROM (
+                           SELECT c3.comment_id, COUNT(cl2.id) as like_count
+                           FROM Comment c3
+                           LEFT JOIN comment_likes cl2 ON cl2.comment_id = c3.comment_id
+                           WHERE c3.comment_parent_id = c2.comment_id
+                           GROUP BY c3.comment_id
+                         ) as sub_likes
+                        )
+                    ) DESC, c2.comment_created_at ASC
+                    LIMIT 1
+                ) as best_comment_introduction
             FROM post p
             LEFT JOIN user u ON p.phone = u.phone
             LEFT JOIN post_likes pl2 ON p.post_id = pl2.post_id AND pl2.user_phone = ?
