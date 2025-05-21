@@ -103,7 +103,7 @@ const Map = () => {
 
     // 지도 움직임 시작 시 핀 애니메이션 및 키보드 닫기
     const handleRegionChangeStart = () => {
-        if (!isAddingCropMode) return; // 작물 추가 모드가 아닐 때는 애니메이션 안 함
+        if (!isAddingCropMode && !isModifyingLocation) return; // 작물 추가 모드나 위치 수정 모드가 아닐 때는 애니메이션 안 함
 
         Keyboard.dismiss();
         setIsMapMoving(true);
@@ -111,7 +111,7 @@ const Map = () => {
         Animated.timing(pinAnimation, {
             toValue: 1,
             duration: 200,
-            useNativeDriver: true, // 네이티브 드라이버 사용으로 복원
+            useNativeDriver: true,
         }).start();
     };
 
@@ -1262,7 +1262,7 @@ const Map = () => {
                     <>
                         {/* 중앙 조준점 */}
                         <Animated.View style={[styles.centerPinContainer, pinAnimatedStyle]} pointerEvents="none">
-                            <Text style={styles.centerPinEmoji}>📍</Text>
+                            <Text style={[styles.centerPinEmoji, { transform: [{ translateY: -20 }] }]}>📍</Text>
                         </Animated.View>
 
                         {/* 하단 주소+버튼 박스 */}
@@ -1737,7 +1737,7 @@ const styles = StyleSheet.create({
     // --- 중앙 핀 스타일 --- (centerPinView 제거, centerPinEmoji 추가)
     centerPinContainer: {
         position: 'absolute',
-        top: 0,
+        top: 50,
         left: 0,
         right: 0,
         bottom: 0,
