@@ -210,7 +210,15 @@ const ProfilePage = () => {
             {/* 내 농장 */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>내 농장</Text>
-                <TouchableOpacity style={styles.sectionRow}>
+                <TouchableOpacity 
+                    style={styles.sectionRow}
+                    onPress={() => navigation.navigate('Homepage/Profile/myfarmpage', {
+                        phone: route.params?.phone,
+                        userData: userData,
+                        name: userData?.name,
+                        region: userData?.region
+                    })}
+                >
                     <Image source={require('../../../assets/mapicon3.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>내 농장 지역</Text>
                     <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />

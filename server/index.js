@@ -2351,6 +2351,21 @@ app.put('/api/cropdetail/location/:id', async (req, res) => {
     }
 });
 
+// 유저의 농장 목록 조회 API
+app.get('/api/farms/user/:phone', async (req, res) => {
+    const { phone } = req.params;
+    try {
+        const [rows] = await pool.query(
+            'SELECT id, user_phone, farm_name, region, address, description, farm_image FROM farm WHERE user_phone = ?',
+            [phone]
+        );
+        res.json({ farms: rows });
+    } catch (error) {
+        console.error('유저 농장 목록 조회 오류:', error);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
@@ -2456,6 +2471,7 @@ app.get('/api/cropdetail', async (req, res) => {
         if (connection) connection.release();
     }
 });
+
 
 
 
