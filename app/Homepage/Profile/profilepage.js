@@ -206,31 +206,6 @@ const ProfilePage = () => {
                     <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
             </View>
-
-            {/* 내 농장 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>내 농장</Text>
-                <TouchableOpacity 
-                    style={styles.sectionRow}
-                    onPress={() => {
-                        router.push({
-                            pathname: 'Homepage/Profile/myfarmpage',
-                            params: {
-                                phone: route.params?.phone,
-                                userData: userData,
-                                name: userData?.name,
-                                region: userData?.region
-                            }
-                        });
-                    }}
-                >
-                    <Image source={require('../../../assets/mapicon3.png')} style={styles.sectionIcon} />
-                    <Text style={styles.sectionText}>내 농장 지역</Text>
-                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
-                </TouchableOpacity>
-            </View>
-
-            
         </ScrollView>
     );
 };

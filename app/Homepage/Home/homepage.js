@@ -749,7 +749,7 @@ const HomePage = () => {
                     ]}
                 >
                     <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>
-                        <Image source={require('../../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
+                        <Image source={require('../../../assets/closeicon.png')} style={{ width: 20, height: 20 }} />
                     </TouchableOpacity>
 
                     <Text style={styles.drawerTitle}>정보</Text>
@@ -774,7 +774,12 @@ const HomePage = () => {
                     </TouchableOpacity>
 
                     <Text style={styles.drawerTitle}>농사 정보</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage' })}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region
+                        } })}>
                         <Image source={require('../../../assets/directdeposit2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>면적 직불금 계산기</Text>
                     </TouchableOpacity>

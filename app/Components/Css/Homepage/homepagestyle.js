@@ -391,7 +391,7 @@ export default StyleSheet.create({
     drawerClose: {
         alignSelf: 'flex-end',
         marginBottom: 0,
-        marginTop: 40
+        marginTop: 50
     },
 
     drawerTitle: {

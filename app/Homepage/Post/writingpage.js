@@ -209,7 +209,7 @@ const WritingPage = () => {
                     </View>
 
                     <View style={styles.sheetOptions}>
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사질문'); setSelectedIcon(require('../../../assets/FarmingQuestions.png')); closeCategorySheet(); }}>
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setSelectedCategory('농사질문'); setSelectedIcon(require('../../../assets/farmingquestions2.png')); closeCategorySheet(); }}>
                             <Image source={require('../../../assets/FarmingQuestions.png')} style={styles.sheetIcon} />
                             <Text style={styles.sheetLabel}>농사질문</Text>
                         </TouchableOpacity>

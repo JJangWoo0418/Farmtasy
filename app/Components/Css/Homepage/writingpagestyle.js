@@ -168,6 +168,7 @@ export default StyleSheet.create({
     },
     sheetLabel: {
         fontSize: 14,
+        fontWeight: 'bold',
     },
     overlay: {
         position: 'absolute',
