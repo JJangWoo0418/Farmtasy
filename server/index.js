@@ -2356,7 +2356,7 @@ app.get('/api/farms/user/:phone', async (req, res) => {
     const { phone } = req.params;
     try {
         const [rows] = await pool.query(
-            'SELECT id, user_phone, farm_name, region, address, description, farm_image FROM farm WHERE user_phone = ?',
+            'SELECT farm_id as id, user_phone, farm_name, address, farm_image FROM farm WHERE user_phone = ?',
             [phone]
         );
         res.json({ farms: rows });

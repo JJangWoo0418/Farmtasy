@@ -212,12 +212,17 @@ const ProfilePage = () => {
                 <Text style={styles.sectionTitle}>내 농장</Text>
                 <TouchableOpacity 
                     style={styles.sectionRow}
-                    onPress={() => navigation.navigate('Homepage/Profile/myfarmpage', {
-                        phone: route.params?.phone,
-                        userData: userData,
-                        name: userData?.name,
-                        region: userData?.region
-                    })}
+                    onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/Profile/myfarmpage',
+                            params: {
+                                phone: route.params?.phone,
+                                userData: userData,
+                                name: userData?.name,
+                                region: userData?.region
+                            }
+                        });
+                    }}
                 >
                     <Image source={require('../../../assets/mapicon3.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>내 농장 지역</Text>
