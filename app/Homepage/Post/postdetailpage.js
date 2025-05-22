@@ -24,6 +24,7 @@ const PostDetailPage = () => {
     const [replyInput, setReplyInput] = useState(''); // 대댓글 입력값
     const [isReplyInputVisible, setIsReplyInputVisible] = useState(false); // 대댓글 입력창 표시 여부
     const [replyToCommentId, setReplyToCommentId] = useState(null); // 대댓글 대상 댓글 id
+    const [replyToName, setReplyToName] = useState(null); // 대댓글 대상 댓글 작성자 이름
 
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
@@ -528,7 +529,7 @@ const PostDetailPage = () => {
                     <ScrollView 
                         ref={scrollViewRef}
                         style={styles.scrollView}
-                        contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : isReplyInputVisible ? 60 : 0 }}
+                        contentContainerStyle={{ paddingBottom: isReplyInputVisible ? 60 : 70 }}
                     >
                         {/* 게시글 내용 */}
                         <View style={styles.postContainer}>
@@ -642,11 +643,11 @@ const PostDetailPage = () => {
                         {renderComments(commentTree)}
                     </ScrollView>
                 </SafeAreaView>
-                {/* 댓글 입력 섹션 */}
-                <Animated.View style={[styles.commentInputSection, { transform: [{ translateY: commentInputAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }]}>                
+                {/* 댓글 입력창 항상 표시 */}
+                <View style={styles.commentInputSection}>
                     <TextInput
                         style={styles.commentInput}
-                        placeholder="댓글을 입력해 주세요"
+                        placeholder={replyToName ? `${replyToName}에게 답글을 입력해 주세요` : '댓글을 입력해 주세요'}
                         placeholderTextColor="#999"
                         value={commentInput}
                         onChangeText={setCommentInput}
@@ -654,23 +655,33 @@ const PostDetailPage = () => {
                     <TouchableOpacity style={styles.sendButton} onPress={handleSendComment}>
                         <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
                     </TouchableOpacity>
-                </Animated.View>
-
-                {/* 대댓글 입력 섹션 */}
-                {isReplyInputVisible && (
-                    <Animated.View style={[styles.commentInputSection, { bottom: 0 }]}>                
-                        <TextInput
-                            style={styles.commentInput}
-                            placeholder="답글을 입력해 주세요"
-                            placeholderTextColor="#999"
-                            value={replyInput}
-                            onChangeText={setReplyInput}
-                            autoFocus
-                        />
-                        <TouchableOpacity style={styles.sendButton} onPress={handleSendReply}>
-                            <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
+                </View>
+                {replyToName && (
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: '#f5f6fa',
+                        borderRadius: 16,
+                        paddingHorizontal: 14,
+                        paddingVertical: 6,
+                        marginLeft: 0,
+                        marginRight: 0,
+                        marginBottom: 2,
+                        marginTop: 0,
+                    }}>
+                        <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 15 }}>
+                            {replyToName}에게 답글작성
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setReplyToName(null);
+                                setReplyToCommentId(null);
+                            }}
+                        >
+                            <Text style={{ color: '#22CC6B', fontWeight: 'bold', fontSize: 15 }}>취소</Text>
                         </TouchableOpacity>
-                    </Animated.View>
+                    </View>
                 )}
             </View>
         </KeyboardAvoidingView>
