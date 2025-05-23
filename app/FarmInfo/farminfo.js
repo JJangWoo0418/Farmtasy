@@ -8,6 +8,7 @@ import { WeatherProvider } from '../context/WeatherContext';
 import Weather from './Weather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../Components/Css/FarmInfo/FarmInfoStyle';
+import { router, useLocalSearchParams} from 'expo-router';
 
 const FarmInfoContent = (props) => {
     const navigation = useNavigation();
@@ -20,7 +21,8 @@ const FarmInfoContent = (props) => {
         locationName
     } = useWeather();
     const [diaryList, setDiaryList] = useState([]);
-    const [phone, setPhone] = useState(null);
+    const [userPhone, setUserPhone] = useState(null);
+    const { userData, name, region } = useLocalSearchParams();
 
     // phone 값 초기화
     useEffect(() => {
@@ -30,7 +32,7 @@ const FarmInfoContent = (props) => {
                 if (userStr) {
                     const user = JSON.parse(userStr);
                     if (user && user.phone) {
-                        setPhone(user.phone);
+                        setUserPhone(user.phone);
                         console.log('FarmInfoContent에서 불러온 phone:', user.phone);
                     }
                 }
@@ -57,8 +59,8 @@ const FarmInfoContent = (props) => {
                         style: 'destructive',
                         onPress: async () => {
                             const API_URL = 'http://192.168.35.144:3000';
-                            if (!phone) return;
-                            const response = await fetch(`${API_URL}/diary/${diary_id}?user_phone=${phone}`, {
+                            if (!userPhone) return;
+                            const response = await fetch(`${API_URL}/diary/${diary_id}?user_phone=${userPhone}`, {
                                 method: 'DELETE'
                             });
                             if (response.ok) {
@@ -83,8 +85,8 @@ const FarmInfoContent = (props) => {
             try {
                 // 서버에서 모든 영농일지 불러오기
                 const API_URL = 'http://192.168.35.144:3000';
-                if (!phone) return;
-                const response = await fetch(`${API_URL}/diary/list?user_phone=${phone}`);
+                if (!userPhone) return;
+                const response = await fetch(`${API_URL}/diary/list?user_phone=${userPhone}`);
                 if (response.ok) {
                     const list = await response.json();
                     // diary_date 기준으로 최신순 정렬
@@ -99,7 +101,7 @@ const FarmInfoContent = (props) => {
             }
         };
         loadDiary();
-    }, [phone]);
+    }, [userPhone]);
 
     return (
         <View style={styles.container}>
@@ -158,7 +160,7 @@ const FarmInfoContent = (props) => {
                                                     editMode: true,
                                                     diaryData: diary,
                                                     diaryIndex: index,
-                                                    phone: phone
+                                                    phone: userPhone
                                                 })}
                                                 style={{backgroundColor:'#4A90E2', borderRadius:6, paddingVertical:6, paddingHorizontal:12, marginRight:8}}
                                             >
@@ -187,39 +189,78 @@ const FarmInfoContent = (props) => {
             <TouchableOpacity 
                 style={styles.writeButton} 
                 onPress={() => {
-                    console.log('DiaryWrite로 이동 시 phone 값:', phone);
-                    navigation.navigate('FarmInfo/DiaryWrite', { phone: phone });
+                    console.log('DiaryWrite로 이동 시 phone 값:', userPhone);
+                    navigation.navigate('FarmInfo/DiaryWrite', { phone: userPhone });
                 }}
             >
                 <Text style={styles.writeButtonText}>일지 작성하기</Text>
                 <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
             </TouchableOpacity>
 
-            <BottomTabNavigator currentTab="정보" onTabPress={(tab) => {
-                if (tab === '질문하기') {
-                    navigation.navigate('Chatbot/questionpage');
-                } else if (tab === '홈') {
-                    navigation.navigate('Homepage/Home/homepage');
-                }
-                else if (tab === '정보') {
-                    navigation.navigate('FarmInfo/farminfo');
-                }
-            }} />
+            <BottomTabNavigator
+                currentTab="정보"
+                onTabPress={(tab) => {
+                    if (tab === '질문하기') {
+                        router.push({ pathname: '/Chatbot/questionpage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    } else if (tab === '홈') {
+                        router.push({ pathname: '/Homepage/Home/homepage', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '정보') {
+                        router.push({ pathname: '/FarmInfo/farminfo', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '장터') {
+                        router.push({ pathname: '/Market/market', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                    else if (tab === '내 농장') {
+                        router.push({ pathname: '/Map/Map', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        } });
+                    }
+                }}
+            />
         </View>
     );
 };
 
 export default function FarmInfo() {
     const route = useRoute();
-    const [phone, setPhone] = React.useState(route.params?.phone);
+    const [userPhone, setUserPhone] = React.useState(route.params?.phone);
     React.useEffect(() => {
-        if (!phone) {
+        if (!userPhone) {
             AsyncStorage.getItem('user').then(userStr => {
                 if (userStr) {
                     try {
                         const user = JSON.parse(userStr);
                         if (user && user.phone) {
-                            setPhone(user.phone);
+                            setUserPhone(user.phone);
                             console.log('AsyncStorage에서 불러온 phone:', user.phone);
                         }
                     } catch (e) {
@@ -228,12 +269,12 @@ export default function FarmInfo() {
                 }
             });
         } else {
-            console.log('route.params에서 받은 phone:', phone);
+            console.log('route.params에서 받은 phone:', userPhone);
         }
-    }, [route.params, phone]);
+    }, [route.params, userPhone]);
     return (
         <WeatherProvider>
-            <FarmInfoContent phone={phone} />
+            <FarmInfoContent phone={userPhone} />
         </WeatherProvider>
     );
 }
