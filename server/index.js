@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
+const stream = require('stream');
+const util = require('util');
+const pipeline = util.promisify(stream.pipeline);
 require('dotenv').config();
 
 const app = express();
@@ -44,8 +49,8 @@ app.use(cors({
 }));
 
 // body-parser 설정
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // JSON 요청 최대 10MB로 증가
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // URL-encoded 요청 최대 10MB로 증가
 
 // 데이터베이스 연결 설정
 const pool = mysql.createPool({
@@ -2388,6 +2393,192 @@ app.get('/api/farms/user/:phone', async (req, res) => {
     } catch (error) {
         console.error('유저 농장 목록 조회 오류:', error);
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+})
+
+// 일지 목록 조회 API
+app.get('/diary/list', async (req, res) => {
+  try {
+    const user_phone = req.query.user_phone;
+    if (!user_phone) return res.status(400).json({ error: 'user_phone 필요' });
+    const [rows] = await pool.query(
+      'SELECT * FROM diary WHERE user_phone = ? ORDER BY diary_date DESC',
+      [user_phone]
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error('일지 목록 조회 실패:', error);
+    res.status(500).json({ error: '일지 목록을 가져오는데 실패했습니다.' });
+  }
+});
+
+// diary_date를 MySQL DATETIME 포맷으로 변환하는 함수
+function toMysqlDatetime(isoString) {
+  // '2025-05-17T15:26:44.646Z' → '2025-05-17 15:26:44'
+  if (!isoString) return null;
+  return isoString.replace('T', ' ').replace('Z', '').split('.')[0];
+}
+
+// 일지 작성 API (토큰 없이 user_phone을 body에서 받음)
+app.post('/diary/create', async (req, res) => {
+  console.log('일지 작성 요청 body:', req.body);
+  console.log('user_phone:', req.body.user_phone);
+  let { diary_date, content, crop_type, user_phone } = req.body;
+  diary_date = toMysqlDatetime(diary_date);
+  console.log('변환된 diary_date:', diary_date);
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO diary (user_phone, diary_date, content, crop_type) VALUES (?, ?, ?, ?)',
+      [user_phone, diary_date, content, crop_type]
+    );
+    res.status(201).json({ 
+      message: '일지가 성공적으로 저장되었습니다.',
+      diary_id: result.insertId 
+    });
+  } catch (error) {
+    console.error('일지 저장 실패:', error);
+    res.status(500).json({ error: '일지 저장에 실패했습니다.' });
+  }
+});
+
+// 일지 삭제 API
+app.delete('/diary/:diary_id', async (req, res) => {
+  const { diary_id } = req.params;
+  const user_phone = req.query.user_phone;
+  if (!user_phone) return res.status(400).json({ error: 'user_phone 필요' });
+  try {
+    // 해당 일지가 사용자의 것인지 확인
+    const [diary] = await pool.query(
+      'SELECT * FROM diary WHERE diary_id = ? AND user_phone = ?',
+      [diary_id, user_phone]
+    );
+    if (diary.length === 0) {
+      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    }
+    // 일지 삭제
+    await pool.query(
+      'DELETE FROM diary WHERE diary_id = ?',
+      [diary_id]
+    );
+    res.json({ message: '일지가 성공적으로 삭제되었습니다.' });
+  } catch (error) {
+    console.error('일지 삭제 실패:', error);
+    res.status(500).json({ error: '일지 삭제에 실패했습니다.' });
+  }
+});
+
+// 이미지 S3 미러링 함수 (기존 코드에 영향 X)
+async function mirrorImageToS3(imageUrl) {
+    const fileName = `pest-ai/mirrored-${uuidv4()}.jpg`;
+    const response = await axios({
+        method: 'get',
+        url: imageUrl,
+        responseType: 'stream',
+        timeout: 10000
+    });
+    const passThrough = new stream.PassThrough();
+    response.data.pipe(passThrough);
+    const uploadResult = await s3.upload({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: fileName,
+        Body: passThrough,
+        ContentType: 'image/jpeg',
+        ACL: 'public-read'
+    }).promise();
+    return uploadResult.Location;
+}
+
+// AI 병해충 진단 API
+app.post('/api/ai/pest-diagnosis', async (req, res) => {
+    try {
+        const { crop, partName, symptomName, detail, image } = req.body;
+        
+        // Gemini Flash API 호출
+        const modelName = 'gemini-2.0-flash';
+        const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=` + process.env.GEMINI_API_KEY;
+        console.log('Gemini API 모델:', modelName);
+
+        // 프롬프트 구성 (더 구체적이고 명확하게)
+        let prompt = `작물: ${crop}\n부위: ${partName}\n증상: ${symptomName}\n설명: ${detail}\n`;
+        prompt += `\n\n아래 조건을 반드시 지켜서 답변해줘.\n`;
+        prompt += `1. 사용자가 입력한 텍스트 정보(작물, 부위, 증상, 상세설명)를 가장 중요하게 참고해서 진단하고, 이미지는 부가적으로 참고해.\n`;
+        prompt += `2. 가장 가능성이 높은 병명, 증상, 방제법을 정리해줘.\n`;
+        prompt += `3. 비슷한 증상을 보이는 다른 병해충도 최소 2가지 이상 함께 안내해줘.\n`;
+        prompt += `4. 각 병해충별로 주요 증상 차이점, 방제법, 추천 약품, 추천 비료를 포함해.\n`;
+        prompt += `5. 반드시 진단 근거(이미지에서 어떤 특징을 보고 판단했는지, 텍스트 정보 중 어떤 부분이 결정적이었는지)를 명확히 설명해.\n`;
+        prompt += `6. 답변 마지막에 "정확한 진단과 방제를 위해서는 반드시 전문가 상담이 필요합니다."라는 경고문을 추가해.`;
+        prompt += `7. 확신이 없을 경우 이유와 함께 "불확실합니다."라고 답변해.\n`;
+        prompt += `8. 이미지에서 병징이 뚜렷한지 여부도 같이 평가해.\n`;
+        prompt += `9. 각 병해충의 피해 심각도를 구분해서 표시해줘 (경미/보통/심각).\n`;
+        prompt += `10. 피해 심각도에 따라 추천 조치 방법을 표시해줘.\n`;
+        prompt += `11. 답변은 다음 순서로 작성해:\n1) 주요 병해 정보\n2) 유사 병해 비교\n3) 진단 근거 설명\n4) 이미지 평가\n5) 피해 심각도와 조치 방법\n6) 전문가 상담 경고문\n`;
+        prompt += `12. 표 형식 대신 일반 텍스트로 작성해줘.\n`;
+        prompt += `13. 병명, 증상, 방제법, 추천 약품, 추천 비료, 주요 증상 차이점 등 중요한 정보는 반드시 **두 개의 별표(asterisk)**로 감싸서 답변해줘. 예시:\n`;
+        prompt += `- **병명:** **복숭아 세균성구멍병**\n- **증상:** **과실에 작은 갈색 반점이 생기며...**\n- **방제법:** **월동 병원균의 밀도를 낮추기 위해...**\n- **추천 약품:** **아그렙토마이신, 옥시테트라사이클린-동 복합제**\n- **주요 증상 차이점:** **구멍이 뚫리는 증상**\n`;
+        prompt += `14. 병 해충명은 한글만 사용해줘. 영어 병 해충명은 사용하지 말아줘.\n`;
+
+        const requestBody = {
+            contents: [
+                {
+                    parts: [
+                        { text: prompt },
+                        ...(image ? [{ inlineData: { mimeType: 'image/jpeg', data: image } }] : [])
+                    ]
+                }
+            ]
+        };
+
+        const response = await axios.post(url, requestBody, {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30000
+        });
+
+        const aiText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!aiText) {
+            throw new Error('AI가 답변을 반환하지 않았습니다.');
+        }
+
+        // 이미지 URL 추출
+        const imageUrls = [];
+        const lines = aiText.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('[이미지:')) {
+                const diseaseName = lines[i].match(/\[이미지:(.*?)\]/)[1];
+                if (lines[i + 1] && lines[i + 1].startsWith('URL:')) {
+                    const imageUrl = lines[i + 1].replace('URL:', '').trim();
+                    imageUrls.push({ diseaseName, imageUrl });
+                }
+            }
+        }
+        // === S3 미러링 적용 (기존 로직, 변수, 응답 구조 등 절대 건드리지 않음) ===
+        for (let i = 0; i < imageUrls.length; i++) {
+            try {
+                const mirroredUrl = await mirrorImageToS3(imageUrls[i].imageUrl);
+                imageUrls[i].imageUrl = mirroredUrl;
+            } catch (e) {
+                // 실패 시 원본 URL 유지
+            }
+        }
+        res.json({ 
+            success: true, 
+            result: aiText,
+            similarImages: imageUrls 
+        });
+
+    } catch (error) {
+        console.error('AI 진단 오류:', error);
+        
+        if (error.response?.status === 429) {
+            res.status(429).json({
+                success: false,
+                message: 'AI 요청 제한에 도달했습니다. 잠시 후 다시 시도해주세요.'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'AI 서버 연결에 실패했습니다.'
+            });
+        }
     }
 });
 

@@ -1061,7 +1061,6 @@ export default function MarketPriceScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             {renderModalHeader()}
-            <Text style={styles.modalSubTitle}>품종 선택</Text>
             {/* 검색창 */}
             <TextInput
               style={[styles.input, { fontSize: 20 }]}
