@@ -467,20 +467,8 @@ const HomePage = () => {
             }
 
             const result = await response.json();
-            // 알림
-            if (Platform.OS === 'android') {
-                ToastAndroid.show(
-                    result.is_bookmarked
-                        ? '북마크 리스트에 추가되었습니다.'
-                        : '북마크가 해제되었습니다.',
-                    ToastAndroid.SHORT
-                );
-            } else {
-                Alert.alert(
-                    result.is_bookmarked
-                        ? '북마크 리스트에 추가되었습니다.'
-                        : '북마크가 해제되었습니다.'
-                );
+            if (result.success) {
+                setIsBookmarked(result.is_bookmarked);
             }
         } catch (error) {
             // 에러 처리 (필요시)

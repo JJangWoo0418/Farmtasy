@@ -289,7 +289,7 @@ const PostDetailPage = () => {
                 ]).start();
             }
         } catch (error) {
-            Alert.alert('오류', '북마크 처리에 실패했습니다.');
+            // 에러 발생 시에도 알림 없이 조용히 처리
         }
     };
 
