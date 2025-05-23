@@ -10,7 +10,7 @@ const PostDetailPage = () => {
     const { post, introduction, phone, name, region, profile } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
     const [isLiked, setIsLiked] = useState(post.is_liked);
     const [likeCount, setLikeCount] = useState(post.likes);
-    const [isBookmarked, setIsBookmarked] = useState(false); // 북마크 상태 추가
+    const [isBookmarked, setIsBookmarked] = useState(post.is_bookmarked);
     const scaleAnim = useRef(new Animated.Value(1)).current;
     const bookmarkScaleAnim = useRef(new Animated.Value(1)).current;
     const commentAnimations = useRef({}).current;
@@ -253,23 +253,44 @@ const PostDetailPage = () => {
         }
     };
 
-    const handleBookmark = () => {
-        setIsBookmarked(!isBookmarked);
-        
-        // 북마크 애니메이션
-        Animated.sequence([
-            Animated.timing(bookmarkScaleAnim, {
-                toValue: 1.5,
-                duration: 100,
-                useNativeDriver: true,
-            }),
-            Animated.spring(bookmarkScaleAnim, {
-                toValue: 1,
-                friction: 3,
-                tension: 40,
-                useNativeDriver: true,
-            })
-        ]).start();
+    const handleBookmark = async () => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/bookmark`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    postId: post.id,
+                    phone,
+                    bookmark: !isBookmarked
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('북마크 처리 실패');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                setIsBookmarked(data.is_bookmarked);
+                
+                // 북마크 애니메이션
+                Animated.sequence([
+                    Animated.timing(bookmarkScaleAnim, {
+                        toValue: 1.5,
+                        duration: 100,
+                        useNativeDriver: true,
+                    }),
+                    Animated.spring(bookmarkScaleAnim, {
+                        toValue: 1,
+                        friction: 3,
+                        tension: 40,
+                        useNativeDriver: true,
+                    })
+                ]).start();
+            }
+        } catch (error) {
+            Alert.alert('오류', '북마크 처리에 실패했습니다.');
+        }
     };
 
     const toggleCommentInput = () => {
@@ -478,6 +499,10 @@ const PostDetailPage = () => {
         return total;
     };
 
+    useEffect(() => {
+        setIsBookmarked(post.is_bookmarked);
+    }, [post.is_bookmarked]);
+
     if (!post) {
         // 데이터가 없는 경우 처리 (예: 로딩 표시 또는 에러 메시지)
         return (
@@ -497,6 +522,8 @@ const PostDetailPage = () => {
             </SafeAreaView>
         );
     }
+
+
 
     return (
         <KeyboardAvoidingView
@@ -601,12 +628,14 @@ const PostDetailPage = () => {
                                 </Animated.View>
                                 <Text style={styles.actionText}>좋아요</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton} onPress={toggleCommentInput}>
-                                <Image source={require('../../../assets/commenticon.png')} style={styles.actionIcon} />
-                                <Text style={styles.actionText}>댓글</Text>
-                            </TouchableOpacity>
+                            <View style={{
+                                width: 1,
+                                height: 24,
+                                backgroundColor: '#eee',
+                                marginHorizontal: 12,
+                            }} />
                             <TouchableOpacity 
-                                style={styles.actionButton}
+                                style={styles.actionButton2}
                                 onPress={handleBookmark}
                             >
                                 <Animated.View style={{ transform: [{ scale: bookmarkScaleAnim }] }}>

@@ -134,8 +134,13 @@ export default StyleSheet.create({
         paddingVertical: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        paddingHorizontal: 45,
     },
     actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    actionButton2: {
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -148,6 +153,7 @@ export default StyleSheet.create({
     actionText: {
         fontSize: 15,
         color: '#333',
+        fontWeight: 'bold',
     },
     commentSectionHeader: {
         paddingHorizontal: 16,

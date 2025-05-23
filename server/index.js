@@ -2351,6 +2351,31 @@ app.put('/api/cropdetail/location/:id', async (req, res) => {
     }
 });
 
+
+// 게시글 북마크 추가/해제 API
+app.post('/api/post/bookmark', async (req, res) => {
+    const { postId, phone, bookmark } = req.body;
+    try {
+        if (bookmark) {
+            // 북마크 추가 (중복 방지)
+            await pool.query(
+                'INSERT IGNORE INTO post_bookmarks (post_id, user_phone) VALUES (?, ?)',
+                [postId, phone]
+            );
+        } else {
+            // 북마크 해제
+            await pool.query(
+                'DELETE FROM post_bookmarks WHERE post_id = ? AND user_phone = ?',
+                [postId, phone]
+            );
+        }
+        res.json({ success: true, is_bookmarked: bookmark });
+    } catch (error) {
+        res.status(500).json({ error: '서버 오류', details: error.message });
+    }
+});
+
+
 // 유저의 농장 목록 조회 API
 app.get('/api/farms/user/:phone', async (req, res) => {
     const { phone } = req.params;
@@ -2471,6 +2496,7 @@ app.get('/api/cropdetail', async (req, res) => {
         if (connection) connection.release();
     }
 });
+
 
 
 
