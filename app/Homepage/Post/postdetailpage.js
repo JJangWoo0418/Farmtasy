@@ -511,7 +511,7 @@ const PostDetailPage = () => {
         <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 100}
+            keyboardVerticalOffset={0}
         >
             <View style={{ flex: 1 }}>
                 <SafeAreaView style={styles.container}>
@@ -644,50 +644,50 @@ const PostDetailPage = () => {
                         {renderComments(commentTree)}
                     </ScrollView>
                 </SafeAreaView>
-            </View>
-            {/* 댓글 입력/답글 안내 UI를 absolute로 하단에 배치 */}
-            <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
-                {isReplyInputVisible && (
-                    <View style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 59, // 입력창 높이만큼 위로
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: '#f5f6fa',
-                        paddingHorizontal: 14,
-                        paddingVertical: 6,
-                        marginHorizontal: 0,
-                        marginBottom: 2,
-                        zIndex: 2,
-                    }}>
-                        <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 15 }}>
-                            {replyToName ? `${replyToName} 에게 답글작성` : '답글 작성'}
-                        </Text>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setIsReplyInputVisible(false);
-                                setReplyToName(null);
-                                setReplyToCommentId(null);
-                            }}
-                        >
-                            <Text style={{ color: '#22CC6B', fontWeight: 'bold', fontSize: 15 }}>취소</Text>
+                {/* absolute 입력창/안내 UI */}
+                <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+                    {isReplyInputVisible && (
+                        <View style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 59, // 입력창 높이만큼 위로
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#f5f6fa',
+                            paddingHorizontal: 14,
+                            paddingVertical: 6,
+                            marginHorizontal: 0,
+                            marginBottom: 2,
+                            zIndex: 2,
+                        }}>
+                            <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 15 }}>
+                                {replyToName ? `${replyToName} 에게 답글작성` : '답글 작성'}
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setIsReplyInputVisible(false);
+                                    setReplyToName(null);
+                                    setReplyToCommentId(null);
+                                }}
+                            >
+                                <Text style={{ color: '#22CC6B', fontWeight: 'bold', fontSize: 15 }}>취소</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    <View style={styles.commentInputSection}>
+                        <TextInput
+                            style={styles.commentInput}
+                            placeholder="댓글을 입력해 주세요"
+                            placeholderTextColor="#999"
+                            value={commentInput}
+                            onChangeText={setCommentInput}
+                        />
+                        <TouchableOpacity style={styles.sendButton} onPress={handleSendComment}>
+                            <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
                         </TouchableOpacity>
                     </View>
-                )}
-                <View style={styles.commentInputSection}>
-                    <TextInput
-                        style={styles.commentInput}
-                        placeholder="댓글을 입력해 주세요"
-                        placeholderTextColor="#999"
-                        value={commentInput}
-                        onChangeText={setCommentInput}
-                    />
-                    <TouchableOpacity style={styles.sendButton} onPress={handleSendComment}>
-                        <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
-                    </TouchableOpacity>
                 </View>
             </View>
         </KeyboardAvoidingView>
