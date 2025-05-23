@@ -511,7 +511,7 @@ const PostDetailPage = () => {
         <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 1 : 60}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 100}
         >
             <View style={{ flex: 1 }}>
                 <SafeAreaView style={styles.container}>
@@ -530,7 +530,7 @@ const PostDetailPage = () => {
                     <ScrollView 
                         ref={scrollViewRef}
                         style={styles.scrollView}
-                        contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : isReplyInputVisible ? 60 : 0 }}
+                        contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : isReplyInputVisible ? 100 : 80 }}
                     >
                         {/* 게시글 내용 */}
                         <View style={styles.postContainer}>
@@ -652,12 +652,11 @@ const PostDetailPage = () => {
                         position: 'absolute',
                         left: 0,
                         right: 0,
-                        bottom: 60, // 입력창 높이만큼 위로
+                        bottom: 59, // 입력창 높이만큼 위로
                         flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         backgroundColor: '#f5f6fa',
-                        borderRadius: 16,
                         paddingHorizontal: 14,
                         paddingVertical: 6,
                         marginHorizontal: 0,
@@ -665,7 +664,7 @@ const PostDetailPage = () => {
                         zIndex: 2,
                     }}>
                         <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 15 }}>
-                            {replyToName ? `${replyToName}에게 답글작성` : '답글 작성'}
+                            {replyToName ? `${replyToName} 에게 답글작성` : '답글 작성'}
                         </Text>
                         <TouchableOpacity
                             onPress={() => {
@@ -681,7 +680,7 @@ const PostDetailPage = () => {
                 <View style={styles.commentInputSection}>
                     <TextInput
                         style={styles.commentInput}
-                        placeholder={isReplyInputVisible && replyToName ? `${replyToName}에게 답글을 입력해 주세요` : '댓글을 입력해 주세요'}
+                        placeholder="댓글을 입력해 주세요"
                         placeholderTextColor="#999"
                         value={commentInput}
                         onChangeText={setCommentInput}
