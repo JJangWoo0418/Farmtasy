@@ -115,7 +115,7 @@ const PostDetailPage = () => {
                     region,
                     profile,
                     introduction,
-                    comment_parent_id: null
+                    comment_parent_id: isReplyInputVisible && replyToCommentId ? replyToCommentId : null
                 })
             });
 
@@ -124,25 +124,16 @@ const PostDetailPage = () => {
             }
 
             setCommentInput('');
+            // 답글 모드 해제는 하지 않음!
+
             // 댓글 목록 새로고침
             const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
             const data = await res.json();
             setComments(Array.isArray(data) ? data : []);
-            
-            // 댓글 작성 후 입력창 닫기
-            setIsCommentInputVisible(false);
-            Animated.timing(commentInputAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
-            
-            // 키보드 내리기
-            Keyboard.dismiss();
         } catch (error) {
             Alert.alert('오류', '댓글 작성에 실패했습니다.');
         }
-    }, [commentInput, post.id, phone, name, region, profile, introduction]);
+    }, [commentInput, post.id, phone, name, region, profile, introduction, isReplyInputVisible, replyToCommentId]);
 
     // 대댓글 작성 함수를 useCallback으로 최적화
     const handleSendReply = useCallback(async () => {
