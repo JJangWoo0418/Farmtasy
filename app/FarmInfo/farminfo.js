@@ -113,7 +113,7 @@ const FarmInfoContent = (props) => {
                 <Link href="/FarmInfo/Weather" asChild>
                     <TouchableOpacity style={styles.menuItem}>
                         <View style={styles.menuContent}>
-                            <Text style={styles.menuIcon}>☀️</Text>
+                            <Image source={require('../../assets/weathericon3.png')} style={{ width: 60, height: 60, marginBottom: 10 }} />
                             <Text style={styles.menuText}>날씨</Text>
                             {isLoading && <Text style={styles.loadingText}>(로딩중...)</Text>}
                         </View>
@@ -121,13 +121,13 @@ const FarmInfoContent = (props) => {
                 </Link>
                 <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('FarmInfo/MarketPriceScreen')}>
                     <View style={styles.menuContent}>
-                        <Text style={styles.menuIcon}>📊</Text>
+                        <Image source={require('../../assets/stockicon.png')} style={{ width: 60, height: 60, marginBottom: 10 }} />
                         <Text style={styles.menuText}>작물 시세</Text>
                     </View>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('FarmInfo/Pests')}>
                     <View style={styles.menuContent}>
-                        <Text style={styles.menuIcon}>🐜</Text>
+                        <Image source={require('../../assets/pestsicon.png')} style={{ width: 60, height: 60, marginBottom: 10 }} />
                         <Text style={styles.menuText}>병해충</Text>
                     </View>
                 </TouchableOpacity>

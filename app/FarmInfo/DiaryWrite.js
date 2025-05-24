@@ -159,7 +159,7 @@ export default function DiaryWrite() {
                     style={{
                       borderWidth: isToday ? 2 : 0,
                       borderColor: isToday ? '#000' : 'transparent',
-                      backgroundColor: isSelected ? '#000' : 'transparent',
+                      backgroundColor: isSelected ? '#22CC6B' : 'transparent',
                       borderRadius: 8,
                       width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
                     }}
@@ -235,7 +235,7 @@ export default function DiaryWrite() {
                         style={{
                           borderWidth: isToday ? 2 : 0,
                           borderColor: isToday ? '#000' : 'transparent',
-                          backgroundColor: isSelected ? '#000' : 'transparent',
+                          backgroundColor: isSelected ? '#22CC6B' : 'transparent',
                           borderRadius: 12,
                           width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
                         }}
@@ -478,14 +478,14 @@ export default function DiaryWrite() {
       <View style={{ height: 18 }} />
       <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 6 }}>어떤 작업을 하셨나요?</Text>
       <TextInput
-        style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, minHeight: 120, fontSize: 16, marginBottom: 16, marginTop: 10 }}
+        style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, minHeight: 200, fontSize: 16, marginBottom: 16, marginTop: 10 }}
         placeholder={'작업한 내용을 적어보세요.\n예시) 복숭아 수확, 비료 살포'}
         placeholderTextColor={'#bbb'}
         value={content}
         onChangeText={setContent}
         multiline
       />
-      <TouchableOpacity style={{ backgroundColor: '#22CC6B', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 5 }} onPress={handleSave}>
+      <TouchableOpacity style={{ backgroundColor: '#22CC6B', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 140 }} onPress={handleSave}>
         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{editMode ? '수정하기' : '등록'}</Text>
       </TouchableOpacity>
     </ScrollView>

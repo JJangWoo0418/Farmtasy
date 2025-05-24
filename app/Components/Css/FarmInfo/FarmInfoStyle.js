@@ -67,11 +67,13 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
         color: '#222',
         textAlign: 'center',
+        fontWeight: 'bold',
     },
     loadingText: {
         marginLeft: 10,
         fontSize: 12,
         color: '#999',
+        fontWeight: 'bold',
     },
     writeButton: {
         position: 'absolute',
