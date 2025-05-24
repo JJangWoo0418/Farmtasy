@@ -57,7 +57,7 @@ const Market = () => {
     const demoProducts = [
         {
             id: 1,
-            image: require('../../assets/blueberryicon.png'), // 이미지 경로 수정
+            image: require('../../assets/sampleimage.jpg'), // 이미지 경로 수정
             title: '중고하우스파이프 31.8mm 25.4mm',
             price: '99,999원',
             location: '경기',
@@ -67,7 +67,7 @@ const Market = () => {
         },
         {
             id: 2,
-            image: require('../../assets/blueberryicon.png'), // 이미지 경로 수정
+            image: require('../../assets/장터 샘플 이미지2.png'), // 이미지 경로 수정
             title: '땅콩씨앗 30g',
             price: '5,000원',
             location: '강원',
@@ -77,7 +77,7 @@ const Market = () => {
         },
         {
             id: 3,
-            image: require('../../assets/blueberryicon.png'), // 이미지 경로 수정
+            image: require('../../assets/장터 샘플 이미지3.jpg'), // 이미지 경로 수정
             title: '고품질 상토 50L',
             price: '25,000원',
             location: '경북',

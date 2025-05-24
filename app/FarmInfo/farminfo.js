@@ -81,6 +81,16 @@ const FarmInfoContent = (props) => {
         }
     };
 
+    const handlePinDiary = (diary_id) => {
+        setDiaryList(prev => {
+            return prev.map(diary =>
+                diary.diary_id === diary_id
+                    ? { ...diary, isPinned: true }
+                    : { ...diary, isPinned: false } // 하나만 고정하려면 나머지는 false
+            ).sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+        });
+    };
+
     useEffect(() => {
         const loadDiary = async () => {
             try {
@@ -104,36 +114,36 @@ const FarmInfoContent = (props) => {
     }, [userPhone]);
 
     const popularCrops = [
-        { name: '고추', image: require('../../assets/peppericon.png') },
-        { name: '벼', image: require('../../assets/riceicon.png') },
-        { name: '감자', image: require('../../assets/potatoicon.png') },
-        { name: '고구마', image: require('../../assets/sweetpotatoicon.png') },
-        { name: '사과', image: require('../../assets/appleicon.png') },
-        { name: '딸기', image: require('../../assets/strawberryicon.png') },
-        { name: '마늘', image: require('../../assets/garlicicon.png') },
-        { name: '상추', image: require('../../assets/lettuceicon.png') },
-        { name: '배추', image: require('../../assets/napacabbageicon.png') },
-        { name: '토마토', image: require('../../assets/tomatoicon.png') },
-        { name: '포도', image: require('../../assets/grapeicon.png') },
-        { name: '콩', image: require('../../assets/beanicon.png') },
-        { name: '감귤', image: require('../../assets/tangerinesicon.png') },
-        { name: '복숭아', image: require('../../assets/peachicon.png') },
-        { name: '양파', image: require('../../assets/onionicon.png') },
-        { name: '감', image: require('../../assets/persimmonicon.png') },
-        { name: '파', image: require('../../assets/greenonionicon.png') },
-        { name: '들깨', image: require('../../assets/perillaseedsicon.png') },
-        { name: '오이', image: require('../../assets/cucumbericon.png') },
-        { name: '낙엽교목류', image: require('../../assets/deciduoustreesicon.png') },
-        { name: '옥수수', image: require('../../assets/cornericon.png') },
-        { name: '표고버섯', image: require('../../assets/mushroomicon.png') },
-        { name: '블루베리', image: require('../../assets/blueberryicon.png') },
-        { name: '양배추', image: require('../../assets/cabbageicon.png') },
-        { name: '호박', image: require('../../assets/pumpkinicon.png') },
-        { name: '자두', image: require('../../assets/plumicon.png') },
-        { name: '시금치', image: require('../../assets/spinachicon.png') },
-        { name: '두릅', image: require('../../assets/araliaicon.png') },
-        { name: '참깨', image: require('../../assets/sesameicon.png') },
-        { name: '매실', image: require('../../assets/greenplumicon.png') },
+        { name: '고추', image: require('../../assets/peppericon2.png') },
+        { name: '벼', image: require('../../assets/riceicon2.png') },
+        { name: '감자', image: require('../../assets/potatoicon2.png') },
+        { name: '고구마', image: require('../../assets/sweetpotatoicon2.png') },
+        { name: '사과', image: require('../../assets/appleicon2.png') },
+        { name: '딸기', image: require('../../assets/strawberryicon2.png') },
+        { name: '마늘', image: require('../../assets/garlicicon2.png') },
+        { name: '상추', image: require('../../assets/lettuceicon2.png') },
+        { name: '배추', image: require('../../assets/napacabbageicon2.png') },
+        { name: '토마토', image: require('../../assets/tomatoicon2.png') },
+        { name: '포도', image: require('../../assets/grapeicon2.png') },
+        { name: '콩', image: require('../../assets/beanicon2.png') },
+        { name: '감귤', image: require('../../assets/tangerinesicon2.png') },
+        { name: '복숭아', image: require('../../assets/peachicon2.png') },
+        { name: '양파', image: require('../../assets/onionicon2.png') },
+        { name: '감', image: require('../../assets/persimmonicon2.png') },
+        { name: '파', image: require('../../assets/greenonionicon2.png') },
+        { name: '들깨', image: require('../../assets/perillaseedsicon2.png') },
+        { name: '오이', image: require('../../assets/cucumbericon2.png') },
+        { name: '낙엽교목류', image: require('../../assets/deciduoustreesicon2.png') },
+        { name: '옥수수', image: require('../../assets/cornericon2.png') },
+        { name: '표고버섯', image: require('../../assets/mushroomicon2.png') },
+        { name: '블루베리', image: require('../../assets/blueberryicon2.png') },
+        { name: '양배추', image: require('../../assets/cabbageicon2.png') },
+        { name: '호박', image: require('../../assets/pumpkinicon2.png') },
+        { name: '자두', image: require('../../assets/plumicon2.png') },
+        { name: '시금치', image: require('../../assets/spinachicon2.png') },
+        { name: '두릅', image: require('../../assets/araliaicon2.png') },
+        { name: '참깨', image: require('../../assets/sesameicon2.png') },
+        { name: '매실', image: require('../../assets/greenplumicon2.png') },
     ];
 
     // 작물명에서 ' | ' 앞부분만 추출 (예: '고추 | 청양고추' → '고추')
@@ -208,7 +218,7 @@ const FarmInfoContent = (props) => {
                                 <View key={index} style={{
                                     width: '100%',
                                     maxWidth: 340,
-                                    backgroundColor: '#ffff7f',
+                                    backgroundColor: '#fffbc8',
                                     borderRadius: 16,
                                     padding: 20,
                                     marginBottom: 18,
@@ -223,8 +233,9 @@ const FarmInfoContent = (props) => {
                                 }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                         <Image source={require('../../assets/timeicon.png')} style={{ width: 22, height: 22, marginRight: 0 }} />
-                                        <Text style={{ fontWeight: 'bold', fontSize: 16, marginRight: 20 }}>{dateStr}</Text>
-                                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                                        <Text style={{ fontWeight: 'bold', fontSize: 16, marginRight: 75 }}>{dateStr}</Text>
+                                        <View style={{ flexDirection: 'row', gap: 3}}>
+                                            {/* 수정하기 버튼 */}
                                             <TouchableOpacity
                                                 onPress={() => navigation.navigate('FarmInfo/DiaryWrite', {
                                                     editMode: true,
@@ -234,13 +245,14 @@ const FarmInfoContent = (props) => {
                                                 })}
                                                 style={{ backgroundColor: '#4A90E2', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8 }}
                                             >
-                                                <Text style={{ color: '#fff', fontSize: 14 }}>수정하기</Text>
+                                                <Text style={{ color: '#fff', fontSize: 14 }}>수정</Text>
                                             </TouchableOpacity>
+                                            {/* 삭제하기 버튼 */}
                                             <TouchableOpacity
                                                 onPress={() => handleDeleteDiary(diary.diary_id)}
                                                 style={{ backgroundColor: '#f44336', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
                                             >
-                                                <Text style={{ color: '#fff', fontSize: 14 }}>삭제하기</Text>
+                                                <Text style={{ color: '#fff', fontSize: 14 }}>삭제</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
@@ -248,12 +260,12 @@ const FarmInfoContent = (props) => {
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                                         <Image
                                             source={getCropImage(diary.crop_type)}
-                                            style={{ width: 22, height: 22, marginRight: 6 }}
+                                            style={{ width: 60, height: 60, marginLeft: -17}}
                                             resizeMode="contain"
                                         />
                                         <Text style={{ fontSize: 15 }}>{diary.crop_type}</Text>
                                     </View>
-                                    <View style={{ height: 1, backgroundColor: '#222', marginVertical: 8, opacity: 0.15, marginTop: 15, marginBottom: 15 }} />
+                                    <View style={{ height: 1, backgroundColor: '#222', marginVertical: 8, opacity: 0.15, marginTop: 0, marginBottom: 15 }} />
                                     {/* 작성내용 */}
                                     <Text style={{ fontSize: 15, marginBottom: 4 }}>{diary.content}</Text>
                                 </View>
@@ -271,7 +283,7 @@ const FarmInfoContent = (props) => {
                     navigation.navigate('FarmInfo/DiaryWrite', { phone: userPhone });
                 }}
             >
-                <Text style={styles.writeButtonText}>일지 작성하기</Text>
+                <Text style={styles.writeButtonText}>일지 작성</Text>
                 <Image source={require('../../assets/paperpencil.png')} style={styles.writeIcon} />
             </TouchableOpacity>
 

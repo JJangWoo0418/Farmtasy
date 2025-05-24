@@ -104,7 +104,7 @@ export const styles = StyleSheet.create({
     writeIcon: {
         width: 17,
         height: 17,
-        marginLeft: 3,
+        marginLeft: 6,
     },
     divider: {
         height: 1,
