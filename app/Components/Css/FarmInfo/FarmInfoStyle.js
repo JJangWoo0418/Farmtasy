@@ -23,7 +23,7 @@ export const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 16,
-        paddingTop: 20,
+        paddingTop: -40,
     },
     section: {
         flexDirection: 'row',
@@ -111,7 +111,6 @@ export const styles = StyleSheet.create({
         backgroundColor: '#eee',
         marginHorizontal: 0,
         marginTop: 10,
-        marginBottom: 10,
         width: '100%',
     },
 }); 
