@@ -23,7 +23,7 @@ export default StyleSheet.create({
     marginHorizontal: 4,
   },
   navButtonActive: {
-    backgroundColor: '#4dabf7',
+    backgroundColor: '#22CC6B',
   },
   navButtonInactive: {
     backgroundColor: '#e9ecef',
@@ -77,7 +77,7 @@ export default StyleSheet.create({
     alignItems: 'center'
   },
   tabButtonActive: {
-    backgroundColor: '#007AFF'
+    backgroundColor: '#22CC6B'
   },
   tabButtonInactive: {
     backgroundColor: '#f8f8f8'
@@ -112,15 +112,15 @@ export default StyleSheet.create({
     borderColor: '#eee'
   },
   hourlyWeatherItemCurrent: {
-    backgroundColor: '#f0f8ff',
-    borderColor: '#007AFF'
+    backgroundColor: '#E3FBED',
+    borderColor: '#22CC6B'
   },
   hourlyTime: {
     fontSize: 16,
     marginBottom: 8
   },
   hourlyTimeCurrent: {
-    color: '#007AFF',
+    color: '#22CC6B',
     fontWeight: '600'
   },
   weatherEmoji: {
@@ -133,7 +133,7 @@ export default StyleSheet.create({
     marginBottom: 4
   },
   weatherTempCurrent: {
-    color: '#007AFF'
+    color: '#22CC6B'
   },
   weeklyContainer: {
     marginHorizontal: 15,
@@ -247,7 +247,7 @@ export default StyleSheet.create({
   },
   modalCloseButton: {
     fontSize: 16,
-    color: '#007AFF'
+    color: '#22CC6B'
   },
   modalWeatherScroll: {
     maxHeight: '90%'

@@ -65,14 +65,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 44,
     borderRadius: 6,
-    backgroundColor: '#19c37d',
+    backgroundColor: '#22CC6B',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   cropButton: {

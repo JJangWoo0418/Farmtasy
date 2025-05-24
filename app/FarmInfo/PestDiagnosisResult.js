@@ -83,7 +83,7 @@ export default function PestDiagnosisResult() {
                     style={styles.backButton}
                     onPress={() => router.back()}
                 >
-                    <Text style={styles.backButtonText}>←</Text>
+                    <Image source={require('../../assets/gobackicon.png')} style={{ width: 23, height: 23, marginLeft: -5 }} />
                 </TouchableOpacity>
                 <Text style={styles.title}>AI 진단 결과</Text>
             </View>
@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
         backgroundColor: '#fff',
+        marginTop: -18,
     },
     backButton: {
         padding: 8,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginLeft: 16,
+        marginLeft: 95,
     },
     content: {
         flex: 1,

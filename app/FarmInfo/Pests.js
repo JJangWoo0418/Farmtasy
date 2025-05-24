@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Alert, ActivityIndicator, StyleSheet, Image} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../Components/Css/FarmInfo/PestsStyle';
 import itemCodeData from '../Components/Utils/item_code_data.json';
@@ -200,7 +200,7 @@ const Pests = () => {
 
         router.push({
           pathname: '/FarmInfo/PestDiagnosisResult',
-          params: { 
+          params: {
             result: response.data.result,
             similarImages: JSON.stringify(response.data.similarImages || [])
           }
@@ -211,7 +211,7 @@ const Pests = () => {
 
     } catch (error) {
       console.error('AI API 오류:', error);
-      
+
       if (error.message === '서버 URL이 설정되지 않았습니다.') {
         Alert.alert(
           '설정 오류',
@@ -412,12 +412,12 @@ const Pests = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* 상단 헤더: ←(뒤로가기) + 중앙 타이틀 */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, width: '100%', marginBottom: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, width: '100%', marginBottom: 16, marginTop: -30 }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', left: 0, paddingLeft: 8, zIndex: 2 }}>
-          <Text style={{ fontSize: 28, color: '#222', fontWeight: 'bold' }}>←</Text>
+          <Image source={require('../../assets/gobackicon.png')} style={{ width: 23, height: 23, marginLeft: -17 }} />
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 22, fontWeight: 'bold', textAlign: 'center' }}>병해충 질문</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', textAlign: 'center', }}>병해충 질문</Text>
         </View>
       </View>
       {/* 작물 선택 버튼 */}
@@ -465,6 +465,7 @@ const Pests = () => {
       <TextInput
         style={styles.textarea}
         placeholder={"병해충 증상과 의심되는 병명을 함께 입력해 주세요.\n사진 첨부시 더욱 정확한 답변이 가능해요."}
+        placeholderTextColor={'#888'}
         value={detail}
         onChangeText={setDetail}
         multiline
@@ -477,8 +478,8 @@ const Pests = () => {
       {image && (
         <Text style={{ color: '#4CAF50', marginBottom: 8 }}>사진이 첨부되었습니다.</Text>
       )}
-      <TouchableOpacity 
-        style={[styles.submitButton, loading && styles.submitButtonDisabled]} 
+      <TouchableOpacity
+        style={[styles.submitButton, loading && styles.submitButtonDisabled]}
         onPress={handleSubmit}
         disabled={loading}
       >
