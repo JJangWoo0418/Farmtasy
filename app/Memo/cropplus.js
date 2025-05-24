@@ -246,6 +246,9 @@ export default function CropPlus() {
     { name: '블루베리', image: require('../../assets/blueberryicon.png') },
     { name: '양배추', image: require('../../assets/cabbageicon.png') },
     { name: '호박', image: require('../../assets/pumpkinicon.png') },
+    { name: '자두', image: require('../../assets/plumicon.png') },
+    { name: '시금치', image: require('../../assets/spinachicon.png') },
+    { name: '두릅', image: require('../../assets/araliaicon.png') },
     { name: '참깨', image: require('../../assets/sesameicon.png') },
     { name: '매실', image: require('../../assets/greenplumicon.png') },
   ];

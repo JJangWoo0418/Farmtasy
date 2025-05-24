@@ -8,13 +8,36 @@ import API_CONFIG from '../DB/api';
 
 // 인기작물 리스트 (MarketPriceScreen에서 복사)
 const popularCrops = [
-  { name: '벼', icon: '🌾' }, { name: '배추', icon: '🥬' }, { name: '양파', icon: '🧅' },
-  { name: '감자', icon: '🥔' }, { name: '사과', icon: '🍎' }, { name: '고추', icon: '🌶️' },
-  { name: '마늘', icon: '🧄' }, { name: '배', icon: '🍐' }, { name: '고구마', icon: '🍠' },
-  { name: '수박', icon: '🍉' }, { name: '포도', icon: '🍇' }, { name: '옥수수', icon: '🌽' },
-  { name: '토마토', icon: '🍅' }, { name: '오이', icon: '🥒' }, { name: '가지', icon: '🍆' },
-  { name: '복숭아', icon: '🍑' }, { name: '딸기', icon: '🍓' }, { name: '땅콩', icon: '🥜' },
-  { name: '버섯', icon: '🍄' }, { name: '당근', icon: '🥕' }, { name: '망고', icon: '🥭' },
+  { name: '고추', image: require('../../assets/peppericon.png') },
+  { name: '벼', image: require('../../assets/riceicon.png') },
+  { name: '감자', image: require('../../assets/potatoicon.png') },
+  { name: '고구마', image: require('../../assets/sweetpotatoicon.png') },
+  { name: '사과', image: require('../../assets/appleicon.png') },
+  { name: '딸기', image: require('../../assets/strawberryicon.png') },
+  { name: '마늘', image: require('../../assets/garlicicon.png') },
+  { name: '상추', image: require('../../assets/lettuceicon.png') },
+  { name: '배추', image: require('../../assets/napacabbageicon.png') },
+  { name: '토마토', image: require('../../assets/tomatoicon.png') },
+  { name: '포도', image: require('../../assets/grapeicon.png') },
+  { name: '콩', image: require('../../assets/beanicon.png') },
+  { name: '감귤', image: require('../../assets/tangerinesicon.png') },
+  { name: '복숭아', image: require('../../assets/peachicon.png') },
+  { name: '양파', image: require('../../assets/onionicon.png') },
+  { name: '감', image: require('../../assets/persimmonicon.png') },
+  { name: '파', image: require('../../assets/greenonionicon.png') },
+  { name: '들깨', image: require('../../assets/perillaseedsicon.png') },
+  { name: '오이', image: require('../../assets/cucumbericon.png') },
+  { name: '낙엽교목류', image: require('../../assets/deciduoustreesicon.png') },
+  { name: '옥수수', image: require('../../assets/cornericon.png') },
+  { name: '표고버섯', image: require('../../assets/mushroomicon.png') },
+  { name: '블루베리', image: require('../../assets/blueberryicon.png') },
+  { name: '양배추', image: require('../../assets/cabbageicon.png') },
+  { name: '호박', image: require('../../assets/pumpkinicon.png') },
+  { name: '자두', image: require('../../assets/plumicon.png') },
+  { name: '시금치', image: require('../../assets/spinachicon.png') },
+  { name: '두릅', image: require('../../assets/araliaicon.png') },
+  { name: '참깨', image: require('../../assets/sesameicon.png') },
+  { name: '매실', image: require('../../assets/greenplumicon.png') },
 ];
 
 const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
@@ -113,7 +136,7 @@ export default function DiaryWrite() {
       return d;
     });
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10}}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
         <View style={{ width: 10 }} />
         <TouchableOpacity onPress={() => setCalendarModal(true)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{month + 1}월 ▼</Text>
@@ -280,9 +303,9 @@ export default function DiaryWrite() {
   const renderModalHeader = () => (
     <>
       <View style={{ height: 16 }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-        <TouchableOpacity onPress={closeModal} style={{ position: 'absolute', left: 0, padding: 8 }}>
-          <Text style={{ color: '#4A90E2', fontSize: 28, fontWeight: 'bold' }}>←</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+        <TouchableOpacity onPress={closeModal} style={{ position: 'absolute', left: -10, padding: 8 }}>
+          <Image source={require('../../assets/gobackicon.png')} style={{ width: 20, height: 20 }} />
         </TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>작물 추가</Text>
       </View>
@@ -290,8 +313,8 @@ export default function DiaryWrite() {
   );
   const renderPopularCrops = () => (
     <>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 16, marginBottom: 8, textAlign: 'left' }}>인기작물 TOP 21</Text>
-      <ScrollView style={{ maxHeight: 320 }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 16, marginBottom: 8, textAlign: 'left' }}>인기작물 TOP 30</Text>
+      <ScrollView style={{ maxHeight: 280 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
           {popularCrops.map((crop, idx) => (
             <TouchableOpacity
@@ -299,7 +322,6 @@ export default function DiaryWrite() {
               style={{
                 width: '30%',
                 margin: '1.5%',
-                backgroundColor: '#f5f5f5',
                 borderRadius: 16,
                 alignItems: 'center',
                 paddingVertical: 18,
@@ -309,7 +331,7 @@ export default function DiaryWrite() {
               }}
               onPress={() => handlePopularCropSelect(crop)}
             >
-              <Text style={{ fontSize: 40 }}>{crop.icon}</Text>
+              <Image source={crop.image} style={{ width: 60, height: 60 }} />
               <Text style={{ marginTop: 8, fontSize: 20, fontWeight: 'bold' }}>{crop.name}</Text>
             </TouchableOpacity>
           ))}
@@ -324,7 +346,7 @@ export default function DiaryWrite() {
         return (
           <TouchableOpacity key={idx} style={styles.categoryItem} onPress={() => handleVarietySelect(varietyPair)}>
             <Text>
-              <Text style={{ color: '#4CAF50', fontWeight: 'bold', fontSize: 20 }}>{crop}</Text>
+              <Text style={{ color: '#22CC6B', fontWeight: 'bold', fontSize: 20 }}>{crop}</Text>
               <Text style={{ fontSize: 20 }}> | {variety}</Text>
             </Text>
           </TouchableOpacity>
@@ -351,7 +373,7 @@ export default function DiaryWrite() {
           />
           {/* 직접 추가하기 버튼 */}
           <TouchableOpacity
-            style={{ backgroundColor: '#4CAF50', borderRadius: 10, paddingVertical: 14, marginVertical: 10 }}
+            style={{ backgroundColor: '#22CC6B', borderRadius: 10, paddingVertical: 14, marginVertical: 10 }}
             onPress={handleDirectAdd}
           >
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>직접 추가하기</Text>
@@ -363,7 +385,7 @@ export default function DiaryWrite() {
             renderVarietyList()
           )}
           {/* 취소 버튼 */}
-          <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={closeModal}>
+          <TouchableOpacity style={[styles.modalButton, styles.cancelButton, { marginTop: 15 }]} onPress={closeModal}>
             <Text style={[styles.modalButtonText, { fontSize: 20 }]}>닫기</Text>
           </TouchableOpacity>
         </View>
