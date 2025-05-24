@@ -8,7 +8,8 @@ import { WeatherProvider } from '../context/WeatherContext';
 import Weather from './Weather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../Components/Css/FarmInfo/FarmInfoStyle';
-import { router, useLocalSearchParams} from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import API_CONFIG from '../DB/api';
 
 const FarmInfoContent = (props) => {
     const navigation = useNavigation();
@@ -58,9 +59,8 @@ const FarmInfoContent = (props) => {
                         text: '삭제',
                         style: 'destructive',
                         onPress: async () => {
-                            const API_URL = 'http://192.168.35.144:3000';
                             if (!userPhone) return;
-                            const response = await fetch(`${API_URL}/diary/${diary_id}?user_phone=${userPhone}`, {
+                            const response = await fetch(`${API_CONFIG.BASE_URL}/diary/${diary_id}?user_phone=${userPhone}`, {
                                 method: 'DELETE'
                             });
                             if (response.ok) {
@@ -84,9 +84,8 @@ const FarmInfoContent = (props) => {
         const loadDiary = async () => {
             try {
                 // 서버에서 모든 영농일지 불러오기
-                const API_URL = 'http://192.168.35.144:3000';
                 if (!userPhone) return;
-                const response = await fetch(`${API_URL}/diary/list?user_phone=${userPhone}`);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/diary/list?user_phone=${userPhone}`);
                 if (response.ok) {
                     const list = await response.json();
                     // diary_date 기준으로 최신순 정렬
@@ -139,9 +138,9 @@ const FarmInfoContent = (props) => {
 
             {/* 영농일지: 스크롤뷰 안에 배치 */}
             <ScrollView style={styles.content}>
-                <View style={{marginTop: 32, alignItems: 'center'}}>
+                <View style={{ marginTop: 32, alignItems: 'center' }}>
                     {diaryList.length === 0 ? (
-                        <Text style={{color:'#888', fontSize:16, marginVertical:40}}>오늘 농작업 내용을 간단히 기록해보세요.</Text>
+                        <Text style={{ color: '#888', fontSize: 16, marginVertical: 40 }}>오늘 농작업 내용을 간단히 기록해보세요.</Text>
                     ) : (
                         diaryList.map((diary, index) => {
                             // 날짜 포맷 함수
@@ -151,33 +150,33 @@ const FarmInfoContent = (props) => {
                                 dateStr = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
                             }
                             return (
-                                <View key={index} style={{width:'100%', maxWidth:340, backgroundColor:'#f8f8f8', borderRadius:12, padding:18, marginBottom:16}}>
-                                    <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-                                        <Text style={{fontWeight:'bold', fontSize:16}}>{dateStr}</Text>
-                                        <View style={{flexDirection: 'row', gap: 8}}>
-                                            <TouchableOpacity 
-                                                onPress={() => navigation.navigate('FarmInfo/DiaryWrite', { 
+                                <View key={index} style={{ width: '100%', maxWidth: 340, backgroundColor: '#f8f8f8', borderRadius: 12, padding: 18, marginBottom: 16 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                        <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{dateStr}</Text>
+                                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                                            <TouchableOpacity
+                                                onPress={() => navigation.navigate('FarmInfo/DiaryWrite', {
                                                     editMode: true,
                                                     diaryData: diary,
                                                     diaryIndex: index,
                                                     phone: userPhone
                                                 })}
-                                                style={{backgroundColor:'#4A90E2', borderRadius:6, paddingVertical:6, paddingHorizontal:12, marginRight:8}}
+                                                style={{ backgroundColor: '#4A90E2', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8 }}
                                             >
-                                                <Text style={{color:'#fff', fontSize:14}}>수정하기</Text>
+                                                <Text style={{ color: '#fff', fontSize: 14 }}>수정하기</Text>
                                             </TouchableOpacity>
-                                            <TouchableOpacity 
+                                            <TouchableOpacity
                                                 onPress={() => handleDeleteDiary(diary.diary_id)}
-                                                style={{backgroundColor:'#f44336', borderRadius:6, paddingVertical:6, paddingHorizontal:12}}
+                                                style={{ backgroundColor: '#f44336', borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
                                             >
-                                                <Text style={{color:'#fff', fontSize:14}}>삭제하기</Text>
+                                                <Text style={{ color: '#fff', fontSize: 14 }}>삭제하기</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
                                     {/* 작물명 */}
-                                    <Text style={{fontSize:15, marginBottom:4}}>{diary.crop_type}</Text>
+                                    <Text style={{ fontSize: 15, marginBottom: 4 }}>{diary.crop_type}</Text>
                                     {/* 작성내용 */}
-                                    <Text style={{fontSize:15, marginBottom:4}}>{diary.content}</Text>
+                                    <Text style={{ fontSize: 15, marginBottom: 4 }}>{diary.content}</Text>
                                 </View>
                             );
                         })
@@ -186,8 +185,8 @@ const FarmInfoContent = (props) => {
             </ScrollView>
 
             {/* 일지 작성하기 버튼: 우측 하단에 고정, 아이콘 포함 */}
-            <TouchableOpacity 
-                style={styles.writeButton} 
+            <TouchableOpacity
+                style={styles.writeButton}
                 onPress={() => {
                     console.log('DiaryWrite로 이동 시 phone 값:', userPhone);
                     navigation.navigate('FarmInfo/DiaryWrite', { phone: userPhone });
@@ -201,48 +200,58 @@ const FarmInfoContent = (props) => {
                 currentTab="정보"
                 onTabPress={(tab) => {
                     if (tab === '질문하기') {
-                        router.push({ pathname: '/Chatbot/questionpage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Chatbot/questionpage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     } else if (tab === '홈') {
-                        router.push({ pathname: '/Homepage/Home/homepage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Homepage/Home/homepage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '정보') {
-                        router.push({ pathname: '/FarmInfo/farminfo', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/FarmInfo/farminfo', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '장터') {
-                        router.push({ pathname: '/Market/market', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Market/market', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '내 농장') {
-                        router.push({ pathname: '/Map/Map', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Map/Map', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                 }}
             />

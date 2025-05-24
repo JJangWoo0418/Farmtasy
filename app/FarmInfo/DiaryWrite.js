@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Modal, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Modal, ScrollView, StyleSheet, Alert, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { styles } from '../Components/Css/FarmInfo/MarketPriceStyle';
 import { getTodayWeather } from '../Components/Utils/weatherUtils';
+import API_CONFIG from '../DB/api';
 
 // 인기작물 리스트 (MarketPriceScreen에서 복사)
 const popularCrops = [
@@ -39,7 +40,7 @@ export default function DiaryWrite() {
   const route = useRoute();
   const { editMode, diaryData, diaryIndex } = route.params || {};
   const [phoneState, setPhoneState] = useState(null);
-  
+
   // phone 값 초기화
   useEffect(() => {
     const loadPhone = async () => {
@@ -87,12 +88,12 @@ export default function DiaryWrite() {
 
   // 상단 헤더: ← 뒤로가기 + 중앙 타이틀
   const renderHeader = () => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, marginBottom: 8 }}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', left: 0, paddingLeft: 8, zIndex: 2 }}>
-        <Text style={{ fontSize: 28, color: '#222', fontWeight: 'bold' }}>←</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 56, marginBottom: 8, marginTop: -35 }}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
       </TouchableOpacity>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 22, fontWeight: 'bold', textAlign: 'center' }}>일지 작성하기</Text>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginRight: 25 }}>일지 작성하기</Text>
       </View>
     </View>
   );
@@ -112,7 +113,7 @@ export default function DiaryWrite() {
       return d;
     });
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10, paddingHorizontal: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10}}>
         <View style={{ width: 10 }} />
         <TouchableOpacity onPress={() => setCalendarModal(true)} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 10 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold' }}>{month + 1}월 ▼</Text>
@@ -172,7 +173,7 @@ export default function DiaryWrite() {
     const today = new Date();
     return (
       <Modal visible={calendarModal} transparent animationType="fade" onRequestClose={() => setCalendarModal(false)}>
-        <View style={{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'rgba(0,0,0,0.2)' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)' }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 20, padding: 28, width: 350, alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, width: '100%' }}>
               <TouchableOpacity style={{ width: 44, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
@@ -349,7 +350,7 @@ export default function DiaryWrite() {
             onChangeText={setSearchText}
           />
           {/* 직접 추가하기 버튼 */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={{ backgroundColor: '#4CAF50', borderRadius: 10, paddingVertical: 14, marginVertical: 10 }}
             onPress={handleDirectAdd}
           >
@@ -373,39 +374,38 @@ export default function DiaryWrite() {
   // 등록 버튼 클릭 시 저장
   const handleSave = async () => {
     try {
-        if (!selectedDate || !selectedVariety || !content) {
-            Alert.alert('알림', '모든 항목을 입력해주세요.');
-            return;
-        }
-        // phone 값이 없으면 저장 시도하지 않음
-        if (!phoneState) {
-            Alert.alert('오류', '사용자 전화번호 정보가 없습니다.');
-            return;
-        }
-        console.log('저장 시도하는 phone 값:', phoneState);
-        const API_URL = 'http://192.168.35.144:3000';
-        const response = await fetch(`${API_URL}/diary/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            diary_date: selectedDate.toISOString(),
-            crop_type: selectedVariety,
-            content: content,
-            user_phone: phoneState // 반드시 포함
-          })
-        });
-        const result = await response.json();
-        if (response.ok) {
-          Alert.alert('알림', '영농일지가 저장되었습니다.');
-          navigation.goBack();
-        } else {
-          Alert.alert('오류', result.error || '영농일지 저장에 실패했습니다.');
-        }
+      if (!selectedDate || !selectedVariety || !content) {
+        Alert.alert('알림', '모든 항목을 입력해주세요.');
+        return;
+      }
+      // phone 값이 없으면 저장 시도하지 않음
+      if (!phoneState) {
+        Alert.alert('오류', '사용자 전화번호 정보가 없습니다.');
+        return;
+      }
+      console.log('저장 시도하는 phone 값:', phoneState);
+      const response = await fetch(`${API_CONFIG.BASE_URL}/diary/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          diary_date: selectedDate.toISOString(),
+          crop_type: selectedVariety,
+          content: content,
+          user_phone: phoneState
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        Alert.alert('알림', '영농일지가 저장되었습니다.');
+        navigation.goBack();
+      } else {
+        Alert.alert('오류', result.error || '영농일지 저장에 실패했습니다.');
+      }
     } catch (e) {
-        console.error('영농일지 저장 실패:', e);
-        Alert.alert('오류', '영농일지 저장에 실패했습니다.');
+      console.error('영농일지 저장 실패:', e);
+      Alert.alert('오류', '영농일지 저장에 실패했습니다.');
     }
   };
 
@@ -420,50 +420,51 @@ export default function DiaryWrite() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{padding:24, backgroundColor:'#fff', flexGrow:1}}>
+    <ScrollView contentContainerStyle={{ padding: 20, backgroundColor: '#fff', flexGrow: 1 }}>
       {renderHeader()}
       {renderCalendar()}
       {renderCalendarModal()}
       {renderCropModal()}
-      <View style={{height:18}} />
-      <Text style={{fontSize:22, fontWeight:'bold', marginBottom:6}}>어떤 작물의 일지인가요?</Text>
-      <TouchableOpacity onPress={openModal} style={{borderWidth:1, borderColor:'#bbb', borderRadius:8, padding:12, marginBottom:24, flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+      <View style={{ height: 18 }} />
+      <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 6 }}>어떤 작물의 일지인가요?</Text>
+      <TouchableOpacity onPress={openModal} style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, marginBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
         {selectedVariety ? (
           (() => {
             const [crop, variety] = selectedVariety.split(' | ');
             return (
-              <View style={{flex:1, flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
-                <Text style={{fontSize:18}}>
-                  <Text style={{color:'#4CAF50', fontWeight:'bold'}}>{crop}</Text>
+              <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 18 }}>
+                  <Text style={{ color: '#4CAF50', fontWeight: 'bold' }}>{crop}</Text>
                   <Text> | {variety}</Text>
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={(e) => {
                     e.stopPropagation();
                     setSelectedVariety(null);
                   }}
-                  style={{padding:4}}
+                  style={{ padding: 4 }}
                 >
-                  <Text style={{fontSize:20, color:'#666'}}>✕</Text>
+                  <Text style={{ fontSize: 20, color: '#666' }}>✕</Text>
                 </TouchableOpacity>
               </View>
             );
           })()
         ) : (
-          <Text style={{fontSize:16}}>+ 작물 추가</Text>
+          <Text style={{ fontSize: 16 }}>+ 작물 추가</Text>
         )}
       </TouchableOpacity>
-      <View style={{height:18}} />
-      <Text style={{fontSize:22, fontWeight:'bold', marginBottom:6}}>어떤 작업을 하셨나요?</Text>
-      <TextInput 
-        style={{borderWidth:1, borderColor:'#bbb', borderRadius:8, padding:12, minHeight:120, fontSize:16, marginBottom:16, marginTop:8}} 
-        placeholder={'작업한 내용을 적어보세요.\n예시) 복숭아 수확, 비료 살포'} 
-        value={content} 
-        onChangeText={setContent} 
+      <View style={{ height: 18 }} />
+      <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 6 }}>어떤 작업을 하셨나요?</Text>
+      <TextInput
+        style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, minHeight: 120, fontSize: 16, marginBottom: 16, marginTop: 10 }}
+        placeholder={'작업한 내용을 적어보세요.\n예시) 복숭아 수확, 비료 살포'}
+        placeholderTextColor={'#bbb'}
+        value={content}
+        onChangeText={setContent}
         multiline
       />
-      <TouchableOpacity style={{backgroundColor:'#22c55e', borderRadius:12, paddingVertical:14, alignItems:'center'}} onPress={handleSave}>
-        <Text style={{color:'#fff', fontWeight:'bold', fontSize:18}}>{editMode ? '수정하기' : '등록'}</Text>
+      <TouchableOpacity style={{ backgroundColor: '#22CC6B', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 5 }} onPress={handleSave}>
+        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{editMode ? '수정하기' : '등록'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
