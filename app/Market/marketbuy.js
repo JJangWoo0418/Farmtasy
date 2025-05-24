@@ -37,27 +37,27 @@ const handleScroll = (e) => {
     }
 };
 
-const Market = () => {
+const Marketbuy = () => {
     const [isFolded, setIsFolded] = useState(false);
     const navigation = useNavigation();
     const [isDrawerVisible, setDrawerVisible] = useState(false);
     const [isWriteToggleVisible, setWriteToggleVisible] = useState(false);
     const route = useRoute();
     const { userData, phone, name, region } = useLocalSearchParams();
-
     const [isFreeShippingFiltered, setIsFreeShippingFiltered] = useState(false);
     const [isSortOptionsVisible, setIsSortOptionsVisible] = useState(false);
     const [selectedSortOption, setSelectedSortOption] = useState('최신순');
+    const { category: selectedCategory } = useLocalSearchParams();
 
     // 장바구니 로컬 상태 추가
     const [cartItems, setCartItems] = useState([]);
     const [isCartVisible, setIsCartVisible] = useState(false);
 
-    // 데모 판매 글 데이터 (전체 목록용)
+    // 데모 판매 글 데이터
     const demoProducts = [
         {
             id: 1,
-            image: require('../../assets/blueberryicon.png'), // 이미지 경로 수정
+            image: require('../../assets/blueberryicon.png'),
             title: '중고하우스파이프 31.8mm 25.4mm',
             price: '99,999원',
             location: '경기',
@@ -67,7 +67,7 @@ const Market = () => {
         },
         {
             id: 2,
-            image: require('../../assets/blueberryicon.png'), // 이미지 경로 수정
+            image: require('../../assets/blueberryicon.png'),
             title: '땅콩씨앗 30g',
             price: '5,000원',
             location: '강원',
@@ -75,9 +75,9 @@ const Market = () => {
             isFreeShipping: true,
             category: '종자/모종',
         },
-        {
+         {
             id: 3,
-            image: require('../../assets/blueberryicon.png'), // 이미지 경로 수정
+            image: require('../../assets/blueberryicon.png'),
             title: '고품질 상토 50L',
             price: '25,000원',
             location: '경북',
@@ -110,33 +110,37 @@ const Market = () => {
         setCartItems(updatedCart);
     };
 
-    // 로컬 getTotalPrice 함수 구현
-    const getTotalPrice = () => {
+     // 로컬 getTotalPrice 함수 구현
+     const getTotalPrice = () => {
         return cartItems.reduce((total, item) => total + (parseFloat(item.price.replace(/[^\d]/g, '')) * item.quantity), 0);
     };
 
-    // 선택된 정렬 옵션 및 무료배송 필터링에 따라 상품 목록 정렬 및 필터링
-    const sortedAndFilteredProducts = useMemo(() => {
-        let products = [...demoProducts];
+    // 선택된 정렬 옵션에 따라 상품 목록 정렬
+    const sortedProducts = useMemo(() => {
+        let productsToSort = [...demoProducts];
+
+        if (selectedCategory) {
+            productsToSort = productsToSort.filter(product => product.category === selectedCategory);
+        }
 
         if (isFreeShippingFiltered) {
-            products = products.filter(product => product.isFreeShipping);
+            productsToSort = productsToSort.filter(product => product.isFreeShipping);
         }
 
         switch (selectedSortOption) {
             case '최신순':
                 // 데모 데이터의 초기 순서 또는 id 기준으로 정렬 (필요시 수정)
-                products.sort((a, b) => a.id - b.id);
+                productsToSort.sort((a, b) => a.id - b.id);
                 break;
             case '낮은 가격순':
-                products.sort((a, b) => {
+                productsToSort.sort((a, b) => {
                     const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
                     const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
                     return priceA - priceB;
                 });
                 break;
             case '높은 가격순':
-                products.sort((a, b) => {
+                productsToSort.sort((a, b) => {
                     const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
                     const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
                     return priceB - priceA;
@@ -144,14 +148,14 @@ const Market = () => {
                 break;
             case '추천순':
                 // 추천 로직 구현 (현재는 최신순과 동일)
-                products.sort((a, b) => a.id - b.id);
+                productsToSort.sort((a, b) => a.id - b.id);
                 break;
             default:
                 break;
         }
 
-        return products;
-    }, [demoProducts, isFreeShippingFiltered, selectedSortOption]);
+        return productsToSort;
+    }, [demoProducts, selectedCategory, isFreeShippingFiltered, selectedSortOption]);
 
     return (
         <View style={styles.container}>
@@ -237,9 +241,9 @@ const Market = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* 판매 글 목록 (전체) */}
+            {/* 판매 글 목록 */}
             <ScrollView style={styles.productListContainer}>
-                {sortedAndFilteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                     <View key={product.id} style={styles.productCard}>
                         <Image source={product.image} style={styles.productImg} />
                         <View style={styles.productInfo}>
@@ -708,4 +712,4 @@ const Market = () => {
     );
 };
 
-export default Market;
+export default Marketbuy;

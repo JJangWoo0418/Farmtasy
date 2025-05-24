@@ -1,3 +1,4 @@
+/*
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
@@ -163,3 +164,4 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 });
+*/
