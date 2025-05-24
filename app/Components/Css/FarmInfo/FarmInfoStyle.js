@@ -13,8 +13,6 @@ export const styles = StyleSheet.create({
     header: {
         alignItems: 'center',
         padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
     },
     headerTitle: {
         fontSize: 22,
@@ -31,7 +29,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-evenly',
         alignItems: 'center',
-        marginTop: 16,
+        marginTop: -10,
     },
     menuItem: {
         alignItems: 'center',
@@ -55,6 +53,12 @@ export const styles = StyleSheet.create({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    menuContent2: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 20,
     },
     menuIcon: {
         fontSize: 36,

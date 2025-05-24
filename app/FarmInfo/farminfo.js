@@ -112,10 +112,14 @@ const FarmInfoContent = (props) => {
             <View style={styles.section}>
                 <Link href="/FarmInfo/Weather" asChild>
                     <TouchableOpacity style={styles.menuItem}>
-                        <View style={styles.menuContent}>
+                        <View style={styles.menuContent2}>
                             <Image source={require('../../assets/weathericon3.png')} style={{ width: 60, height: 60, marginBottom: 10 }} />
                             <Text style={styles.menuText}>날씨</Text>
-                            {isLoading && <Text style={styles.loadingText}>(로딩중...)</Text>}
+                            <View style={{ minHeight: 20, justifyContent: 'center' }}>
+                                <Text style={styles.loadingText}>
+                                    {isLoading ? '(로딩중...)' : ' '}
+                                </Text>
+                            </View>
                         </View>
                     </TouchableOpacity>
                 </Link>
