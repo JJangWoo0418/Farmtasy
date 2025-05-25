@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Market/marketstyle';
@@ -55,6 +55,34 @@ const Market = () => {
     const [cartItems, setCartItems] = useState([]);
     const [isCartVisible, setIsCartVisible] = useState(false);
 
+    const [products, setProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // API 호출
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setIsLoading(true);
+            try {
+                console.log('API 호출 시작');
+                const response = await axios.get(`${API_CONFIG.BASE_URL}/api/market`);
+                console.log('API 응답:', response.data);
+
+                if (response.data && Array.isArray(response.data)) {
+                    setProducts(response.data);
+                } else {
+                    setProducts([]);
+                }
+            } catch (error) {
+                console.error('API 호출 에러:', error);
+                setProducts([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProducts();
+    }, []);
+
     // 데모 판매 글 데이터 (전체 목록용)
     const demoProducts = [
         {
@@ -62,9 +90,6 @@ const Market = () => {
             image: require('../../assets/sampleimage.jpg'), // 이미지 경로 수정
             title: '중고하우스파이프 31.8mm 25.4mm',
             price: '99,999원',
-            location: '경기',
-            size: '31.8mm 25.4mm',
-            isFreeShipping: false,
             category: '농자재',
         },
         {
@@ -72,9 +97,6 @@ const Market = () => {
             image: require('../../assets/장터 샘플 이미지2.png'), // 이미지 경로 수정
             title: '땅콩씨앗 30g',
             price: '5,000원',
-            location: '강원',
-            size: '30g',
-            isFreeShipping: true,
             category: '종자/모종',
         },
         {
@@ -82,9 +104,6 @@ const Market = () => {
             image: require('../../assets/장터 샘플 이미지3.jpg'), // 이미지 경로 수정
             title: '고품질 상토 50L',
             price: '25,000원',
-            location: '경북',
-            size: '50L',
-            isFreeShipping: false,
             category: '비료/상토',
         }
     ];
@@ -95,13 +114,13 @@ const Market = () => {
         let updatedCart;
 
         if (existingItem) {
-          updatedCart = cartItems.map(cartItem =>
-            cartItem.id === item.id
-              ? { ...cartItem, quantity: cartItem.quantity + 1 }
-              : cartItem
-          );
+            updatedCart = cartItems.map(cartItem =>
+                cartItem.id === item.id
+                    ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                    : cartItem
+            );
         } else {
-          updatedCart = [...cartItems, { ...item, quantity: 1 }];
+            updatedCart = [...cartItems, { ...item, quantity: 1 }];
         }
         setCartItems(updatedCart);
     };
@@ -178,8 +197,8 @@ const Market = () => {
                 <>
                     <View style={styles.categoryWrap}>
                         {categories.map((cat, idx) => (
-                            <TouchableOpacity 
-                                key={idx} 
+                            <TouchableOpacity
+                                key={idx}
                                 style={styles.categoryItem}
                                 onPress={() => {
                                     router.push({
@@ -241,22 +260,45 @@ const Market = () => {
 
             {/* 판매 글 목록 (전체) */}
             <ScrollView style={styles.productListContainer}>
-                {sortedAndFilteredProducts.map((product) => (
-                    <View key={product.id} style={styles.productCard}>
-                        <Image source={product.image} style={styles.productImg} />
-                        <View style={styles.productInfo}>
-                            <Text style={styles.productTitle}>{product.title}</Text>
-                            <Text style={styles.price}>{product.price}</Text>
-                            <View style={styles.productDetails}>
-                                <Text style={styles.productLocation}>{product.location}</Text>
-                                <Text style={styles.productSize}>{product.size}</Text>
+                {isLoading ? (
+                    <Text style={{ textAlign: 'center', marginTop: 30 }}>상품을 불러오는 중입니다...</Text>
+                ) : products.length === 0 ? (
+                    <Text style={{ textAlign: 'center', marginTop: 30 }}>등록된 상품이 없습니다.</Text>
+                ) : (
+                    products.map((product) => {
+                        // 이미지 URL 파싱 (market_image_url이 JSON 배열일 수 있음)
+                        let imageUrl = '';
+                        try {
+                            const arr = typeof product.market_image_url === 'string'
+                                ? JSON.parse(product.market_image_url)
+                                : [];
+                            imageUrl = Array.isArray(arr) && arr.length > 0 ? arr[0] : '';
+                        } catch (e) {
+                            imageUrl = '';
+                        }
+                        return (
+                            <View key={product.market_id} style={styles.productCard}>
+                                <Image
+                                    source={imageUrl ? { uri: imageUrl } : require('../../assets/cameraicon3.png')}
+                                    style={styles.productImg}
+                                />
+                                <View style={styles.productInfo}>
+                                    <Text style={styles.productTitle}>{product.market_name}</Text>
+                                    <Text style={styles.price}>{product.market_price?.toLocaleString()}원</Text>
+                                    <View style={styles.productDetails}>
+                                        <Text style={styles.productLocation}>{product.market_category}</Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    style={styles.cartBtn}
+                                    onPress={() => addToCart(product)}
+                                >
+                                    <Text style={styles.cartBtnText}>장바구니 담기</Text>
+                                </TouchableOpacity>
                             </View>
-                        </View>
-                        <TouchableOpacity style={styles.cartBtn} onPress={() => addToCart(product)}>
-                            <Text style={styles.cartBtnText}>장바구니 담기</Text>
-                        </TouchableOpacity>
-                    </View>
-                ))}
+                        );
+                    })
+                )}
             </ScrollView>
 
             {isWriteToggleVisible && (
@@ -537,7 +579,7 @@ const Market = () => {
                                 <FontAwesome name="times" size={20} color="#555" />
                             </TouchableOpacity>
                         </View>
-                        {[ '최신순', '추천순', '낮은 가격순', '높은 가격순' ].map(option => (
+                        {['최신순', '추천순', '낮은 가격순', '높은 가격순'].map(option => (
                             <TouchableOpacity
                                 key={option}
                                 style={styles.sortOptionItem}
@@ -651,49 +693,59 @@ const Market = () => {
                 currentTab="장터"
                 onTabPress={(tab) => {
                     if (tab === '질문하기') {
-                        router.push({ pathname: '/Chatbot/questionpage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Chatbot/questionpage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     } else if (tab === '홈') {
-                        router.push({ pathname: '/Homepage/Home/homepage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Homepage/Home/homepage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '정보') {
-                        router.push({ pathname: '/FarmInfo/farminfo', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/FarmInfo/farminfo', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                         // 필요시 다른 탭도 추가
                     }
                     else if (tab === '장터') {
-                        router.push({ pathname: '/Market/market', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Market/market', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '내 농장') {
-                        router.push({ pathname: '/Map/Map', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Map/Map', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                 }
                 }

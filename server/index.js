@@ -2621,6 +2621,34 @@ app.post('/api/market', async (req, res) => {
     }
 });
 
+// server/index.js
+
+app.get('/api/market', async (req, res) => {
+    try {
+        console.log('=== 마켓 상품 목록 API 호출됨 ===');
+        const query = `
+            SELECT 
+                market_id,
+                name,
+                market_name,
+                market_category,
+                market_price,
+                market_image_url,
+                market_content,
+                market_created_at,
+                market_update_at,
+                phone
+            FROM market
+        `;
+        const [products] = await pool.query(query);
+        console.log('조회된 상품 수:', products.length);
+        res.json(products);
+    } catch (error) {
+        console.error('마켓 상품 목록 조회 에러:', error);
+        res.status(500).json({ error: '상품 목록을 불러오는데 실패했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
