@@ -330,10 +330,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    category: '농자재',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -359,10 +358,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    category: '생활잡화',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -388,10 +386,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    category: '농기계',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -417,10 +414,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    category: '비료/상토',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -446,10 +442,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    category: '제초용품',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -475,10 +470,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사공부',
-                                    icon: require('../../assets/studyfarming2.png'),
+                                    category: '종자/모종',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -505,10 +499,9 @@ const Market = () => {
                                 region: route.params?.region
                             });
                             router.push({
-                                pathname: "/Homepage/Post/writingpage",
+                                pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '자유주제',
-                                    icon: require('../../assets/freetopic2.png'),
+                                    category: '기타',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,

@@ -17,15 +17,16 @@ const categories = [
 ];
 
 const MarketUpload = () => {
+    const params = useLocalSearchParams();
     const [imageUris, setImageUris] = useState([]);
-    const [phonePlaceholder, setPhonePlaceholder] = useState('010-1234-5678');
     const [namePlaceholder, setNamePlaceholder] = useState('상품명과 중량을 입력해 주세요');
     const [pricePlaceholder, setPricePlaceholder] = useState('상품 가격을 입력해 주세요.');
     const [descPlaceholder, setDescPlaceholder] = useState('상품의 옵션, 상태, 수확 과정 등 상세하게 작성할수록 더 쉽게 판매할 수 있어요.');
     const [showCategory, setShowCategory] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState(params.category || '');
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const [price, setPrice] = useState('');
+    const [phone, setPhone] = useState(params.phone || '010-1234-5678');
 
     const openCategorySheet = () => {
         setShowCategory(true);
@@ -178,16 +179,18 @@ const MarketUpload = () => {
                     </View>
 
                     {/* 사진 업로드 미리보기 */}
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8, marginTop: 20 }}>
-                        {imageUris.map((uri, idx) => (
-                            <TouchableOpacity key={idx} onPress={() => handleRemoveImage(idx)} activeOpacity={0.8}>
-                                <Image
-                                    source={{ uri }}
-                                    style={{ width: 120, height: 120, borderRadius: 8, marginRight: 8 }}
-                                />
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                    {imageUris.length > 0 && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8, marginTop: 20 }}>
+                            {imageUris.map((uri, idx) => (
+                                <TouchableOpacity key={idx} onPress={() => handleRemoveImage(idx)} activeOpacity={0.8}>
+                                    <Image
+                                        source={{ uri }}
+                                        style={{ width: 120, height: 120, borderRadius: 8, marginRight: 8 }}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
 
                     {/* 사진 업로드 버튼 */}
                     <TouchableOpacity style={styles.imageUploadBtn} onPress={handleImagePick}>
@@ -236,11 +239,12 @@ const MarketUpload = () => {
                     {/* 전화번호 입력 */}
                     <TextInput
                         style={styles.input}
-                        placeholder={phonePlaceholder}
+                        placeholder={'010-1234-5678'}
                         placeholderTextColor="#222"
                         keyboardType="phone-pad"
-                        onFocus={() => setPhonePlaceholder('')}
-                        onBlur={() => setPhonePlaceholder('010-1234-5678')}
+                        value={phone}
+                        onChangeText={setPhone}
+                        editable={false}
                     />
 
                     {/* 상세 설명 */}
@@ -254,7 +258,18 @@ const MarketUpload = () => {
                     />
 
                     {/* 등록 버튼 */}
-                    <TouchableOpacity style={styles.submitBtn}>
+                    <TouchableOpacity
+                        style={styles.submitBtn}
+                        onPress={() => {
+                            router.push({
+                                pathname: '/Market/CategorySellPage', // 이동할 페이지 경로에 맞게 수정
+                                params: {
+                                    category: selectedCategory,
+                                    phone: phone,
+                                }
+                            });
+                        }}
+                    >
                         <Text style={styles.submitBtnText}>등록</Text>
                     </TouchableOpacity>
                 </View>
