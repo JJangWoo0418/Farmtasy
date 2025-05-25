@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Animated, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Market/marketstyle';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
@@ -172,6 +172,36 @@ const Market = () => {
         return products;
     }, [demoProducts, isFreeShippingFiltered, selectedSortOption]);
 
+    const renderProductItem = ({ item }) => {
+        let imageUrl = '';
+        try {
+            let arr = [];
+            if (Array.isArray(item.market_image_url)) {
+                arr = item.market_image_url;
+            } else if (typeof item.market_image_url === 'string') {
+                arr = JSON.parse(item.market_image_url);
+            }
+            imageUrl = Array.isArray(arr) && arr.length > 0 ? arr[0] : '';
+        } catch (e) {
+            imageUrl = '';
+        }
+        return (
+            <View style={styles.productCard}>
+                <Image
+                    source={imageUrl ? { uri: imageUrl } : require('../../assets/cameraicon3.png')}
+                    style={styles.productImg}
+                />
+                <View style={styles.productInfo}>
+                    <Text style={styles.productTitle}>{item.market_name}</Text>
+                    <Text style={styles.price}>{item.market_price?.toLocaleString()}원</Text>
+                    <View style={styles.productDetails}>
+                        <Text style={styles.productLocation}>{item.market_category}</Text>
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
     return (
         <View style={styles.container}>
             {/* 상단 검색창 */}
@@ -247,59 +277,27 @@ const Market = () => {
                     <Text style={styles.latestSortText}>{selectedSortOption}</Text>
                     <FontAwesome name="chevron-down" size={12} color="#555" style={styles.dropdownIcon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.freeShippingContainer} onPress={() => setIsFreeShippingFiltered(prev => !prev)}>
-                    {/* 체크박스는 스타일로 원형 테두리만 표시 */}
-                    <View style={styles.checkbox}>
-                        {isFreeShippingFiltered && <FontAwesome name="check" size={14} color="#555" />}
-                    </View>
-                    <Text style={styles.checkboxText}>무료배송 모아보기</Text>
-                </TouchableOpacity>
             </View>
 
             {/* 판매 글 목록 (전체) */}
-            <ScrollView style={styles.productListContainer}>
-                {isLoading ? (
-                    <Text style={{ textAlign: 'center', marginTop: 30 }}>상품을 불러오는 중입니다...</Text>
-                ) : products.length === 0 ? (
-                    <Text style={{ textAlign: 'center', marginTop: 30 }}>등록된 상품이 없습니다.</Text>
-                ) : (
-                    products.map((product) => {
-                        let imageUrl = '';
-                        try {
-                            let arr = [];
-                            if (Array.isArray(product.market_image_url)) {
-                                arr = product.market_image_url;
-                            } else if (typeof product.market_image_url === 'string') {
-                                arr = JSON.parse(product.market_image_url);
-                            }
-                            imageUrl = Array.isArray(arr) && arr.length > 0 ? arr[0] : '';
-                        } catch (e) {
-                            imageUrl = '';
-                        }
-                        return (
-                            <View key={product.market_id} style={styles.productCard}>
-                                <Image
-                                    source={imageUrl ? { uri: imageUrl } : require('../../assets/cameraicon3.png')}
-                                    style={styles.productImg}
-                                />
-                                <View style={styles.productInfo}>
-                                    <Text style={styles.productTitle}>{product.market_name}</Text>
-                                    <Text style={styles.price}>{product.market_price?.toLocaleString()}원</Text>
-                                    <View style={styles.productDetails}>
-                                        <Text style={styles.productLocation}>{product.market_category}</Text>
-                                    </View>
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.cartBtn}
-                                    onPress={() => addToCart(product)}
-                                >
-                                    <Text style={styles.cartBtnText}>장바구니 담기</Text>
-                                </TouchableOpacity>
-                            </View>
-                        );
-                    })
-                )}
-            </ScrollView>
+            <FlatList
+                data={products}
+                keyExtractor={item => item.market_id.toString()}
+                renderItem={renderProductItem}
+                numColumns={2}
+                columnWrapperStyle={{
+                    justifyContent: 'space-between', // 또는 'flex-start'
+                    paddingHorizontal: 2,           // 좌우 여백
+                    marginBottom: 2,
+                    marginLeft: 1
+                }}
+                contentContainerStyle={styles.productListContainer}
+                ListEmptyComponent={
+                    isLoading
+                        ? <Text style={{ textAlign: 'center', marginTop: 30 }}>상품을 불러오는 중입니다...</Text>
+                        : <Text style={{ textAlign: 'center', marginTop: 30 }}>등록된 상품이 없습니다.</Text>
+                }
+            />
 
             {isWriteToggleVisible && (
                 <TouchableOpacity
@@ -627,64 +625,6 @@ const Market = () => {
                             source={require('../../assets/paperpencil.png')}
                             style={styles.paperpencilIcon}
                         />
-                    </View>
-                )}
-            </TouchableOpacity>
-
-            {/* 장바구니 모달/뷰 다시 추가 */}
-            {isCartVisible && (
-                <TouchableOpacity
-                    activeOpacity={1}
-                    onPress={() => setIsCartVisible(false)}
-                    style={styles.overlay}
-                >
-                    <View style={styles.cartModalContainer}>
-                        <View style={styles.cartModalHeader}>
-                            <Text style={styles.cartModalTitle}>장바구니</Text>
-                            <TouchableOpacity onPress={() => setIsCartVisible(false)}>
-                                <FontAwesome name="times" size={20} color="#555" />
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView>
-                            {cartItems.map((item, index) => (
-                                <View key={index} style={styles.cartItem}>
-                                    <Image source={item.image} style={styles.cartItemImage} />
-                                    <View style={styles.cartItemInfo}>
-                                        <Text style={styles.cartItemTitle}>{item.title}</Text>
-                                        <Text style={styles.cartItemPrice}>{item.price}</Text>
-                                    </View>
-                                    <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.removeItemButton}>
-                                        <FontAwesome name="times-circle" size={20} color="red" />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </ScrollView>
-                        {/* 총 가격 표시 */}
-                        {cartItems.length > 0 && (
-                            <View style={styles.cartTotal}>
-                                <Text style={styles.cartTotalText}>총 품목: {cartItems.length}개</Text>
-                                <Text style={styles.cartTotalText}>총 가격: {getTotalPrice().toLocaleString()}원</Text>
-                            </View>
-                        )}
-                        {/* 결제하기 버튼 */}
-                        {cartItems.length > 0 && (
-                            <TouchableOpacity style={styles.checkoutButton} onPress={() => console.log('결제하기 버튼 클릭됨!')}>
-                                <Text style={styles.checkoutButtonText}>결제하기</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </TouchableOpacity>
-            )}
-
-            {/* 장바구니 버튼 다시 추가 */}
-            <TouchableOpacity
-                style={styles.cartButton}
-                onPress={() => setIsCartVisible(true)}
-            >
-                <FontAwesome name="shopping-cart" size={24} color="white" />
-                {cartItems.length > 0 && (
-                    <View style={styles.cartItemCountContainer}>
-                        <Text style={styles.cartItemCountText}>{cartItems.length}</Text>
                     </View>
                 )}
             </TouchableOpacity>

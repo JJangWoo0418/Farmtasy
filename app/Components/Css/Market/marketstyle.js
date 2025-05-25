@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         marginBottom: 10,
         justifyContent: 'space-between',
+        marginLeft: 15
     },
     latestSortContainer: {
         flexDirection: 'row',
@@ -143,26 +144,35 @@ const styles = StyleSheet.create({
         marginLeft: 20,
     },
     productCard: {
-        flexDirection: 'row',
+        flex: 1,
+        marginHorizontal: 5,      // 카드 좌우 간격
+        marginVertical: 10,       // 카드 위아래 간격
         backgroundColor: '#fff',
         borderRadius: 14,
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 2,
+        borderWidth: 1,         // 테두리 두께
+        borderColor: '#F2F2F2',   // 테두리 색상 (연한 회색)
         padding: 12,
-        marginBottom: 20,
         alignItems: 'center',
+        justifyContent: 'flex-start',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        elevation: 3,
+        minWidth: 0,
+        marginTop: -5
     },
     productImg: {
-        width: 80,
-        height: 100,
+        width: 150,
+        height: 150,
         borderRadius: 8,
-        marginRight: 12,
+        resizeMode: 'cover',
+        marginBottom: 8,
         backgroundColor: '#eee',
     },
     productInfo: {
-        flex: 1,
+        width: '100%',
+        alignItems: 'flex-start',
     },
     timerWrap: {
         flexDirection: 'row',
@@ -179,11 +189,6 @@ const styles = StyleSheet.create({
         color: '#FF4D4F',
         fontSize: 12,
         fontWeight: 'bold',
-    },
-    productTitle: {
-        fontSize: 14,
-        color: '#222',
-        marginBottom: 4,
     },
     priceRow: {
         flexDirection: 'row',
@@ -202,9 +207,11 @@ const styles = StyleSheet.create({
         textDecorationLine: 'line-through',
     },
     price: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: 'bold',
         color: '#222',
+        marginBottom: 2,
+        marginTop: 2
     },
     freeShip: {
         color: '#00C471',
@@ -289,12 +296,12 @@ const styles = StyleSheet.create({
     },
     productDetails: {
         flexDirection: 'row',
-        marginTop: 4,
+        alignItems: 'center',
+        marginTop: 2,
     },
     productLocation: {
         fontSize: 12,
-        color: '#777',
-        marginRight: 8,
+        color: '#888',
     },
     productSize: {
         fontSize: 12,
@@ -453,6 +460,17 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: 'white',
+    },
+    productListContainer: {
+        paddingHorizontal: 10,
+        paddingTop: 10,
+        paddingBottom: 80,
+    },
+    productTitle: {
+        fontSize: 15,
+        marginBottom: 2,
+        color: '#222',
+        marginTop: 5
     },
 });
 
