@@ -181,6 +181,91 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#222',
     },
+    overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1000,
+        elevation: 5,
+    },
+
+    categoryModal: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        zIndex: 1001,
+        maxHeight: '80%',
+        elevation: 6,
+    },
+
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E5E5',
+    },
+
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#222',
+    },
+
+    modalClose: {
+        fontSize: 20,
+        color: '#999',
+        padding: 5,
+    },
+
+    categoryList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        paddingHorizontal: 10,
+    },
+
+    categoryItem: {
+        width: '48%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F8F8F8',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 15,
+    },
+
+    categoryIcon: {
+        width: 24,
+        height: 24,
+        marginRight: 10,
+    },
+
+    categoryLabel: {
+        fontSize: 14,
+        color: '#222',
+        flex: 1,
+    },
+
+    dim: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 1000,
+    },
 });
 
 export default styles;

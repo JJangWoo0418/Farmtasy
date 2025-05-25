@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, Animated, Easing, Modal } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../Components/Css/Market/marketuploadstyle';
 import { useLocalSearchParams } from 'expo-router';
 import { router } from 'expo-router';
 
 const categories = [
-    { label: '농수산물 팔기', icon: require('../../assets/fruit.png') },
-    { label: '농자재 팔기', icon: require('../../assets/tool.png') },
-    { label: '생활잡화 팔기', icon: require('../../assets/life.png') },
-    { label: '농기계 팔기', icon: require('../../assets/tractor.png') },
-    { label: '비료/상토 팔기', icon: require('../../assets/fertilizer.png') },
-    { label: '제초용품 팔기', icon: require('../../assets/weed.png') },
-    { label: '종자/모종 팔기', icon: require('../../assets/seed.png') },
+    { label: '농수산물', icon: require('../../assets/fruit.png') },
+    { label: '농자재', icon: require('../../assets/tool.png') },
+    { label: '생활잡화', icon: require('../../assets/life.png') },
+    { label: '농기계', icon: require('../../assets/tractor.png') },
+    { label: '비료/상토', icon: require('../../assets/fertilizer.png') },
+    { label: '제초용품', icon: require('../../assets/weed.png') },
+    { label: '종자/모종', icon: require('../../assets/seed.png') },
+    { label: '기타', icon: require('../../assets/etc.png') },
 ];
 
 const MarketUpload = () => {
@@ -23,6 +24,33 @@ const MarketUpload = () => {
     const [descPlaceholder, setDescPlaceholder] = useState('상품의 옵션, 상태, 수확 과정 등 상세하게 작성할수록 더 쉽게 판매할 수 있어요.');
     const [showCategory, setShowCategory] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('');
+    const sheetAnim = useRef(new Animated.Value(0)).current;
+
+    const openCategorySheet = () => {
+        setShowCategory(true);
+        Animated.timing(sheetAnim, {
+            toValue: 1,
+            duration: 300,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: false,
+        }).start();
+    };
+
+    const closeCategorySheet = () => {
+        Animated.timing(sheetAnim, {
+            toValue: 0,
+            duration: 200,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: false,
+        }).start(() => {
+            setShowCategory(false);
+        });
+    };
+
+    const sheetTranslateY = sheetAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [300, 0]
+    });
 
     // 사진 선택/촬영 함수
     const handleImagePick = async () => {
@@ -71,7 +99,48 @@ const MarketUpload = () => {
     };
 
     return (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={{ flex: 1 }}>
+            {/* 카테고리 모달 (Modal 컴포넌트 사용) */}
+            <Modal
+                visible={showCategory}
+                transparent
+                animationType="fade"
+                onRequestClose={closeCategorySheet}
+            >
+                <TouchableOpacity
+                    style={styles.dim}
+                    activeOpacity={1}
+                    onPress={closeCategorySheet}
+                />
+                <Animated.View
+                    style={[
+                        styles.categoryModal,
+                        { transform: [{ translateY: sheetTranslateY }] }
+                    ]}
+                >
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>카테고리 선택</Text>
+                        <TouchableOpacity onPress={closeCategorySheet}>
+                            <Text style={styles.modalClose}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.categoryList}>
+                        {categories.map((cat, idx) => (
+                            <TouchableOpacity
+                                key={idx}
+                                style={styles.categoryItem}
+                                onPress={() => {
+                                    setSelectedCategory(cat.label);
+                                    closeCategorySheet();
+                                }}
+                            >
+                                <Image source={cat.icon} style={styles.categoryIcon} />
+                                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </Animated.View>
+            </Modal>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <View style={styles.container}>
                     {/* 상단 네비게이션 */}
@@ -106,7 +175,7 @@ const MarketUpload = () => {
                     <View style={styles.dropdownWrap}>
                         <TouchableOpacity
                             style={styles.dropdown}
-                            onPress={() => setShowCategory(!showCategory)}
+                            onPress={openCategorySheet}
                             activeOpacity={0.8}
                         >
                             <Text style={[styles.dropdownText, { color: selectedCategory ? '#222' : '#BDBDBD' }]}>
@@ -115,24 +184,6 @@ const MarketUpload = () => {
                             <Image source={require('../../assets/triangle.png')} style={styles.dropdownIcon} />
                         </TouchableOpacity>
                     </View>
-                    {showCategory && (
-                        <View style={styles.categoryList}>
-                            {categories.map((cat, idx) => (
-                                <TouchableOpacity
-                                    key={idx}
-                                    style={styles.categoryItem}
-                                    onPress={() => {
-                                        setSelectedCategory(cat.label);
-                                        setShowCategory(false);
-                                    }}
-                                >
-                                    <Image source={cat.icon} style={styles.categoryIcon} />
-                                    <Text style={styles.categoryLabel}>{cat.label}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    )}
-
                     {/* 가격 입력 */}
                     <View style={styles.priceRow}>
                         <Text style={styles.pricePrefix}>₩</Text>
@@ -173,7 +224,7 @@ const MarketUpload = () => {
                     </TouchableOpacity>
                 </View>
             </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+        </View>
     );
 };
 
