@@ -46,9 +46,10 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     cameraIcon: {
-        width: 28,
-        height: 28,
+        width: 22,
+        height: 22,
         marginRight: 8,
+        resizeMode: 'contain',
     },
     imageUploadText: {
         color: '#222',
@@ -95,7 +96,6 @@ const styles = StyleSheet.create({
         top: 12,
         width: 20,
         height: 20,
-        tintColor: '#222',
     },
     dropdownText: {
         flex: 1,
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
         height: 44,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 150,
+        marginTop: 15
     },
     submitBtnText: {
         color: '#fff',

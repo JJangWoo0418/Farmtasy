@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, Animated, Easing, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, Animated, Easing, Modal, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../Components/Css/Market/marketuploadstyle';
 import { useLocalSearchParams } from 'expo-router';
@@ -17,7 +17,7 @@ const categories = [
 ];
 
 const MarketUpload = () => {
-    const [imageUri, setImageUri] = useState(null);
+    const [imageUris, setImageUris] = useState([]);
     const [phonePlaceholder, setPhonePlaceholder] = useState('010-1234-5678');
     const [namePlaceholder, setNamePlaceholder] = useState('상품명과 중량을 입력해 주세요');
     const [pricePlaceholder, setPricePlaceholder] = useState('상품 가격을 입력해 주세요.');
@@ -25,6 +25,7 @@ const MarketUpload = () => {
     const [showCategory, setShowCategory] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('');
     const sheetAnim = useRef(new Animated.Value(0)).current;
+    const [price, setPrice] = useState('');
 
     const openCategorySheet = () => {
         setShowCategory(true);
@@ -52,6 +53,12 @@ const MarketUpload = () => {
         outputRange: [300, 0]
     });
 
+    const handlePriceChange = (text) => {
+        const numeric = text.replace(/[^0-9]/g, '');
+        const formatted = numeric.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        setPrice(formatted);
+    };
+
     // 사진 선택/촬영 함수
     const handleImagePick = async () => {
         Alert.alert(
@@ -70,9 +77,11 @@ const MarketUpload = () => {
                             mediaTypes: ImagePicker.MediaTypeOptions.Images,
                             allowsEditing: true,
                             quality: 1,
+                            allowsMultipleSelection: true,
+                            selectionLimit: 10,
                         });
                         if (!result.canceled && result.assets && result.assets.length > 0) {
-                            setImageUri(result.assets[0].uri);
+                            setImageUris(prev => [...prev, ...result.assets.map(asset => asset.uri)]);
                         }
                     },
                 },
@@ -89,7 +98,7 @@ const MarketUpload = () => {
                             quality: 1,
                         });
                         if (!result.canceled && result.assets && result.assets.length > 0) {
-                            setImageUri(result.assets[0].uri);
+                            setImageUris(prev => [...prev, result.assets[0].uri]);
                         }
                     },
                 },
@@ -98,8 +107,25 @@ const MarketUpload = () => {
         );
     };
 
+    const handleRemoveImage = (idx) => {
+        Alert.alert(
+            '사진 삭제',
+            '이 사진을 삭제하시겠습니까?',
+            [
+                { text: '취소', style: 'cancel' },
+                {
+                    text: '삭제',
+                    style: 'destructive',
+                    onPress: () => {
+                        setImageUris(prev => prev.filter((_, i) => i !== idx));
+                    }
+                }
+            ]
+        );
+    };
+
     return (
-        <View style={{ flex: 1 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
             {/* 카테고리 모달 (Modal 컴포넌트 사용) */}
             <Modal
                 visible={showCategory}
@@ -151,13 +177,21 @@ const MarketUpload = () => {
                         <Text style={styles.headerTitle}>글쓰기</Text>
                     </View>
 
-                    {/* 사진 업로드 */}
+                    {/* 사진 업로드 미리보기 */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8, marginTop: 20 }}>
+                        {imageUris.map((uri, idx) => (
+                            <TouchableOpacity key={idx} onPress={() => handleRemoveImage(idx)} activeOpacity={0.8}>
+                                <Image
+                                    source={{ uri }}
+                                    style={{ width: 120, height: 120, borderRadius: 8, marginRight: 8 }}
+                                />
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+
+                    {/* 사진 업로드 버튼 */}
                     <TouchableOpacity style={styles.imageUploadBtn} onPress={handleImagePick}>
-                        {imageUri ? (
-                            <Image source={{ uri: imageUri }} style={{ width: 40, height: 40, borderRadius: 8, marginRight: 8 }} />
-                        ) : (
-                            <Image source={require('../../assets/cameraicon3.png')} style={styles.cameraIcon} />
-                        )}
+                        <Image source={require('../../assets/cameraicon.png')} style={styles.cameraIcon} />
                         <Text style={styles.imageUploadText}>사진 올리기</Text>
                     </TouchableOpacity>
 
@@ -181,7 +215,6 @@ const MarketUpload = () => {
                             <Text style={[styles.dropdownText, { color: selectedCategory ? '#222' : '#BDBDBD' }]}>
                                 {selectedCategory || '카테고리 선택'}
                             </Text>
-                            <Image source={require('../../assets/triangle.png')} style={styles.dropdownIcon} />
                         </TouchableOpacity>
                     </View>
                     {/* 가격 입력 */}
@@ -192,6 +225,8 @@ const MarketUpload = () => {
                             placeholder={pricePlaceholder}
                             placeholderTextColor="#BDBDBD"
                             keyboardType="numeric"
+                            value={price}
+                            onChangeText={handlePriceChange}
                             onFocus={() => setPricePlaceholder('')}
                             onBlur={() => setPricePlaceholder('상품 가격을 입력해 주세요.')}
                         />
@@ -224,7 +259,7 @@ const MarketUpload = () => {
                     </TouchableOpacity>
                 </View>
             </TouchableWithoutFeedback>
-        </View>
+        </ScrollView>
     );
 };
 
