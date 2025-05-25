@@ -301,8 +301,7 @@ const Market = () => {
                             router.push({
                                 pathname: "/Market/Marketupload",
                                 params: {
-                                    category: '농사질문',
-                                    icon: require('../../assets/farmingquestions2.png'),
+                                    category: '농수산물',
                                     userData: route.params?.userData,
                                     name: route.params?.name,
                                     phone: route.params?.phone,
@@ -586,7 +585,7 @@ const Market = () => {
                     />
                 ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.writeButtonText}>글쓰기  </Text>
+                        <Text style={styles.writeButtonText}>판매</Text>
                         <Image
                             source={require('../../assets/paperpencil.png')}
                             style={styles.paperpencilIcon}

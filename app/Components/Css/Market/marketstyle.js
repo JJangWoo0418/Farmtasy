@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
     paperpencilIcon: {
         width: 17,
         height: 17,
+        marginLeft: 3,
     },
     checkbox: {
         width: 20,
