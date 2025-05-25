@@ -149,6 +149,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
     backgroundColor: '#fff',
+    marginTop: 10,
   },
   cancelButton: {
     backgroundColor: '#f0f0f0',

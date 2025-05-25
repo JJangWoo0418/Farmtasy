@@ -10,27 +10,36 @@ import { router } from 'expo-router';
 
 // 인기작물 TOP21 (이모지 포함)
 const popularCrops = [
-  { name: '벼', icon: '🌾' },
-  { name: '배추', icon: '🥬' },
-  { name: '양파', icon: '🧅' },
-  { name: '감자', icon: '🥔' },
-  { name: '사과', icon: '🍎' },
-  { name: '고추', icon: '🌶️' },
-  { name: '마늘', icon: '🧄' },
-  { name: '배', icon: '🍐' },
-  { name: '고구마', icon: '🍠' },
-  { name: '수박', icon: '🍉' },
-  { name: '포도', icon: '🍇' },
-  { name: '옥수수', icon: '🌽' },
-  { name: '토마토', icon: '🍅' },
-  { name: '오이', icon: '🥒' },
-  { name: '가지', icon: '🍆' },
-  { name: '복숭아', icon: '🍑' },
-  { name: '딸기', icon: '🍓' },
-  { name: '땅콩', icon: '🥜' },
-  { name: '버섯', icon: '🍄' },
-  { name: '당근', icon: '🥕' },
-  { name: '망고', icon: '🥭' },
+  { name: '고추', image: require('../../assets/peppericon.png') },
+  { name: '벼', image: require('../../assets/riceicon.png') },
+  { name: '감자', image: require('../../assets/potatoicon.png') },
+  { name: '고구마', image: require('../../assets/sweetpotatoicon.png') },
+  { name: '사과', image: require('../../assets/appleicon.png') },
+  { name: '딸기', image: require('../../assets/strawberryicon.png') },
+  { name: '마늘', image: require('../../assets/garlicicon.png') },
+  { name: '상추', image: require('../../assets/lettuceicon.png') },
+  { name: '배추', image: require('../../assets/napacabbageicon.png') },
+  { name: '토마토', image: require('../../assets/tomatoicon.png') },
+  { name: '포도', image: require('../../assets/grapeicon.png') },
+  { name: '콩', image: require('../../assets/beanicon.png') },
+  { name: '감귤', image: require('../../assets/tangerinesicon.png') },
+  { name: '복숭아', image: require('../../assets/peachicon.png') },
+  { name: '양파', image: require('../../assets/onionicon.png') },
+  { name: '감', image: require('../../assets/persimmonicon.png') },
+  { name: '파', image: require('../../assets/greenonionicon.png') },
+  { name: '들깨', image: require('../../assets/perillaseedsicon.png') },
+  { name: '오이', image: require('../../assets/cucumbericon.png') },
+  { name: '낙엽교목류', image: require('../../assets/deciduoustreesicon.png') },
+  { name: '옥수수', image: require('../../assets/cornericon.png') },
+  { name: '표고버섯', image: require('../../assets/mushroomicon.png') },
+  { name: '블루베리', image: require('../../assets/blueberryicon.png') },
+  { name: '양배추', image: require('../../assets/cabbageicon.png') },
+  { name: '호박', image: require('../../assets/pumpkinicon.png') },
+  { name: '자두', image: require('../../assets/plumicon.png') },
+  { name: '시금치', image: require('../../assets/spinachicon.png') },
+  { name: '두릅', image: require('../../assets/araliaicon.png') },
+  { name: '참깨', image: require('../../assets/sesameicon.png') },
+  { name: '매실', image: require('../../assets/greenplumicon.png') },
 ];
 
 // 요일 한글
@@ -467,7 +476,7 @@ export default function MarketPriceScreen() {
                     style={{
                       borderWidth: isToday ? 2 : 0,
                       borderColor: isToday ? '#000' : 'transparent',
-                      backgroundColor: isSelected ? '#000' : 'transparent',
+                      backgroundColor: isSelected ? '#22CC6B' : 'transparent',
                       borderRadius: 8,
                       width: 32, height: 32, alignItems: 'center', justifyContent: 'center',
                     }}
@@ -547,7 +556,7 @@ export default function MarketPriceScreen() {
                           style={{
                             borderWidth: isToday ? 2 : 0,
                             borderColor: isToday ? '#000' : 'transparent',
-                            backgroundColor: isSelected ? '#000' : 'transparent',
+                            backgroundColor: isSelected ? '#22CC6B' : 'transparent',
                             borderRadius: 12,
                             width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
                           }}
@@ -761,7 +770,7 @@ export default function MarketPriceScreen() {
             const spec = std + ' / ' + grade;
 
             return (
-              <View key={index} style={[styles.auctionItem, { paddingVertical: 10, paddingHorizontal: 16 }]}> 
+              <View key={index} style={[styles.auctionItem, { paddingVertical: 10, paddingHorizontal: 16 }]}>
                 {/* 첫 줄: 품종, 규격/등급, 물량, 경락가 */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                   <Text style={{ flex: 2.2, fontSize: 17, fontWeight: 'bold', color: '#222', textAlign: 'left' }}>{variety}</Text>
@@ -794,7 +803,7 @@ export default function MarketPriceScreen() {
   // 인기작물/검색 결과 렌더링 (사진4 스타일, 3열 그리드, 회색 박스, 이모지+작물명, 스크롤뷰)
   const renderPopularCrops = () => (
     <>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 16, marginBottom: 8, textAlign: 'left' }}>인기작물 TOP 21</Text>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 16, marginBottom: 8, textAlign: 'left' }}>인기작물 TOP 30</Text>
       <ScrollView style={{ maxHeight: 320 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
           {popularCrops.map((crop, idx) => (
@@ -803,7 +812,6 @@ export default function MarketPriceScreen() {
               style={{
                 width: '30%',
                 margin: '1.5%',
-                backgroundColor: '#f5f5f5',
                 borderRadius: 16,
                 alignItems: 'center',
                 paddingVertical: 18,
@@ -813,7 +821,7 @@ export default function MarketPriceScreen() {
               }}
               onPress={() => handlePopularCropSelect(crop)}
             >
-              <Text style={{ fontSize: 40 }}>{crop.icon}</Text>
+              <Image source={crop.image} style={{ width: 60, height: 60 }} />
               <Text style={{ marginTop: 8, fontSize: 20, fontWeight: 'bold' }}>{crop.name}</Text>
             </TouchableOpacity>
           ))}
@@ -838,7 +846,7 @@ export default function MarketPriceScreen() {
       })}
       {/* 인기작물로 돌아가기 버튼 */}
       <TouchableOpacity onPress={() => { setSelectedCrop(null); setSearchText(''); setVarietyList([]); }}>
-        <Text style={{ color: '#4A90E2', marginTop: 16, textAlign: 'center', fontSize: 18 }}>인기작물로 돌아가기</Text>
+        <Text style={{ color: '#4CAF50', marginTop: 16, textAlign: 'center', fontSize: 18 }}>인기작물로 돌아가기</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -847,9 +855,9 @@ export default function MarketPriceScreen() {
   const renderModalHeader = () => (
     <>
       <View style={{ height: 16 }} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-        <TouchableOpacity onPress={closeModal} style={{ position: 'absolute', left: 0, padding: 8 }}>
-          <Text style={{ color: '#4A90E2', fontSize: 28, fontWeight: 'bold' }}>←</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+        <TouchableOpacity onPress={closeModal} style={{ position: 'absolute', left: -10, padding: 8 }}>
+          <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: 'bold', textAlign: 'center' }}>작물 추가</Text>
       </View>
@@ -1069,7 +1077,7 @@ export default function MarketPriceScreen() {
               onChangeText={setSearchText}
             />
             {/* 직접 추가하기 버튼 */}
-            <TouchableOpacity style={{ backgroundColor: '#4CAF50', borderRadius: 10, paddingVertical: 14, marginVertical: 10 }}>
+            <TouchableOpacity style={{ backgroundColor: '#22CC6B', borderRadius: 10, paddingVertical: 14, marginVertical: 10 }}>
               <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>직접 추가하기</Text>
             </TouchableOpacity>
             {/* 인기작물 or 검색 결과 */}

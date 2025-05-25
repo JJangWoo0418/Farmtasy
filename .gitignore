@@ -42,3 +42,4 @@ server/.env
 
 # API 설정 파일
 app/DB/api.js
+app/Components/API/apikey.js
