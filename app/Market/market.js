@@ -63,9 +63,7 @@ const Market = () => {
         const fetchProducts = async () => {
             setIsLoading(true);
             try {
-                console.log('API 호출 시작');
                 const response = await axios.get(`${API_CONFIG.BASE_URL}/api/market`);
-                console.log('API 응답:', response.data);
 
                 if (response.data && Array.isArray(response.data)) {
                     setProducts(response.data);
@@ -266,12 +264,14 @@ const Market = () => {
                     <Text style={{ textAlign: 'center', marginTop: 30 }}>등록된 상품이 없습니다.</Text>
                 ) : (
                     products.map((product) => {
-                        // 이미지 URL 파싱 (market_image_url이 JSON 배열일 수 있음)
                         let imageUrl = '';
                         try {
-                            const arr = typeof product.market_image_url === 'string'
-                                ? JSON.parse(product.market_image_url)
-                                : [];
+                            let arr = [];
+                            if (Array.isArray(product.market_image_url)) {
+                                arr = product.market_image_url;
+                            } else if (typeof product.market_image_url === 'string') {
+                                arr = JSON.parse(product.market_image_url);
+                            }
                             imageUrl = Array.isArray(arr) && arr.length > 0 ? arr[0] : '';
                         } catch (e) {
                             imageUrl = '';
