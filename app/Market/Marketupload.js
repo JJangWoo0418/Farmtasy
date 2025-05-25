@@ -193,7 +193,13 @@ const MarketUpload = () => {
                 Alert.alert('성공', '상품이 등록되었습니다.', [
                     {
                         text: '확인',
-                        onPress: () => router.push('/Market/market')
+                        onPress: () => router.push({
+                            pathname: '/Market/market',
+                            params: {
+                                category: selectedCategory,
+                                phone: phone,
+                            }
+                        })
                     }
                 ]);
             } else {
@@ -216,6 +222,9 @@ const MarketUpload = () => {
             setIsLoading(false);
         }
     };
+
+    // 필수 입력값 체크
+    const isFormValid = productName && selectedCategory && price && description && imageUris.length > 0;
 
     return (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
@@ -355,9 +364,15 @@ const MarketUpload = () => {
 
                     {/* 등록 버튼 */}
                     <TouchableOpacity
-                        style={[styles.submitBtn, isLoading && styles.submitBtnDisabled]}
-                        onPress={handleSubmit}
-                        disabled={isLoading}
+                        style={[styles.submitBtn, (!isFormValid || isLoading) && styles.submitBtnDisabled]}
+                        onPress={() => {
+                            if (!isFormValid) {
+                                Alert.alert('알림', '모든 필수 항목과 이미지를 입력해주세요.');
+                                return;
+                            }
+                            handleSubmit();
+                        }}
+                        disabled={!isFormValid || isLoading}
                     >
                         <Text style={styles.submitBtnText}>
                             {isLoading ? '등록 중...' : '등록'}

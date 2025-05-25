@@ -5,6 +5,8 @@ import styles from '../Components/Css/Market/marketstyle';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import { FontAwesome } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+import axios from 'axios';
+import API_CONFIG from '../DB/api';
 
 const categories = [
     { label: '제초용품', icon: require('../../assets/weedicon2.png') },

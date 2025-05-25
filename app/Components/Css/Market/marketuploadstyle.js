@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     submitBtnDisabled: {
-        backgroundColor: '#A5D6A7',
+        backgroundColor: '#D9D9D9',
         opacity: 0.7,
     },
     submitBtnText: {
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
 
     modalClose: {
         fontSize: 20,
-        color: '#999',
+        color: '#222',
         padding: 5,
     },
 
@@ -259,6 +259,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#222',
         flex: 1,
+        fontWeight: 'bold',
     },
 
     dim: {
