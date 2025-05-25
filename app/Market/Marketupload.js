@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, Animated, Easing, Modal, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, Animated, Easing, Modal, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../Components/Css/Market/marketuploadstyle';
 import { useLocalSearchParams } from 'expo-router';
@@ -198,6 +198,7 @@ const MarketUpload = () => {
                             params: {
                                 category: selectedCategory,
                                 phone: phone,
+                                name: userName,           // 유저 이름 추가
                             }
                         })
                     }
@@ -208,7 +209,7 @@ const MarketUpload = () => {
         } catch (error) {
             console.error('상품 등록 실패:', error);
             let errorMessage = '상품 등록에 실패했습니다.';
-            
+
             if (error.response) {
                 // 서버에서 응답이 왔지만 에러인 경우
                 errorMessage = error.response.data.message || errorMessage;
@@ -216,7 +217,7 @@ const MarketUpload = () => {
                 // 요청은 보냈지만 응답이 없는 경우
                 errorMessage = '서버에 연결할 수 없습니다.';
             }
-            
+
             Alert.alert('오류', errorMessage);
         } finally {
             setIsLoading(false);
@@ -227,160 +228,166 @@ const MarketUpload = () => {
     const isFormValid = productName && selectedCategory && price && description && imageUris.length > 0;
 
     return (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
-            {/* 카테고리 모달 (Modal 컴포넌트 사용) */}
-            <Modal
-                visible={showCategory}
-                transparent
-                animationType="fade"
-                onRequestClose={closeCategorySheet}
-            >
-                <TouchableOpacity
-                    style={styles.dim}
-                    activeOpacity={1}
-                    onPress={closeCategorySheet}
-                />
-                <Animated.View
-                    style={[
-                        styles.categoryModal,
-                        { transform: [{ translateY: sheetTranslateY }] }
-                    ]}
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0} // 필요시 조정
+        >
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+                {/* 카테고리 모달 (Modal 컴포넌트 사용) */}
+                <Modal
+                    visible={showCategory}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={closeCategorySheet}
                 >
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>카테고리 선택</Text>
-                        <TouchableOpacity onPress={closeCategorySheet}>
-                            <Text style={styles.modalClose}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.categoryList}>
-                        {categories.map((cat, idx) => (
-                            <TouchableOpacity
-                                key={idx}
-                                style={styles.categoryItem}
-                                onPress={() => {
-                                    setSelectedCategory(cat.label);
-                                    closeCategorySheet();
-                                }}
-                            >
-                                <Image source={cat.icon} style={styles.categoryIcon} />
-                                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                    <TouchableOpacity
+                        style={styles.dim}
+                        activeOpacity={1}
+                        onPress={closeCategorySheet}
+                    />
+                    <Animated.View
+                        style={[
+                            styles.categoryModal,
+                            { transform: [{ translateY: sheetTranslateY }] }
+                        ]}
+                    >
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>카테고리 선택</Text>
+                            <TouchableOpacity onPress={closeCategorySheet}>
+                                <Text style={styles.modalClose}>✕</Text>
                             </TouchableOpacity>
-                        ))}
-                    </View>
-                </Animated.View>
-            </Modal>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View style={styles.container}>
-                    {/* 상단 네비게이션 */}
-                    <View style={styles.header}>
-                        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                            <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
-                        </TouchableOpacity>
-                        <Text style={styles.headerTitle}>글쓰기</Text>
-                    </View>
-
-                    {/* 사진 업로드 미리보기 */}
-                    {imageUris.length > 0 && (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8, marginTop: 20 }}>
-                            {imageUris.map((uri, idx) => (
-                                <TouchableOpacity key={idx} onPress={() => handleRemoveImage(idx)} activeOpacity={0.8}>
-                                    <Image
-                                        source={{ uri }}
-                                        style={{ width: 120, height: 120, borderRadius: 8, marginRight: 8 }}
-                                    />
+                        </View>
+                        <View style={styles.categoryList}>
+                            {categories.map((cat, idx) => (
+                                <TouchableOpacity
+                                    key={idx}
+                                    style={styles.categoryItem}
+                                    onPress={() => {
+                                        setSelectedCategory(cat.label);
+                                        closeCategorySheet();
+                                    }}
+                                >
+                                    <Image source={cat.icon} style={styles.categoryIcon} />
+                                    <Text style={styles.categoryLabel}>{cat.label}</Text>
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
-                    )}
+                        </View>
+                    </Animated.View>
+                </Modal>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                    <View style={styles.container}>
+                        {/* 상단 네비게이션 */}
+                        <View style={styles.header}>
+                            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+                                <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                            </TouchableOpacity>
+                            <Text style={styles.headerTitle}>글쓰기</Text>
+                        </View>
 
-                    {/* 사진 업로드 버튼 */}
-                    <TouchableOpacity style={styles.imageUploadBtn} onPress={handleImagePick}>
-                        <Image source={require('../../assets/cameraicon.png')} style={styles.cameraIcon} />
-                        <Text style={styles.imageUploadText}>사진 올리기</Text>
-                    </TouchableOpacity>
+                        {/* 사진 업로드 미리보기 */}
+                        {imageUris.length > 0 && (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8, marginTop: 20 }}>
+                                {imageUris.map((uri, idx) => (
+                                    <TouchableOpacity key={idx} onPress={() => handleRemoveImage(idx)} activeOpacity={0.8}>
+                                        <Image
+                                            source={{ uri }}
+                                            style={{ width: 120, height: 120, borderRadius: 8, marginRight: 8 }}
+                                        />
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        )}
 
-                    {/* 상품명 입력 */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder={namePlaceholder}
-                        placeholderTextColor="#BDBDBD"
-                        value={productName}
-                        onChangeText={setProductName}
-                        onFocus={() => setNamePlaceholder('')}
-                        onBlur={() => setNamePlaceholder('상품명과 중량을 입력해 주세요')}
-                    />
-                    <Text style={styles.inputHint}>예) 샤인머스캣 2kg</Text>
+                        {/* 사진 업로드 버튼 */}
+                        <TouchableOpacity style={styles.imageUploadBtn} onPress={handleImagePick}>
+                            <Image source={require('../../assets/cameraicon.png')} style={styles.cameraIcon} />
+                            <Text style={styles.imageUploadText}>사진 올리기</Text>
+                        </TouchableOpacity>
 
-                    {/* 카테고리 선택 */}
-                    <View style={styles.dropdownWrap}>
+                        {/* 상품명 입력 */}
+                        <TextInput
+                            style={styles.input}
+                            placeholder={namePlaceholder}
+                            placeholderTextColor="#BDBDBD"
+                            value={productName}
+                            onChangeText={setProductName}
+                            onFocus={() => setNamePlaceholder('')}
+                            onBlur={() => setNamePlaceholder('상품명과 중량을 입력해 주세요')}
+                        />
+                        <Text style={styles.inputHint}>예) 샤인머스캣 2kg</Text>
+
+                        {/* 카테고리 선택 */}
+                        <View style={styles.dropdownWrap}>
+                            <TouchableOpacity
+                                style={styles.dropdown}
+                                onPress={openCategorySheet}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={[styles.dropdownText, { color: selectedCategory ? '#222' : '#BDBDBD' }]}>
+                                    {selectedCategory || '카테고리 선택'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                        {/* 가격 입력 */}
+                        <View style={styles.priceRow}>
+                            <Text style={styles.pricePrefix}>₩</Text>
+                            <TextInput
+                                style={styles.priceInput}
+                                placeholder={pricePlaceholder}
+                                placeholderTextColor="#BDBDBD"
+                                keyboardType="numeric"
+                                value={price}
+                                onChangeText={handlePriceChange}
+                                onFocus={() => setPricePlaceholder('')}
+                                onBlur={() => setPricePlaceholder('상품 가격을 입력해 주세요.')}
+                            />
+                            <Text style={styles.priceSuffix}>원</Text>
+                        </View>
+
+                        {/* 전화번호 입력 */}
+                        <TextInput
+                            style={styles.input}
+                            placeholder={'010-1234-5678'}
+                            placeholderTextColor="#222"
+                            keyboardType="phone-pad"
+                            value={phone}
+                            onChangeText={setPhone}
+                            editable={false}
+                        />
+
+                        {/* 상세 설명 */}
+                        <TextInput
+                            style={styles.textarea}
+                            placeholder={descPlaceholder}
+                            placeholderTextColor="#BDBDBD"
+                            multiline
+                            value={description}
+                            onChangeText={setDescription}
+                            onFocus={() => setDescPlaceholder('')}
+                            onBlur={() => setDescPlaceholder('상품의 옵션, 상태, 수확 과정 등 상세하게 작성할수록 더 쉽게 판매할 수 있어요.')}
+                        />
+
+                        {/* 등록 버튼 */}
                         <TouchableOpacity
-                            style={styles.dropdown}
-                            onPress={openCategorySheet}
-                            activeOpacity={0.8}
+                            style={[styles.submitBtn, (!isFormValid || isLoading) && styles.submitBtnDisabled]}
+                            onPress={() => {
+                                if (!isFormValid) {
+                                    Alert.alert('알림', '모든 필수 항목과 이미지를 입력해주세요.');
+                                    return;
+                                }
+                                handleSubmit();
+                            }}
+                            disabled={!isFormValid || isLoading}
                         >
-                            <Text style={[styles.dropdownText, { color: selectedCategory ? '#222' : '#BDBDBD' }]}>
-                                {selectedCategory || '카테고리 선택'}
+                            <Text style={styles.submitBtnText}>
+                                {isLoading ? '등록 중...' : '등록'}
                             </Text>
                         </TouchableOpacity>
                     </View>
-                    {/* 가격 입력 */}
-                    <View style={styles.priceRow}>
-                        <Text style={styles.pricePrefix}>₩</Text>
-                        <TextInput
-                            style={styles.priceInput}
-                            placeholder={pricePlaceholder}
-                            placeholderTextColor="#BDBDBD"
-                            keyboardType="numeric"
-                            value={price}
-                            onChangeText={handlePriceChange}
-                            onFocus={() => setPricePlaceholder('')}
-                            onBlur={() => setPricePlaceholder('상품 가격을 입력해 주세요.')}
-                        />
-                        <Text style={styles.priceSuffix}>원</Text>
-                    </View>
-
-                    {/* 전화번호 입력 */}
-                    <TextInput
-                        style={styles.input}
-                        placeholder={'010-1234-5678'}
-                        placeholderTextColor="#222"
-                        keyboardType="phone-pad"
-                        value={phone}
-                        onChangeText={setPhone}
-                        editable={false}
-                    />
-
-                    {/* 상세 설명 */}
-                    <TextInput
-                        style={styles.textarea}
-                        placeholder={descPlaceholder}
-                        placeholderTextColor="#BDBDBD"
-                        multiline
-                        value={description}
-                        onChangeText={setDescription}
-                        onFocus={() => setDescPlaceholder('')}
-                        onBlur={() => setDescPlaceholder('상품의 옵션, 상태, 수확 과정 등 상세하게 작성할수록 더 쉽게 판매할 수 있어요.')}
-                    />
-
-                    {/* 등록 버튼 */}
-                    <TouchableOpacity
-                        style={[styles.submitBtn, (!isFormValid || isLoading) && styles.submitBtnDisabled]}
-                        onPress={() => {
-                            if (!isFormValid) {
-                                Alert.alert('알림', '모든 필수 항목과 이미지를 입력해주세요.');
-                                return;
-                            }
-                            handleSubmit();
-                        }}
-                        disabled={!isFormValid || isLoading}
-                    >
-                        <Text style={styles.submitBtnText}>
-                            {isLoading ? '등록 중...' : '등록'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </TouchableWithoutFeedback>
-        </ScrollView>
+                </TouchableWithoutFeedback>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 

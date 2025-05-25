@@ -58,6 +58,8 @@ const Market = () => {
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [searchText, setSearchText] = useState('');
+
     // API 호출
     useEffect(() => {
         const fetchProducts = async () => {
@@ -80,6 +82,20 @@ const Market = () => {
 
         fetchProducts();
     }, []);
+
+    const filteredProducts = useMemo(() => {
+        if (!searchText.trim()) return products;
+        return products.filter(product =>
+            (product.market_name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+        );
+    }, [products, searchText]);
+
+    const getGridData = (data) => {
+        if (data.length % 2 === 1) {
+            return [...data, { isPlaceholder: true, market_id: 'placeholder_' + Math.random() }];
+        }
+        return data;
+    };
 
     // 데모 판매 글 데이터 (전체 목록용)
     const demoProducts = [
@@ -173,6 +189,10 @@ const Market = () => {
     }, [demoProducts, isFreeShippingFiltered, selectedSortOption]);
 
     const renderProductItem = ({ item }) => {
+        if (item.isPlaceholder) {
+            // 빈 View로 공간만 차지 (투명)
+            return <View style={[styles.productCard, { backgroundColor: 'transparent', borderWidth: 0, elevation: 0 }]} />;
+        }
         let imageUrl = '';
         try {
             let arr = [];
@@ -212,6 +232,9 @@ const Market = () => {
                         style={styles.searchInput}
                         placeholder=" 지금 필요한 농자재 검색"
                         placeholderTextColor="#aaa"
+                        value={searchText}
+                        onChangeText={setSearchText}
+                        returnKeyType="search"
                     />
                 </View>
 
@@ -281,13 +304,13 @@ const Market = () => {
 
             {/* 판매 글 목록 (전체) */}
             <FlatList
-                data={products}
+                data={getGridData(filteredProducts)}
                 keyExtractor={item => item.market_id.toString()}
                 renderItem={renderProductItem}
                 numColumns={2}
                 columnWrapperStyle={{
-                    justifyContent: 'space-between', // 또는 'flex-start'
-                    paddingHorizontal: 2,           // 좌우 여백
+                    justifyContent: 'space-between',
+                    paddingHorizontal: 2,
                     marginBottom: 2,
                     marginLeft: 1
                 }}
