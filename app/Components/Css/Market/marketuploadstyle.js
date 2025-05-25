@@ -145,15 +145,19 @@ const styles = StyleSheet.create({
     },
     submitBtn: {
         backgroundColor: '#22CC6B',
+        padding: 15,
         borderRadius: 8,
-        height: 44,
         alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 15
+        marginTop: 20,
+        marginBottom: 30,
+    },
+    submitBtnDisabled: {
+        backgroundColor: '#A5D6A7',
+        opacity: 0.7,
     },
     submitBtnText: {
         color: '#fff',
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
     },
     categoryList: {

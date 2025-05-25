@@ -2267,7 +2267,7 @@ app.put('/api/cropdetail/:id', async (req, res) => {
         console.log('데이터베이스 업데이트 결과:', result);
 
         console.log('수정 성공');
-        res.json({ 
+        res.json({
             success: true,
             message: '작물 정보가 성공적으로 수정되었습니다.',
             updatedData: {
@@ -2281,7 +2281,7 @@ app.put('/api/cropdetail/:id', async (req, res) => {
         });
     } catch (error) {
         console.error('수정 중 오류 발생:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             error: '서버 오류가 발생했습니다.',
             details: error.message
@@ -2328,7 +2328,7 @@ app.put('/api/cropdetail/location/:id', async (req, res) => {
             'UPDATE cropdetail SET latitude = ?, longitude = ? WHERE cropdetail_id = ?',
             [latitude, longitude, id]
         );
-        
+
         console.log('위치 수정 결과:', {
             affectedRows: result.affectedRows,
             id,
@@ -2398,73 +2398,73 @@ app.get('/api/farms/user/:phone', async (req, res) => {
 
 // 일지 목록 조회 API
 app.get('/diary/list', async (req, res) => {
-  try {
-    const user_phone = req.query.user_phone;
-    if (!user_phone) return res.status(400).json({ error: 'user_phone 필요' });
-    const [rows] = await pool.query(
-      'SELECT * FROM diary WHERE user_phone = ? ORDER BY diary_date DESC',
-      [user_phone]
-    );
-    res.json(rows);
-  } catch (error) {
-    console.error('일지 목록 조회 실패:', error);
-    res.status(500).json({ error: '일지 목록을 가져오는데 실패했습니다.' });
-  }
+    try {
+        const user_phone = req.query.user_phone;
+        if (!user_phone) return res.status(400).json({ error: 'user_phone 필요' });
+        const [rows] = await pool.query(
+            'SELECT * FROM diary WHERE user_phone = ? ORDER BY diary_date DESC',
+            [user_phone]
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error('일지 목록 조회 실패:', error);
+        res.status(500).json({ error: '일지 목록을 가져오는데 실패했습니다.' });
+    }
 });
 
 // diary_date를 MySQL DATETIME 포맷으로 변환하는 함수
 function toMysqlDatetime(isoString) {
-  // '2025-05-17T15:26:44.646Z' → '2025-05-17 15:26:44'
-  if (!isoString) return null;
-  return isoString.replace('T', ' ').replace('Z', '').split('.')[0];
+    // '2025-05-17T15:26:44.646Z' → '2025-05-17 15:26:44'
+    if (!isoString) return null;
+    return isoString.replace('T', ' ').replace('Z', '').split('.')[0];
 }
 
 // 일지 작성 API (토큰 없이 user_phone을 body에서 받음)
 app.post('/diary/create', async (req, res) => {
-  console.log('일지 작성 요청 body:', req.body);
-  console.log('user_phone:', req.body.user_phone);
-  let { diary_date, content, crop_type, user_phone } = req.body;
-  diary_date = toMysqlDatetime(diary_date);
-  console.log('변환된 diary_date:', diary_date);
-  try {
-    const [result] = await pool.query(
-      'INSERT INTO diary (user_phone, diary_date, content, crop_type) VALUES (?, ?, ?, ?)',
-      [user_phone, diary_date, content, crop_type]
-    );
-    res.status(201).json({ 
-      message: '일지가 성공적으로 저장되었습니다.',
-      diary_id: result.insertId 
-    });
-  } catch (error) {
-    console.error('일지 저장 실패:', error);
-    res.status(500).json({ error: '일지 저장에 실패했습니다.' });
-  }
+    console.log('일지 작성 요청 body:', req.body);
+    console.log('user_phone:', req.body.user_phone);
+    let { diary_date, content, crop_type, user_phone } = req.body;
+    diary_date = toMysqlDatetime(diary_date);
+    console.log('변환된 diary_date:', diary_date);
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO diary (user_phone, diary_date, content, crop_type) VALUES (?, ?, ?, ?)',
+            [user_phone, diary_date, content, crop_type]
+        );
+        res.status(201).json({
+            message: '일지가 성공적으로 저장되었습니다.',
+            diary_id: result.insertId
+        });
+    } catch (error) {
+        console.error('일지 저장 실패:', error);
+        res.status(500).json({ error: '일지 저장에 실패했습니다.' });
+    }
 });
 
 // 일지 삭제 API
 app.delete('/diary/:diary_id', async (req, res) => {
-  const { diary_id } = req.params;
-  const user_phone = req.query.user_phone;
-  if (!user_phone) return res.status(400).json({ error: 'user_phone 필요' });
-  try {
-    // 해당 일지가 사용자의 것인지 확인
-    const [diary] = await pool.query(
-      'SELECT * FROM diary WHERE diary_id = ? AND user_phone = ?',
-      [diary_id, user_phone]
-    );
-    if (diary.length === 0) {
-      return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+    const { diary_id } = req.params;
+    const user_phone = req.query.user_phone;
+    if (!user_phone) return res.status(400).json({ error: 'user_phone 필요' });
+    try {
+        // 해당 일지가 사용자의 것인지 확인
+        const [diary] = await pool.query(
+            'SELECT * FROM diary WHERE diary_id = ? AND user_phone = ?',
+            [diary_id, user_phone]
+        );
+        if (diary.length === 0) {
+            return res.status(403).json({ error: '삭제 권한이 없습니다.' });
+        }
+        // 일지 삭제
+        await pool.query(
+            'DELETE FROM diary WHERE diary_id = ?',
+            [diary_id]
+        );
+        res.json({ message: '일지가 성공적으로 삭제되었습니다.' });
+    } catch (error) {
+        console.error('일지 삭제 실패:', error);
+        res.status(500).json({ error: '일지 삭제에 실패했습니다.' });
     }
-    // 일지 삭제
-    await pool.query(
-      'DELETE FROM diary WHERE diary_id = ?',
-      [diary_id]
-    );
-    res.json({ message: '일지가 성공적으로 삭제되었습니다.' });
-  } catch (error) {
-    console.error('일지 삭제 실패:', error);
-    res.status(500).json({ error: '일지 삭제에 실패했습니다.' });
-  }
 });
 
 // 이미지 S3 미러링 함수 (기존 코드에 영향 X)
@@ -2492,7 +2492,7 @@ async function mirrorImageToS3(imageUrl) {
 app.post('/api/ai/pest-diagnosis', async (req, res) => {
     try {
         const { crop, partName, symptomName, detail, image } = req.body;
-        
+
         // Gemini Flash API 호출
         const modelName = 'gemini-2.0-flash';
         const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=` + process.env.GEMINI_API_KEY;
@@ -2559,15 +2559,15 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
                 // 실패 시 원본 URL 유지
             }
         }
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             result: aiText,
-            similarImages: imageUrls 
+            similarImages: imageUrls
         });
 
     } catch (error) {
         console.error('AI 진단 오류:', error);
-        
+
         if (error.response?.status === 429) {
             res.status(429).json({
                 success: false,
@@ -2579,6 +2579,45 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
                 message: 'AI 서버 연결에 실패했습니다.'
             });
         }
+    }
+});
+
+// 상품 등록 API
+app.post('/api/market', async (req, res) => {
+    try {
+        const {
+            name,
+            market_name,
+            market_category,
+            market_price,
+            market_image_url,
+            market_content,
+            phone
+        } = req.body;
+
+        if (!name || !market_name || !market_category || !market_price || !market_image_url || !phone) {
+            return res.status(400).json({ success: false, message: '필수 항목 누락' });
+        }
+
+        const sql = `
+        INSERT INTO Market
+        (name, market_name, market_category, market_price, market_image_url, market_content, phone)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+        await pool.query(sql, [
+            name,
+            market_name,
+            market_category,
+            market_price,
+            market_image_url,
+            market_content,
+            phone
+        ]);
+
+        res.json({ success: true, message: '상품 등록 성공' });
+    } catch (err) {
+        console.error('상품 등록 오류:', err);
+        res.status(500).json({ success: false, message: '서버 오류' });
     }
 });
 
@@ -2687,6 +2726,7 @@ app.get('/api/cropdetail', async (req, res) => {
         if (connection) connection.release();
     }
 });
+
 
 
 
