@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#222',
+        marginTop: 10
     },
     foldBtnText: {
         color: '#222',

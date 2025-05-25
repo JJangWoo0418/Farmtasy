@@ -269,11 +269,11 @@ const Market = () => {
                             </TouchableOpacity>
                         ))}
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 0 }}>
                         <View style={styles.foldBtnHDivider} />
                         <TouchableOpacity style={styles.foldBtn} onPress={() => setIsFolded(true)}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Image source={require('../../assets/arrow_up.png')} style={{ width: 16, height: 16, marginRight: 2 }} />
+                                <Image source={require('../../assets/arrow_up.png')} style={{ width: 16, height: 16, marginRight: 2}} />
                                 <Text style={styles.foldBtnText}>접기</Text>
                             </View>
                         </TouchableOpacity>
