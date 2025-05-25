@@ -331,7 +331,7 @@ const Pests = () => {
 
   // 발병 부위 선택 모달
   const renderPartModal = () => (
-    <Modal visible={partModalVisible} animationType="slide" transparent onRequestClose={() => setPartModalVisible(false)}>
+    <Modal visible={partModalVisible} animationType="fade" transparent onRequestClose={() => setPartModalVisible(false)}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>발병 부위 선택</Text>
@@ -375,7 +375,7 @@ const Pests = () => {
 
   // 증상 선택 모달
   const renderSymptomModal = () => (
-    <Modal visible={symptomModalVisible} animationType="slide" transparent onRequestClose={() => setSymptomModalVisible(false)}>
+    <Modal visible={symptomModalVisible} animationType="fade" transparent onRequestClose={() => setSymptomModalVisible(false)}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>병해충 증상 선택</Text>
@@ -433,7 +433,7 @@ const Pests = () => {
         <Text style={styles.cropButtonText}>{crop ? crop : '작물 선택'}</Text>
       </TouchableOpacity>
       {/* 모달: 작물 선택 (MarketPriceScreen.js와 동일하게) */}
-      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={closeModal}>
+      <Modal visible={modalVisible} animationType="fade" transparent onRequestClose={closeModal}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             {renderModalHeader()}

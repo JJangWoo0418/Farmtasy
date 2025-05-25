@@ -485,7 +485,7 @@ export default function DiaryWrite() {
         onChangeText={setContent}
         multiline
       />
-      <TouchableOpacity style={{ backgroundColor: '#22CC6B', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 140 }} onPress={handleSave}>
+      <TouchableOpacity style={{ backgroundColor: '#22CC6B', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 10 }} onPress={handleSave}>
         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{editMode ? '수정하기' : '등록'}</Text>
       </TouchableOpacity>
     </ScrollView>
