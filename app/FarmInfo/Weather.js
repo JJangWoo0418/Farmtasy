@@ -14,8 +14,8 @@ import { router } from 'expo-router';
 
 //농장 좌표(음성)
 const FARM_COORDS = {
-  latitude: 36.953862288,
-  longitude: 127.681782599,
+  latitude: 36.7692064,
+  longitude: 127.0220957,
 };
 
 const WeatherContent = () => {

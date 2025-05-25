@@ -4,8 +4,8 @@ import { getBaseDateTime } from '../Components/Utils/timeUtils';
 import { getMidLandRegId } from '../Components/Utils/regionMapper';
 
 const FARM_COORDS = {
-  latitude: 36.953862288,
-  longitude: 127.681782599,
+  latitude: 36.7692064,
+  longitude: 127.0220957,
 };
 
 const WeatherContext = createContext();
