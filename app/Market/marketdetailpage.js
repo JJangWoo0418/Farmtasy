@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, Share, Linking } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from '../Components/Css/Market/marketdetailpagestyle';
+import { useNavigation } from '@react-navigation/native';
 
 const product = {
+    id: '12345', // 판매글 고유 ID 공유 기능을 위한 것.
     region: '충북음성',
     name: '이준호',
     profileImg: require('../../assets/usericon.png'),
@@ -37,20 +39,42 @@ const product = {
 };
 
 const MarketDetailPage = () => {
+    const navigation = useNavigation();
+    const [showFullContent, setShowFullContent] = useState(false);
+    const TRUNCATE_LENGTH = 300;
+    const INITIAL_IMAGE_COUNT = 1;
+
+    const handleShare = async () => {
+        try {
+            // 판매글 링크 생성 (실제 서비스의 도메인으로 변경 필요)
+            const productUrl = `https://farmtasy.com/market/${product.id}`;
+            
+            const shareMessage = `${product.title}\n\n${productUrl}`;
+            
+            await Share.share({
+                message: shareMessage,
+                title: product.title,
+                url: productUrl // iOS에서 사용
+            });
+        } catch (error) {
+            console.log('공유하기 에러:', error);
+        }
+    };
+
     return (
         <View style={styles.container}>
             {/* 상단 네비게이션 */}
             <View style={styles.header}>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                     <FontAwesome name="chevron-left" size={22} color="#222" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>장터</Text>
                 <View style={styles.headerIcons}>
-                    <TouchableOpacity style={styles.headerIconBtn}>
-                        <FontAwesome name="share-alt" size={20} color="#222" />
+                    <TouchableOpacity style={styles.headerIconBtn} onPress={handleShare}>
+                        <FontAwesome name="share-alt" size={22} color="#222" />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerIconBtn}>
-                        <FontAwesome name="ellipsis-v" size={20} color="#222" />
+                        <FontAwesome name="ellipsis-v" size={22} color="#222" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -69,31 +93,57 @@ const MarketDetailPage = () => {
                 <Text style={styles.title}>{product.title}</Text>
                 <Text style={styles.price}>{product.price.toLocaleString()}원</Text>
 
-                {/* 상세 설명 */}
-                <Text style={styles.content}>{product.content}</Text>
+                {/* 상세 설명 및 이미지 */}
+                <Text style={styles.content}>
+                    {showFullContent || product.content.length <= TRUNCATE_LENGTH
+                        ? product.content
+                        : `${product.content.substring(0, TRUNCATE_LENGTH)}...`}
+                </Text>
 
-                {/* 상품 이미지들 */}
-                {product.images.map((img, idx) => (
+                {/* 상품 이미지들 (기본 개수 또는 전체) */}
+                {product.images.slice(0, showFullContent ? product.images.length : INITIAL_IMAGE_COUNT).map((img, idx) => (
                     <Image key={idx} source={img} style={styles.productImg} />
                 ))}
+
+                {/* 더보기/접기 버튼 (텍스트 또는 이미지 개수가 기준 이상일 때 표시) */}
+                {(product.content.length > TRUNCATE_LENGTH || product.images.length > INITIAL_IMAGE_COUNT) && (
+                    <TouchableOpacity onPress={() => setShowFullContent(!showFullContent)} style={styles.viewMoreButton}>
+                        <Text style={styles.viewMoreButtonText}>
+                            {showFullContent ? '상품 설명 접기' : '상품 설명 더보기'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+
+                {/* 판매자 책임 고지 문구 (스크롤되도록 ScrollView 안으로 이동) */}
+                <Text style={styles.noticeText}>
+                    판매자가 등록한 상품의 홍보/상담/거래와 관련된 의무 및 책임 등은 모두 판매자에게 있습니다.
+                </Text>
+
+                {/* 상품 문의 개수 및 작은 문의하기 버튼 섹션 (스크롤 영역 안) */}
+                <View style={styles.inquiryBox}>
+                    {/* 여기서 하트 아이콘 제거 */}
+                    {/* <FontAwesome name="heart-o" size={22} color="#222" /> */}
+                    {/* 상품 문의 개수 텍스트 */}
+                    <Text style={styles.inquiryCountText}>상품 문의 {product.inquiryCount}개</Text>
+                    {/* 문의하기 버튼 */}
+                    <TouchableOpacity style={styles.inquiryDetailBtn}>
+                         <Text style={styles.inquiryDetailBtnText}>문의하기</Text>
+                         <FontAwesome name="chevron-right" size={12} color="#888" />
+                    </TouchableOpacity>
+                </View>
+
             </ScrollView>
 
-            {/* 하단 고정 버튼 */}
+            {/* 하단 고정 버튼 - 하트 아이콘과 주문하기 버튼 포함 */}
             <View style={styles.bottomBar}>
-                <View style={styles.inquiryBox}>
+                {/* 하단 고정 바에 하트 버튼 추가 */}
+                <TouchableOpacity style={styles.bottomHeartBtn}>
                     <FontAwesome name="heart-o" size={22} color="#222" />
-                    <Text style={styles.inquiryText}>상품 문의 {product.inquiryCount}개</Text>
-                </View>
-                <TouchableOpacity style={styles.inquiryBtn}>
-                    <Text style={styles.inquiryBtnText}>문의하기</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.callBtn}>
-                    <Text style={styles.callBtnText}>전화하기</Text>
+                <TouchableOpacity style={styles.orderBtn}>
+                    <Text style={styles.orderBtnText}>전화하기</Text>
                 </TouchableOpacity>
             </View>
-            <Text style={styles.noticeText}>
-                판매자가 등록한 상품의 홍보/상담/거래와 관련된 의무 및 책임 등은 모두 판매자에게 있습니다.
-            </Text>
         </View>
     );
 };

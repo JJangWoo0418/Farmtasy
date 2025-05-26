@@ -5,5 +5,5 @@ export const MARKET_API_KEY = 'ce6bfb5a5e29d7ae2f0255c456bbd9caf2a617877fff580bc
 export const PEST_AI_API_KEY = 'AIzaSyAwXiXrVf8Jik9Il147FmZHiPHH6oGJ0Nc';
 
 // 서버 URL 설정
-export const SERVER_URL = 'http://192.168.219.102:3000'; // 실제 PC IP로 변경
+export const SERVER_URL = 'http://192.168.35.17:3000'; // 실제 PC IP로 변경
 // export const SERVER_URL = 'https://your-production-server.com'; // 운영 환경
