@@ -60,6 +60,9 @@ const Market = () => {
 
     const [searchText, setSearchText] = useState('');
 
+    const [selectedCategory, setSelectedCategory] = useState(null);
+
+
     // API 호출
     useEffect(() => {
         const fetchProducts = async () => {
@@ -83,12 +86,58 @@ const Market = () => {
         fetchProducts();
     }, []);
 
+    // 카테고리별 상품 조회 함수
+    const fetchProductsByCategory = async (category) => {
+        try {
+            // 디버깅을 위한 로그 추가
+            console.log('선택한 카테고리:', category);
+            const encodedCategory = encodeURIComponent(category);
+            console.log('인코딩된 카테고리:', encodedCategory);
+
+            const response = await axios.get(`${API_CONFIG.BASE_URL}/api/market/category/${encodedCategory}`);
+            console.log('응답 데이터:', response.data);
+
+            setProducts(response.data || []);
+            setSelectedCategory(category);
+        } catch (error) {
+            console.error('카테고리별 상품 조회 실패:', error);
+            console.error('에러 상세:', error.response?.data); // 에러 응답 데이터 확인
+            setProducts([]);
+        }
+    };
+
+    // 전체 상품 조회 함수
+    const fetchAllProducts = async () => {
+        try {
+            const response = await axios.get(`${API_CONFIG.BASE_URL}/api/market`);
+            setProducts(response.data || []);
+            setSelectedCategory(null); // 카테고리 선택 해제
+        } catch (error) {
+            console.error('전체 상품 조회 실패:', error);
+            setProducts([]);
+        }
+    };
+
+    // 검색어와 카테고리 모두 고려한 필터링
     const filteredProducts = useMemo(() => {
-        if (!searchText.trim()) return products;
-        return products.filter(product =>
-            (product.market_name || '').toLowerCase().includes(searchText.trim().toLowerCase())
-        );
-    }, [products, searchText]);
+        let filtered = products;
+
+        // 카테고리 필터링
+        if (selectedCategory) {
+            filtered = filtered.filter(product =>
+                product.market_category === selectedCategory
+            );
+        }
+
+        // 검색어 필터링
+        if (searchText.trim()) {
+            filtered = filtered.filter(product =>
+                (product.market_name || '').toLowerCase().includes(searchText.trim().toLowerCase())
+            );
+        }
+
+        return filtered;
+    }, [products, searchText, selectedCategory]);
 
     const getGridData = (data) => {
         if (data.length % 2 === 1) {
@@ -150,43 +199,30 @@ const Market = () => {
         return cartItems.reduce((total, item) => total + (parseFloat(item.price.replace(/[^\d]/g, '')) * item.quantity), 0);
     };
 
-    // 선택된 정렬 옵션 및 무료배송 필터링에 따라 상품 목록 정렬 및 필터링
+    // 정렬된 상품 목록
     const sortedAndFilteredProducts = useMemo(() => {
-        let products = [...demoProducts];
+        let result = [...filteredProducts];
 
-        if (isFreeShippingFiltered) {
-            products = products.filter(product => product.isFreeShipping);
-        }
-
+        // 정렬 옵션에 따른 정렬
         switch (selectedSortOption) {
             case '최신순':
-                // 데모 데이터의 초기 순서 또는 id 기준으로 정렬 (필요시 수정)
-                products.sort((a, b) => a.id - b.id);
+                result.sort((a, b) => new Date(b.market_created_at) - new Date(a.market_created_at));
+                break;
+            case '오래된 순':
+                result.sort((a, b) => new Date(a.market_created_at) - new Date(b.market_created_at));
                 break;
             case '낮은 가격순':
-                products.sort((a, b) => {
-                    const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
-                    const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
-                    return priceA - priceB;
-                });
+                result.sort((a, b) => Number(a.market_price) - Number(b.market_price));
                 break;
             case '높은 가격순':
-                products.sort((a, b) => {
-                    const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
-                    const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
-                    return priceB - priceA;
-                });
-                break;
-            case '추천순':
-                // 추천 로직 구현 (현재는 최신순과 동일)
-                products.sort((a, b) => a.id - b.id);
+                result.sort((a, b) => Number(b.market_price) - Number(a.market_price));
                 break;
             default:
                 break;
         }
 
-        return products;
-    }, [demoProducts, isFreeShippingFiltered, selectedSortOption]);
+        return result;
+    }, [filteredProducts, selectedSortOption]);
 
     const renderProductItem = ({ item }) => {
         if (item.isPlaceholder) {
@@ -250,19 +286,11 @@ const Market = () => {
                         {categories.map((cat, idx) => (
                             <TouchableOpacity
                                 key={idx}
-                                style={styles.categoryItem}
-                                onPress={() => {
-                                    router.push({
-                                        pathname: "/Market/marketbuy",
-                                        params: {
-                                            category: cat.label,
-                                            userData: route.params?.userData,
-                                            name: route.params?.name,
-                                            phone: route.params?.phone,
-                                            region: route.params?.region
-                                        }
-                                    });
-                                }}
+                                style={[
+                                    styles.categoryItem,
+                                    selectedCategory === cat.label && styles.selectedCategory
+                                ]}
+                                onPress={() => fetchProductsByCategory(cat.label)}
                             >
                                 <Image source={cat.icon} style={styles.categoryIcon} />
                                 <Text style={styles.categoryLabel}>{cat.label}</Text>
@@ -273,7 +301,7 @@ const Market = () => {
                         <View style={styles.foldBtnHDivider} />
                         <TouchableOpacity style={styles.foldBtn} onPress={() => setIsFolded(true)}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Image source={require('../../assets/arrow_up.png')} style={{ width: 16, height: 16, marginRight: 2}} />
+                                <Image source={require('../../assets/arrow_up.png')} style={{ width: 16, height: 16, marginRight: 2 }} />
                                 <Text style={styles.foldBtnText}>접기</Text>
                             </View>
                         </TouchableOpacity>
@@ -296,15 +324,32 @@ const Market = () => {
 
             {/* 최신순 및 무료배송 모아보기 */}
             <View style={styles.filterRowContainer}>
-                <TouchableOpacity style={styles.latestSortContainer} onPress={() => setIsSortOptionsVisible(true)}>
-                    <Text style={styles.latestSortText}>{selectedSortOption}</Text>
-                    <FontAwesome name="chevron-down" size={12} color="#555" style={styles.dropdownIcon} />
-                </TouchableOpacity>
+                <View style={styles.filterButtonsContainer}>
+                    <TouchableOpacity
+                        style={styles.latestSortContainer}
+                        onPress={() => setIsSortOptionsVisible(true)}
+                    >
+                        <Text style={styles.latestSortText}>{selectedSortOption}</Text>
+                        <FontAwesome name="chevron-down" size={12} color="#555" style={styles.dropdownIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            !selectedCategory && styles.selectedFilterButton
+                        ]}
+                        onPress={fetchAllProducts}
+                    >
+                        <Text style={[
+                            styles.filterButtonText,
+                            !selectedCategory && styles.selectedFilterButtonText
+                        ]}>전체 보기</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* 판매 글 목록 (전체) */}
             <FlatList
-                data={getGridData(filteredProducts)}
+                data={getGridData(sortedAndFilteredProducts)}
                 keyExtractor={item => item.market_id.toString()}
                 renderItem={renderProductItem}
                 numColumns={2}
@@ -600,7 +645,7 @@ const Market = () => {
                                 <FontAwesome name="times" size={20} color="#555" />
                             </TouchableOpacity>
                         </View>
-                        {['최신순', '추천순', '낮은 가격순', '높은 가격순'].map(option => (
+                        {['최신순', '오래된 순', '낮은 가격순', '높은 가격순'].map(option => (
                             <TouchableOpacity
                                 key={option}
                                 style={styles.sortOptionItem}

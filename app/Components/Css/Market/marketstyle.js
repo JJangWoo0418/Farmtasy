@@ -55,18 +55,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         resizeMode: 'contain',
     },
-    filterRowContainer: {
+    filterButtonsContainer: {
         flexDirection: 'row',
+        justifyContent: 'space-between', // 양쪽 끝으로 정렬
         alignItems: 'center',
-        paddingHorizontal: 10,
-        marginBottom: 10,
-        justifyContent: 'space-between',
-        marginLeft: 15
+        paddingHorizontal: 15,
     },
     latestSortContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        minWidth: 80, // 최소 너비 설정
         marginBottom: 5,
+        marginLeft: 10
     },
     latestSortText: {
         fontSize: 16,
@@ -472,6 +472,33 @@ const styles = StyleSheet.create({
         marginBottom: 2,
         color: '#222',
         marginTop: 5
+    },
+    filterButtonsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 15,
+    },
+    filterButton: {
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: '#D9D9D9',
+        minWidth: 80, // 최소 너비 설정
+        alignItems: 'center', // 텍스트 중앙 정렬
+        marginRight: 5,
+        marginBottom: 7
+    },
+    selectedFilterButton: {
+        backgroundColor: '#22CC6B',
+    },
+    filterButtonText: {
+        fontSize: 14,
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    selectedFilterButtonText: {
+        color: '#fff',
     },
 });
 

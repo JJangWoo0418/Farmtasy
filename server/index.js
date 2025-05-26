@@ -2649,6 +2649,58 @@ app.get('/api/market', async (req, res) => {
     }
 });
 
+app.get('/api/market/category/:category', async (req, res) => {
+    try {
+        // 디버깅을 위한 로그 추가
+        console.log('받은 카테고리 파라미터:', req.params.category);
+        const category = decodeURIComponent(req.params.category);
+        console.log('디코딩된 카테고리:', category);
+        
+        const categoryMapping = {
+            '제초용품': '제초용품',
+            '농자재': '농자재',
+            '농수산물': '농수산물',
+            '생활잡화': '생활잡화',
+            '농기계': '농기계',
+            '비료/상토': '비료/상토',
+            '종자/모종': '종자/모종',
+            '기타': '기타',
+        };
+
+        console.log('매핑된 DB 카테고리:', categoryMapping[category]);
+        
+        const dbCategory = categoryMapping[category];
+        
+        if (!dbCategory) {
+            console.log('카테고리 매핑 실패');
+            return res.status(404).json({ error: '존재하지 않는 카테고리입니다.' });
+        }
+
+        const [products] = await pool.query(`
+            SELECT 
+                market_id,
+                name,
+                market_name,
+                market_category,
+                market_price,
+                market_image_url,
+                market_content,
+                market_created_at,
+                market_update_at,
+                phone
+            FROM market
+            WHERE market_category = ?
+        `, [dbCategory]);
+        
+        console.log('조회된 상품 수:', products.length);
+        
+        res.json(products);
+    } catch (error) {
+        console.error('카테고리별 상품 조회 에러:', error);
+        res.status(500).json({ error: '상품 목록을 불러오는데 실패했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
