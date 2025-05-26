@@ -89,18 +89,47 @@ const Marketbuy = () => {
 
     // 로컬 addToCart 함수 구현
     const addToCart = (item) => {
+        console.log('--- addToCart 호출 ---');
+        console.log('현재 장바구니 상태:', JSON.stringify(cartItems));
+        console.log('추가하려는 아이템:', JSON.stringify(item));
+
         const existingItem = cartItems.find(cartItem => cartItem.id === item.id);
-        let updatedCart;
 
         if (existingItem) {
-          updatedCart = cartItems.map(cartItem =>
-            cartItem.id === item.id
-              ? { ...cartItem, quantity: cartItem.quantity + 1 }
-              : cartItem
-          );
+            console.log(`ID ${item.id}인 기존 아이템 발견. 현재 수량: ${existingItem.quantity}. 수량 증가.`);
+            const updatedCart = cartItems.map(cartItem =>
+                cartItem.id === item.id
+                    ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                    : cartItem
+            );
+            console.log('업데이트된 장바구니 상태 (수량 증가):', JSON.stringify(updatedCart));
+            setCartItems(updatedCart);
         } else {
-          updatedCart = [...cartItems, { ...item, quantity: 1 }];
+            console.log(`ID ${item.id}인 새로운 아이템. 장바구니에 추가.`);
+            const updatedCart = [...cartItems, { ...item, quantity: 1 }];
+            console.log('업데이트된 장바구니 상태 (새 아이템 추가):', JSON.stringify(updatedCart));
+            setCartItems(updatedCart);
         }
+        console.log('--- addToCart 종료 ---');
+    };
+
+    // 수량 증가 함수 추가
+    const increaseQuantity = (itemId) => {
+        const updatedCart = cartItems.map(item =>
+            item.id === itemId
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+        );
+        setCartItems(updatedCart);
+    };
+
+    // 수량 감소 함수 추가
+    const decreaseQuantity = (itemId) => {
+        const updatedCart = cartItems.map(item =>
+            item.id === itemId
+                ? { ...item, quantity: Math.max(1, item.quantity - 1) }
+                : item
+        );
         setCartItems(updatedCart);
     };
 
@@ -254,7 +283,13 @@ const Marketbuy = () => {
                                 <Text style={styles.productSize}>{product.size}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.cartBtn} onPress={() => addToCart(product)}>
+                        <TouchableOpacity 
+                            style={styles.cartBtn} 
+                            onPress={() => {
+                                console.log('장바구니 담기 클릭:', product);
+                                addToCart(product);
+                            }}
+                        >
                             <Text style={styles.cartBtnText}>장바구니 담기</Text>
                         </TouchableOpacity>
                     </View>
@@ -599,7 +634,7 @@ const Marketbuy = () => {
                 )}
             </TouchableOpacity>
 
-            {/* 장바구니 모달/뷰 다시 추가 */}
+            {/* 장바구니 모달/뷰 수정 */}
             {isCartVisible && (
                 <TouchableOpacity
                     activeOpacity={1}
@@ -620,6 +655,21 @@ const Marketbuy = () => {
                                     <View style={styles.cartItemInfo}>
                                         <Text style={styles.cartItemTitle}>{item.title}</Text>
                                         <Text style={styles.cartItemPrice}>{item.price}</Text>
+                                        <View style={styles.quantityContainer}>
+                                            <TouchableOpacity 
+                                                style={styles.quantityButton} 
+                                                onPress={() => decreaseQuantity(item.id)}
+                                            >
+                                                <Text style={styles.quantityButtonText}>-</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.quantityText}>{item.quantity}</Text>
+                                            <TouchableOpacity 
+                                                style={styles.quantityButton} 
+                                                onPress={() => increaseQuantity(item.id)}
+                                            >
+                                                <Text style={styles.quantityButtonText}>+</Text>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
                                     <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.removeItemButton}>
                                         <FontAwesome name="times-circle" size={20} color="red" />
@@ -652,7 +702,10 @@ const Marketbuy = () => {
                 <FontAwesome name="shopping-cart" size={24} color="white" />
                 {cartItems.length > 0 && (
                     <View style={styles.cartItemCountContainer}>
-                        <Text style={styles.cartItemCountText}>{cartItems.length}</Text>
+                        <Text style={styles.cartItemCountText}>
+                            {/* 장바구니 총 개수 계산 */}
+                            {cartItems.reduce((total, item) => total + item.quantity, 0)}
+                        </Text>
                     </View>
                 )}
             </TouchableOpacity>

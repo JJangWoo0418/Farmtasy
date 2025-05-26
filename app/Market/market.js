@@ -117,6 +117,26 @@ const Market = () => {
         return cartItems.reduce((total, item) => total + (parseFloat(item.price.replace(/[^\d]/g, '')) * item.quantity), 0);
     };
 
+    // 수량 증가 함수 추가
+    const increaseQuantity = (itemId) => {
+        const updatedCart = cartItems.map(item =>
+            item.id === itemId
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+        );
+        setCartItems(updatedCart);
+    };
+
+    // 수량 감소 함수 추가
+    const decreaseQuantity = (itemId) => {
+        const updatedCart = cartItems.map(item =>
+            item.id === itemId
+                ? { ...item, quantity: Math.max(1, item.quantity - 1) }
+                : item
+        );
+        setCartItems(updatedCart);
+    };
+
     // 선택된 정렬 옵션 및 무료배송 필터링에 따라 상품 목록 정렬 및 필터링
     const sortedAndFilteredProducts = useMemo(() => {
         let products = [...demoProducts];
@@ -580,7 +600,7 @@ const Market = () => {
                     />
                 ) : (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.writeButtonText}>판매</Text>
+                        <Text style={styles.writeButtonText}>글쓰기</Text>
                         <Image
                             source={require('../../assets/paperpencil.png')}
                             style={styles.paperpencilIcon}
@@ -610,6 +630,21 @@ const Market = () => {
                                     <View style={styles.cartItemInfo}>
                                         <Text style={styles.cartItemTitle}>{item.title}</Text>
                                         <Text style={styles.cartItemPrice}>{item.price}</Text>
+                                        <View style={styles.quantityContainer}>
+                                            <TouchableOpacity 
+                                                style={styles.quantityButton} 
+                                                onPress={() => decreaseQuantity(item.id)}
+                                            >
+                                                <Text style={styles.quantityButtonText}>-</Text>
+                                            </TouchableOpacity>
+                                            <Text style={styles.quantityText}>{item.quantity}</Text>
+                                            <TouchableOpacity 
+                                                style={styles.quantityButton} 
+                                                onPress={() => increaseQuantity(item.id)}
+                                            >
+                                                <Text style={styles.quantityButtonText}>+</Text>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
                                     <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.removeItemButton}>
                                         <FontAwesome name="times-circle" size={20} color="red" />
@@ -642,7 +677,7 @@ const Market = () => {
                 <FontAwesome name="shopping-cart" size={24} color="white" />
                 {cartItems.length > 0 && (
                     <View style={styles.cartItemCountContainer}>
-                        <Text style={styles.cartItemCountText}>{cartItems.length}</Text>
+                        <Text style={styles.cartItemCountText}>{cartItems.reduce((total, item) => total + item.quantity, 0)}</Text>
                     </View>
                 )}
             </TouchableOpacity>

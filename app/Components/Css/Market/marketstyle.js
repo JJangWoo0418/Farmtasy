@@ -454,6 +454,31 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'white',
     },
+    quantityContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    quantityButton: {
+        width: 30,
+        height: 30,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    quantityButtonText: {
+        fontSize: 18,
+        color: '#333',
+        fontWeight: 'bold',
+    },
+    quantityText: {
+        fontSize: 16,
+        marginHorizontal: 15,
+        color: '#333',
+    },
 });
 
 export default styles; 
