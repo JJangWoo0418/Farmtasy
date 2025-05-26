@@ -1,0 +1,157 @@
+import { StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 18,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        backgroundColor: '#fff',
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#222',
+    },
+    headerIcons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIconBtn: {
+        marginLeft: 16,
+    },
+    scrollArea: {
+        flex: 1,
+        paddingHorizontal: 18,
+        backgroundColor: '#fff',
+    },
+    profileRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 18,
+        marginBottom: 10,
+    },
+    profileImg: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        marginRight: 10,
+        backgroundColor: '#eee',
+    },
+    profileInfo: {
+        flex: 1,
+    },
+    profileRegion: {
+        fontSize: 15,
+        color: '#222',
+        fontWeight: 'bold',
+    },
+    profileName: {
+        fontSize: 15,
+        color: '#222',
+        fontWeight: 'bold',
+    },
+    profileTime: {
+        fontSize: 12,
+        color: '#888',
+        marginTop: 2,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#222',
+        marginTop: 10,
+        marginBottom: 6,
+    },
+    price: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#22CC6B',
+        marginBottom: 14,
+    },
+    content: {
+        fontSize: 15,
+        color: '#222',
+        lineHeight: 22,
+        marginBottom: 18,
+        whiteSpace: 'pre-line',
+    },
+    productImg: {
+        width: '100%',
+        height: 220,
+        borderRadius: 10,
+        marginBottom: 14,
+        backgroundColor: '#eee',
+    },
+    bottomBar: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        zIndex: 10,
+    },
+    inquiryBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    inquiryText: {
+        marginLeft: 6,
+        fontSize: 14,
+        color: '#222',
+    },
+    inquiryBtn: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#22CC6B',
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 18,
+        marginRight: 8,
+    },
+    inquiryBtnText: {
+        color: '#22CC6B',
+        fontWeight: 'bold',
+        fontSize: 15,
+    },
+    callBtn: {
+        backgroundColor: '#22CC6B',
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 28,
+    },
+    callBtnText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 15,
+    },
+    noticeText: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 56,
+        textAlign: 'center',
+        fontSize: 12,
+        color: '#888',
+        backgroundColor: '#fff',
+        paddingVertical: 6,
+        zIndex: 5,
+    },
+});
+
+export default styles;

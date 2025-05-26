@@ -226,7 +226,6 @@ const Market = () => {
 
     const renderProductItem = ({ item }) => {
         if (item.isPlaceholder) {
-            // 빈 View로 공간만 차지 (투명)
             return <View style={[styles.productCard, { backgroundColor: 'transparent', borderWidth: 0, elevation: 0 }]} />;
         }
         let imageUrl = '';
@@ -242,7 +241,15 @@ const Market = () => {
             imageUrl = '';
         }
         return (
-            <View style={styles.productCard}>
+            <TouchableOpacity
+                style={styles.productCard}
+                onPress={() => {
+                    router.push({
+                        pathname: '/Market/marketdetailpage',
+                        params: { productId: item.market_id }
+                    });
+                }}
+            >
                 <Image
                     source={imageUrl ? { uri: imageUrl } : require('../../assets/cameraicon3.png')}
                     style={styles.productImg}
@@ -254,7 +261,7 @@ const Market = () => {
                         <Text style={styles.productLocation}>{item.market_category}</Text>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
