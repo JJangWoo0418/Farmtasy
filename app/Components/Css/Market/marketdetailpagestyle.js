@@ -10,16 +10,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingTop: 18,
+        paddingTop: 10,
         paddingBottom: 12,
-        borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
         backgroundColor: '#fff',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#222',
+        marginLeft: 50,
     },
     headerIcons: {
         flexDirection: 'row',
@@ -70,12 +70,18 @@ const styles = StyleSheet.create({
         color: '#222',
         marginTop: 10,
         marginBottom: 6,
+        borderTopWidth: 1,
+        borderColor: '#B2B2B2',
+        paddingTop: 15,
     },
     price: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#22CC6B',
+        color: '#222',
         marginBottom: 14,
+        borderBottomWidth: 1,
+        borderColor: '#B2B2B2',
+        paddingBottom: 15,
     },
     content: {
         fontSize: 15,
@@ -85,9 +91,8 @@ const styles = StyleSheet.create({
         whiteSpace: 'pre-line',
     },
     productImg: {
-        width: '100%',
-        height: 220,
-        borderRadius: 10,
+        width: 357,
+        height: 357,
         marginBottom: 14,
         backgroundColor: '#eee',
     },
@@ -103,16 +108,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginTop: 20,
+        marginTop: 10,
         paddingVertical: 15,
-        borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
-        paddingHorizontal: 18,
+        borderTopColor: '#B2B2B2',
+        paddingHorizontal: -20,
+        borderBottomColor: '#B2B2B2',
     },
     inquiryCountText: {
         fontSize: 16,
         color: '#222',
         marginRight: 10,
+        fontWeight: 'bold',
     },
     inquiryDetailBtn: {
         flexDirection: 'row',
@@ -130,9 +136,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
         paddingVertical: 12,
         paddingHorizontal: 18,
         zIndex: 10,
@@ -169,6 +172,19 @@ const styles = StyleSheet.create({
         color: '#22CC6B', 
         fontSize: 15,
         fontWeight: 'bold',
+    },
+    heartBox: {
+        width: 40, // 정사각형 크기
+        height: 40,
+        borderWidth: 2,
+        borderColor: '#222', // 테두리 색상
+        borderRadius: 10,    // 모서리 둥글게 (원하면 0으로)
+        borderWidth: 3,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff', // 배경색
+        padding: 10,
+        marginRight: 10,
     },
 });
 

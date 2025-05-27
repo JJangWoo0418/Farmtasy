@@ -48,9 +48,9 @@ const MarketDetailPage = () => {
         try {
             // 판매글 링크 생성 (실제 서비스의 도메인으로 변경 필요)
             const productUrl = `https://farmtasy.com/market/${product.id}`;
-            
+
             const shareMessage = `${product.title}\n\n${productUrl}`;
-            
+
             await Share.share({
                 message: shareMessage,
                 title: product.title,
@@ -65,21 +65,21 @@ const MarketDetailPage = () => {
         <View style={styles.container}>
             {/* 상단 네비게이션 */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <FontAwesome name="chevron-left" size={22} color="#222" />
+                <TouchableOpacity onPress={() => router.back()}>
+                    <Image source={require('../../assets/gobackicon.png')} style={{ width: 22, height: 22 }} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>장터</Text>
                 <View style={styles.headerIcons}>
                     <TouchableOpacity style={styles.headerIconBtn} onPress={handleShare}>
-                        <FontAwesome name="share-alt" size={22} color="#222" />
+                        <Image source={require('../../assets/shareicon.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerIconBtn}>
-                        <FontAwesome name="ellipsis-v" size={22} color="#222" />
+                        <Image source={require('../../assets/moreicon.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 70 }}>
                 {/* 프로필 */}
                 <View style={styles.profileRow}>
                     <Image source={product.profileImg} style={styles.profileImg} />
@@ -127,8 +127,8 @@ const MarketDetailPage = () => {
                     <Text style={styles.inquiryCountText}>상품 문의 {product.inquiryCount}개</Text>
                     {/* 문의하기 버튼 */}
                     <TouchableOpacity style={styles.inquiryDetailBtn}>
-                         <Text style={styles.inquiryDetailBtnText}>문의하기</Text>
-                         <FontAwesome name="chevron-right" size={12} color="#888" />
+                        <Text style={styles.inquiryDetailBtnText}>문의하기</Text>
+                        <Image source={require('../../assets/arrowrighticon2.png')} style={{ width: 12, height: 12, resizeMode: 'contain' }} />
                     </TouchableOpacity>
                 </View>
 
@@ -137,8 +137,8 @@ const MarketDetailPage = () => {
             {/* 하단 고정 버튼 - 하트 아이콘과 주문하기 버튼 포함 */}
             <View style={styles.bottomBar}>
                 {/* 하단 고정 바에 하트 버튼 추가 */}
-                <TouchableOpacity style={styles.bottomHeartBtn}>
-                    <FontAwesome name="heart-o" size={22} color="#222" />
+                <TouchableOpacity style={styles.heartBox}>
+                    <Image source={require('../../assets/hearticon.png')} style={{ width: 22, height: 22,resizeMode: 'contain' }} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.orderBtn}>
                     <Text style={styles.orderBtnText}>전화하기</Text>
