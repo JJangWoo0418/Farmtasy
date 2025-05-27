@@ -287,7 +287,10 @@ const Market = () => {
             onPress={() => {
                 router.push({
                     pathname: '/Market/marketdetailpage',
-                    params: { productId: item.market_id }
+                    params: { 
+                        productId: item.market_id,
+                        phone
+                    }
                 });
             }}
             styles={styles}

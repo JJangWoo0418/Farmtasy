@@ -53,8 +53,18 @@ const MarketDetailPage = () => {
     const [isLiked, setIsLiked] = useState(false);
     const heartScale = useRef(new Animated.Value(1)).current;
     const [user, setUser] = useState(null);
+    const userPhone = params.phone; // 이렇게 받아서 사용
 
     const [imageLoading, setImageLoading] = useState([]);
+
+    useEffect(() => {
+        if (productId && userPhone) {
+            fetch(`${API_CONFIG.BASE_URL}/api/market/${productId}/like?phone=${userPhone}`)
+                .then(res => res.json())
+                .then(data => setIsLiked(data.liked))
+                .catch(() => setIsLiked(false));
+        }
+    }, [productId, userPhone]);
 
     useEffect(() => {
         // product가 없거나 이미지 파싱이 안 된 경우 빈 배열로 처리
@@ -85,23 +95,31 @@ const MarketDetailPage = () => {
         );
     };
 
-    const handleHeartPress = () => {
-        // 애니메이션
-        Animated.sequence([
-            Animated.timing(heartScale, {
-                toValue: 1.3,
-                duration: 120,
-                useNativeDriver: true,
-            }),
-            Animated.timing(heartScale, {
-                toValue: 1,
-                duration: 120,
-                useNativeDriver: true,
-            }),
-        ]).start();
-
-        setIsLiked(prev => !prev);
-        // 서버에 좋아요 상태 저장/삭제 요청이 필요하다면 여기에 추가
+    const handleHeartPress = async () => {
+        if (!userPhone) {
+            Alert.alert('에러', '로그인 정보가 없습니다.');
+            return;
+        }
+    
+        try {
+            if (!isLiked) {
+                // 좋아요 추가
+                await fetch(`${API_CONFIG.BASE_URL}/api/market/${product.market_id}/like`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: userPhone })
+                });
+                setIsLiked(true);
+            } else {
+                // 좋아요 취소
+                await fetch(`${API_CONFIG.BASE_URL}/api/market/${product.market_id}/like?phone=${userPhone}`, {
+                    method: 'DELETE'
+                });
+                setIsLiked(false);
+            }
+        } catch (e) {
+            Alert.alert('에러', '좋아요 처리 중 오류가 발생했습니다.');
+        }
     };
 
     const handleShare = async () => {
@@ -174,6 +192,22 @@ const MarketDetailPage = () => {
         const min = date.getMinutes().toString().padStart(2, '0');
         return `${month}월 ${day}일 ${hour}:${min}`;
     }
+
+    const handleCall = () => {
+        if (product?.phone) {
+            Linking.openURL(`tel:${product.phone}`);
+        } else {
+            Alert.alert('연락처 없음', '판매자의 전화번호가 없습니다.');
+        }
+    };
+
+    const handleSMS = () => {
+        if (product?.phone) {
+            Linking.openURL(`sms:${product.phone}`);
+        } else {
+            Alert.alert('연락처 없음', '판매자의 전화번호가 없습니다.');
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -294,7 +328,6 @@ const MarketDetailPage = () => {
 
             {/* 하단 고정 버튼 - 하트 아이콘과 주문하기 버튼 포함 */}
             <View style={styles.bottomBar}>
-                {/* 하단 고정 바에 하트 버튼 추가 */}
                 <TouchableOpacity style={styles.heartBox} onPress={handleHeartPress}>
                     <Animated.Image
                         source={isLiked
@@ -307,14 +340,14 @@ const MarketDetailPage = () => {
                         ]}
                     />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.orderBtn}>
+                <TouchableOpacity style={styles.orderBtn} onPress={handleCall}>
                     <Text style={styles.orderBtnText}>전화하기</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.orderBtn2}>
+                <TouchableOpacity style={styles.orderBtn2} onPress={handleSMS}>
                     <Text style={styles.orderBtnText2}>문자하기</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </View >
     );
 };
 

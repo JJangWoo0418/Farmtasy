@@ -2739,6 +2739,60 @@ app.get('/api/user/:phone', async (req, res) => {
     }
 });
 
+// 예시: /api/market/:id/like?phone=01012345678
+app.get('/api/market/:id/like', async (req, res) => {
+    const { id } = req.params;
+    const { phone } = req.query;
+    try {
+        const [rows] = await pool.query(
+            `SELECT 1 FROM Market_likes WHERE market_id = ? AND phone = ? LIMIT 1`,
+            [id, phone]
+        );
+        res.json({ liked: rows.length > 0 });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/market/:id/like', async (req, res) => {
+    const { id } = req.params;
+    const { phone } = req.body;
+    try {
+        await pool.query(
+            `INSERT IGNORE INTO Market_likes (phone, market_id) VALUES (?, ?)`,
+            [phone, id]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.delete('/api/market/:id/like', async (req, res) => {
+    const { id } = req.params;
+    const phone = req.query.phone;
+    const conn = await pool.getConnection();
+    console.log('DELETE /api/market/:id/like', req.params, req.query);
+    try {
+        await conn.beginTransaction();
+        await conn.query(
+            `DELETE FROM Market_likes WHERE phone = ? AND market_id = ?`,
+            [phone, id]
+        );
+        await conn.query(
+            `UPDATE market SET market_like = GREATEST(market_like - 1, 0) WHERE market_id = ?`,
+            [id]
+        );
+        await conn.commit();
+        res.json({ success: true });
+    } catch (e) {
+        await conn.rollback();
+        res.status(500).json({ error: e.message });
+    } finally {
+        conn.release();
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });
