@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     },
     viewMoreButton: {
         marginTop: 10,
-        paddingVertical: 8,
+        paddingVertical: 12,
         backgroundColor: '#fff',
         borderRadius: 8,
         width: '100%',
