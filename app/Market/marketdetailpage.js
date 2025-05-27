@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, Share, Linking } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, Share, Linking, Animated, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from '../Components/Css/Market/marketdetailpagestyle';
 import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 
 const product = {
     id: '12345', // 판매글 고유 ID 공유 기능을 위한 것.
@@ -44,6 +45,40 @@ const MarketDetailPage = () => {
     const TRUNCATE_LENGTH = 300;
     const INITIAL_IMAGE_COUNT = 1;
 
+    const [isLiked, setIsLiked] = useState(false);
+    const heartScale = useRef(new Animated.Value(1)).current;
+
+    const handleMorePress = () => {
+        Alert.alert(
+            '신고하기',
+            '신고 항목을 선택하세요.',
+            [
+                { text: '작성자 신고', onPress: () => Alert.alert('알림', '작성자 신고가 접수되었습니다.') },
+                { text: '게시글 신고', onPress: () => Alert.alert('알림', '게시글 신고가 접수되었습니다.') },
+                { text: '취소', style: 'cancel' }
+            ]
+        );
+    };
+
+    const handleHeartPress = () => {
+        // 애니메이션
+        Animated.sequence([
+            Animated.timing(heartScale, {
+                toValue: 1.3,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+            Animated.timing(heartScale, {
+                toValue: 1,
+                duration: 120,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        setIsLiked(prev => !prev);
+        // 서버에 좋아요 상태 저장/삭제 요청이 필요하다면 여기에 추가
+    };
+
     const handleShare = async () => {
         try {
             // 판매글 링크 생성 (실제 서비스의 도메인으로 변경 필요)
@@ -73,7 +108,7 @@ const MarketDetailPage = () => {
                     <TouchableOpacity style={styles.headerIconBtn} onPress={handleShare}>
                         <Image source={require('../../assets/shareicon.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerIconBtn}>
+                    <TouchableOpacity style={styles.headerIconBtn} onPress={handleMorePress}>
                         <Image source={require('../../assets/moreicon.png')} style={{ width: 22, height: 22, resizeMode: 'contain' }} />
                     </TouchableOpacity>
                 </View>
@@ -137,11 +172,23 @@ const MarketDetailPage = () => {
             {/* 하단 고정 버튼 - 하트 아이콘과 주문하기 버튼 포함 */}
             <View style={styles.bottomBar}>
                 {/* 하단 고정 바에 하트 버튼 추가 */}
-                <TouchableOpacity style={styles.heartBox}>
-                    <Image source={require('../../assets/hearticon.png')} style={{ width: 22, height: 22,resizeMode: 'contain' }} />
+                <TouchableOpacity style={styles.heartBox} onPress={handleHeartPress}>
+                    <Animated.Image
+                        source={isLiked
+                            ? require('../../assets/heartgreenicon.png') // 채워진 하트
+                            : require('../../assets/hearticon.png')      // 빈 하트
+                        }
+                        style={[
+                            { width: 22, height: 22, resizeMode: 'contain' },
+                            { transform: [{ scale: heartScale }] }
+                        ]}
+                    />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.orderBtn}>
                     <Text style={styles.orderBtnText}>전화하기</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.orderBtn2}>
+                    <Text style={styles.orderBtnText2}>문자하기</Text>
                 </TouchableOpacity>
             </View>
         </View>

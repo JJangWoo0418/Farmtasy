@@ -145,14 +145,31 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     orderBtn: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        paddingVertical: 14,
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
+        borderWidth: 1,
+        borderColor: '#22CC6B',
+    },
+    orderBtn2: {
         backgroundColor: '#22CC6B',
         borderRadius: 8,
         paddingVertical: 14,
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        marginLeft: 8,
     },
     orderBtnText: {
+        color: '#22CC6B',
+        fontWeight: 'bold',
+        fontSize: 15,
+    },
+    orderBtnText2: {
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 15,
@@ -184,7 +201,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fff', // 배경색
         padding: 10,
-        marginRight: 10,
+        marginRight: 5,
     },
 });
 
