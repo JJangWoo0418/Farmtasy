@@ -2754,39 +2754,85 @@ app.get('/api/market/:id/like', async (req, res) => {
     }
 });
 
-app.post('/api/market/:id/like', async (req, res) => {
+// 좋아요 상태 조회
+app.get('/api/market/:id/like', async (req, res) => {
     const { id } = req.params;
-    const { phone } = req.body;
+    const { phone } = req.query;
     try {
-        await pool.query(
-            `INSERT IGNORE INTO Market_likes (phone, market_id) VALUES (?, ?)`,
-            [phone, id]
+        const [rows] = await pool.query(
+            `SELECT 1 FROM Market_likes WHERE market_id = ? AND phone = ? LIMIT 1`,
+            [id, phone]
         );
-        res.json({ success: true });
+        res.json({ liked: rows.length > 0 });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
 
+// 좋아요 취소
 app.delete('/api/market/:id/like', async (req, res) => {
     const { id } = req.params;
-    const phone = req.query.phone;
+    const { phone } = req.query;
     const conn = await pool.getConnection();
-    console.log('DELETE /api/market/:id/like', req.params, req.query);
     try {
         await conn.beginTransaction();
-        await conn.query(
+
+        // 1. 좋아요 취소
+        const [deleteResult] = await conn.query(
             `DELETE FROM Market_likes WHERE phone = ? AND market_id = ?`,
             [phone, id]
         );
-        await conn.query(
-            `UPDATE market SET market_like = GREATEST(market_like - 1, 0) WHERE market_id = ?`,
-            [id]
-        );
+        console.log('DELETE 결과:', deleteResult);
+
+        // 2. 실제로 삭제된 경우에만 market_like 감소
+        if (deleteResult.affectedRows > 0) {
+            const [updateResult] = await conn.query(
+                `UPDATE market SET market_like = GREATEST(market_like - 1, 0) WHERE market_id = ?`,
+                [id]
+            );
+            console.log('UPDATE 결과:', updateResult);
+        }
+
         await conn.commit();
         res.json({ success: true });
     } catch (e) {
         await conn.rollback();
+        console.error('좋아요 취소 에러:', e);
+        res.status(500).json({ error: e.message });
+    } finally {
+        conn.release();
+    }
+});
+
+// 좋아요 추가
+app.post('/api/market/:id/like', async (req, res) => {
+    const { id } = req.params;
+    const { phone } = req.body;
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        // 1. 좋아요 기록 (중복 방지)
+        const [insertResult] = await conn.query(
+            `INSERT IGNORE INTO Market_likes (phone, market_id) VALUES (?, ?)`,
+            [phone, id]
+        );
+        console.log('INSERT 결과:', insertResult);
+
+        // 2. 실제로 추가된 경우에만 market_like 증가
+        if (insertResult.affectedRows > 0) {
+            const [updateResult] = await conn.query(
+                `UPDATE market SET market_like = market_like + 1 WHERE market_id = ?`,
+                [id]
+            );
+            console.log('UPDATE 결과:', updateResult);
+        }
+
+        await conn.commit();
+        res.json({ success: true });
+    } catch (e) {
+        await conn.rollback();
+        console.error('좋아요 추가 에러:', e);
         res.status(500).json({ error: e.message });
     } finally {
         conn.release();
