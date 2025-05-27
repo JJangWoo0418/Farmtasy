@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 8,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: '#22CC6B',
     },
     orderBtn2: {
