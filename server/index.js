@@ -2701,6 +2701,26 @@ app.get('/api/market/category/:category', async (req, res) => {
     }
 });
 
+app.get('/api/market/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        // market 테이블에서 상세 정보 조회
+        const [rows] = await pool.query(
+            `SELECT market_id, market_name, market_price, market_image_url, market_content
+             FROM market
+             WHERE market_id = ?`,
+            [id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: '해당 상품을 찾을 수 없습니다.' });
+        }
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('마켓 상세 조회 오류:', error);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
 // 404 에러 핸들러 (맨 마지막에 위치)
 app.use((req, res) => {
     res.status(404).json({ message: '요청하신 경로를 찾을 수 없습니다.' });

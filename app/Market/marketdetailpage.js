@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, Share, Linking, Animated, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from '../Components/Css/Market/marketdetailpagestyle';
 import { useNavigation } from '@react-navigation/native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import API_CONFIG from '../DB/api';
 
 const product = {
     id: '12345', // 판매글 고유 ID 공유 기능을 위한 것.
@@ -45,6 +46,10 @@ const MarketDetailPage = () => {
     const TRUNCATE_LENGTH = 300;
     const INITIAL_IMAGE_COUNT = 1;
 
+    const params = useLocalSearchParams();
+    const productId = params.productId;
+
+    const [product, setProduct] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
     const heartScale = useRef(new Animated.Value(1)).current;
 
@@ -96,6 +101,42 @@ const MarketDetailPage = () => {
         }
     };
 
+    useEffect(() => {
+        if (!productId) return;
+        const fetchProductDetail = async () => {
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/${productId}`);
+                const data = await response.json();
+                setProduct(data);
+            } catch (e) {
+                Alert.alert('에러', '상품 정보를 불러오지 못했습니다.');
+            }
+        };
+        fetchProductDetail();
+    }, [productId]);
+
+    // ... (handleMorePress, handleHeartPress, handleShare 등 기존 코드)
+
+    if (!product) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>상품 정보를 불러오는 중입니다...</Text>
+            </View>
+        );
+    }
+
+    // 이미지 배열 파싱 (DB에서 문자열로 올 수도 있음)
+    let images = [];
+    try {
+        if (Array.isArray(product.market_image_url)) {
+            images = product.market_image_url;
+        } else if (typeof product.market_image_url === 'string') {
+            images = JSON.parse(product.market_image_url);
+        }
+    } catch (e) {
+        images = [];
+    }
+
     return (
         <View style={styles.container}>
             {/* 상단 네비게이션 */}
@@ -115,33 +156,24 @@ const MarketDetailPage = () => {
             </View>
 
             <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 70 }}>
-                {/* 프로필 */}
-                <View style={styles.profileRow}>
-                    <Image source={product.profileImg} style={styles.profileImg} />
-                    <View style={styles.profileInfo}>
-                        <Text style={styles.profileRegion}>{product.region} <Text style={styles.profileName}>{product.name}</Text></Text>
-                        <Text style={styles.profileTime}>고양이가 제일 좋아요 · {product.time}</Text>
-                    </View>
-                </View>
-
                 {/* 상품명, 가격 */}
-                <Text style={styles.title}>{product.title}</Text>
-                <Text style={styles.price}>{product.price.toLocaleString()}원</Text>
+                <Text style={styles.title}>{product.market_name}</Text>
+                <Text style={styles.price}>{Number(product.market_price).toLocaleString()}원</Text>
 
-                {/* 상세 설명 및 이미지 */}
+                {/* 상세 설명 */}
                 <Text style={styles.content}>
-                    {showFullContent || product.content.length <= TRUNCATE_LENGTH
-                        ? product.content
-                        : `${product.content.substring(0, TRUNCATE_LENGTH)}...`}
+                    {showFullContent || !product.market_content || product.market_content.length <= TRUNCATE_LENGTH
+                        ? product.market_content
+                        : `${product.market_content.substring(0, TRUNCATE_LENGTH)}...`}
                 </Text>
 
-                {/* 상품 이미지들 (기본 개수 또는 전체) */}
-                {product.images.slice(0, showFullContent ? product.images.length : INITIAL_IMAGE_COUNT).map((img, idx) => (
-                    <Image key={idx} source={img} style={styles.productImg} />
+                {/* 상품 이미지들 */}
+                {images.slice(0, showFullContent ? images.length : INITIAL_IMAGE_COUNT).map((img, idx) => (
+                    <Image key={idx} source={{ uri: img }} style={styles.productImg} />
                 ))}
 
-                {/* 더보기/접기 버튼 (텍스트 또는 이미지 개수가 기준 이상일 때 표시) */}
-                {(product.content.length > TRUNCATE_LENGTH || product.images.length > INITIAL_IMAGE_COUNT) && (
+                {/* 더보기/접기 버튼 */}
+                {(product.market_content && product.market_content.length > TRUNCATE_LENGTH) && (
                     <TouchableOpacity onPress={() => setShowFullContent(!showFullContent)} style={styles.viewMoreButton}>
                         <Text style={styles.viewMoreButtonText}>
                             {showFullContent ? '상품 설명 접기' : '상품 설명 더보기'}
