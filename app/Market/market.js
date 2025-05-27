@@ -7,6 +7,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import API_CONFIG from '../DB/api';
+import { ActivityIndicator } from 'react-native';
 
 const categories = [
     { label: '제초용품', icon: require('../../assets/weedicon2.png') },
@@ -224,10 +225,9 @@ const Market = () => {
         return result;
     }, [filteredProducts, selectedSortOption]);
 
-    const renderProductItem = ({ item }) => {
-        if (item.isPlaceholder) {
-            return <View style={[styles.productCard, { backgroundColor: 'transparent', borderWidth: 0, elevation: 0 }]} />;
-        }
+    const ProductItem = ({ item, onPress, styles }) => {
+        const [loading, setLoading] = React.useState(true);
+    
         let imageUrl = '';
         try {
             let arr = [];
@@ -240,20 +240,36 @@ const Market = () => {
         } catch (e) {
             imageUrl = '';
         }
+    
+        if (item.isPlaceholder) {
+            return <View style={[styles.productCard, { backgroundColor: 'transparent', borderWidth: 0, elevation: 0 }]} />;
+        }
+    
         return (
             <TouchableOpacity
                 style={styles.productCard}
-                onPress={() => {
-                    router.push({
-                        pathname: '/Market/marketdetailpage',
-                        params: { productId: item.market_id }
-                    });
-                }}
+                onPress={onPress}
             >
-                <Image
-                    source={imageUrl ? { uri: imageUrl } : require('../../assets/cameraicon3.png')}
-                    style={styles.productImg}
-                />
+                <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    {loading && (
+                        <ActivityIndicator
+                            size="large"
+                            color="#22CC6B"
+                            style={{
+                                position: 'absolute',
+                                zIndex: 1,
+                                width: '100%',
+                                height: '100%',
+                            }}
+                        />
+                    )}
+                    <Image
+                        source={imageUrl ? { uri: imageUrl } : require('../../assets/cameraicon3.png')}
+                        style={styles.productImg}
+                        onLoadEnd={() => setLoading(false)}
+                        onError={() => setLoading(false)}
+                    />
+                </View>
                 <View style={styles.productInfo}>
                     <Text style={styles.productTitle}>{item.market_name}</Text>
                     <Text style={styles.price}>{item.market_price?.toLocaleString()}원</Text>
@@ -264,6 +280,19 @@ const Market = () => {
             </TouchableOpacity>
         );
     };
+
+    const renderProductItem = ({ item }) => (
+        <ProductItem
+            item={item}
+            onPress={() => {
+                router.push({
+                    pathname: '/Market/marketdetailpage',
+                    params: { productId: item.market_id }
+                });
+            }}
+            styles={styles}
+        />
+    );
 
     return (
         <View style={styles.container}>

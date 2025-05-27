@@ -2706,7 +2706,7 @@ app.get('/api/market/:id', async (req, res) => {
     try {
         // market 테이블에서 상세 정보 조회
         const [rows] = await pool.query(
-            `SELECT market_id, market_name, market_price, market_image_url, market_content
+            `SELECT market_id, market_name, market_price, market_image_url, market_content, phone, market_created_at, market_update_at
              FROM market
              WHERE market_id = ?`,
             [id]
@@ -2717,6 +2717,24 @@ app.get('/api/market/:id', async (req, res) => {
         res.json(rows[0]);
     } catch (error) {
         console.error('마켓 상세 조회 오류:', error);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
+// server/index.js
+app.get('/api/user/:phone', async (req, res) => {
+    const { phone } = req.params;
+    try {
+        const [rows] = await pool.query(
+            `SELECT name, region, introduction, profile_image FROM user WHERE phone = ?`,
+            [phone]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: '해당 유저를 찾을 수 없습니다.' });
+        }
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('유저 정보 조회 오류:', error);
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });

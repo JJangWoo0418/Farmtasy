@@ -36,15 +36,26 @@ const styles = StyleSheet.create({
     profileRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 18,
-        marginBottom: 10,
+        marginBottom: 5,
+        marginTop: 8,
     },
     profileImg: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
+        width: 30,
+        height: 30,
+        borderRadius: 20,
         marginRight: 10,
-        backgroundColor: '#eee',
+    },
+    userInfoContainer: {
+        flex: 1,
+    },
+    username: {
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    time: {
+        color: '#888',
+        fontSize: 13,
+        marginTop: 2,
     },
     profileInfo: {
         flex: 1,
@@ -177,7 +188,7 @@ const styles = StyleSheet.create({
     viewMoreButton: {
         marginTop: 10,
         paddingVertical: 8,
-        backgroundColor: '#fff', 
+        backgroundColor: '#fff',
         borderRadius: 8,
         width: '100%',
         borderWidth: 1,
@@ -186,7 +197,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     viewMoreButtonText: {
-        color: '#22CC6B', 
+        color: '#22CC6B',
         fontSize: 15,
         fontWeight: 'bold',
     },

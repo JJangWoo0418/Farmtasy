@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, Share, Linking, Animated, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, Share, Linking, Animated, Alert, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from '../Components/Css/Market/marketdetailpagestyle';
 import { useNavigation } from '@react-navigation/native';
@@ -52,6 +52,26 @@ const MarketDetailPage = () => {
     const [product, setProduct] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
     const heartScale = useRef(new Animated.Value(1)).current;
+    const [user, setUser] = useState(null);
+
+    const [imageLoading, setImageLoading] = useState([]);
+
+    useEffect(() => {
+        // product가 없거나 이미지 파싱이 안 된 경우 빈 배열로 처리
+        let imgs = [];
+        try {
+            if (product) {
+                if (Array.isArray(product.market_image_url)) {
+                    imgs = product.market_image_url;
+                } else if (typeof product.market_image_url === 'string') {
+                    imgs = JSON.parse(product.market_image_url);
+                }
+            }
+        } catch (e) {
+            imgs = [];
+        }
+        setImageLoading(imgs.map(() => true));
+    }, [product]);
 
     const handleMorePress = () => {
         Alert.alert(
@@ -101,6 +121,7 @@ const MarketDetailPage = () => {
         }
     };
 
+    // marketdetailpage.js의 기존 코드를 그대로 사용하면 됩니다
     useEffect(() => {
         if (!productId) return;
         const fetchProductDetail = async () => {
@@ -108,8 +129,15 @@ const MarketDetailPage = () => {
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/${productId}`);
                 const data = await response.json();
                 setProduct(data);
+
+                if (data.phone) {  // phone 필드가 있으면
+                    const userRes = await fetch(`${API_CONFIG.BASE_URL}/api/user/${data.phone}`);
+                    const userData = await userRes.json();
+                    setUser(userData);
+                }
             } catch (e) {
                 Alert.alert('에러', '상품 정보를 불러오지 못했습니다.');
+                console.log('fetch error:', e);
             }
         };
         fetchProductDetail();
@@ -137,8 +165,19 @@ const MarketDetailPage = () => {
         images = [];
     }
 
+    function formatMarketDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const hour = date.getHours().toString().padStart(2, '0');
+        const min = date.getMinutes().toString().padStart(2, '0');
+        return `${month}월 ${day}일 ${hour}:${min}`;
+    }
+
     return (
         <View style={styles.container}>
+
             {/* 상단 네비게이션 */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
@@ -156,6 +195,27 @@ const MarketDetailPage = () => {
             </View>
 
             <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 70 }}>
+                <View style={styles.profileRow}>
+                    <Image
+                        source={
+                            user?.profile_image && user?.profile_image !== '프로필 미설정'
+                                ? { uri: user.profile_image }
+                                : require('../../assets/usericon.png')
+                        }
+                        style={styles.profileImg}
+                    />
+                    <View style={styles.userInfoContainer}>
+                        <Text style={styles.username}>
+                            [{user?.region || '지역 미설정'}] {user?.name || '이름 미설정'}
+                        </Text>
+                        <Text style={styles.time}>
+                            {user?.introduction || '소개 미설정'}
+                            {product?.market_created_at
+                                ? ` · ${formatMarketDate(product.market_created_at)}`
+                                : ''}
+                        </Text>
+                    </View>
+                </View>
                 {/* 상품명, 가격 */}
                 <Text style={styles.title}>{product.market_name}</Text>
                 <Text style={styles.price}>{Number(product.market_price).toLocaleString()}원</Text>
@@ -168,8 +228,39 @@ const MarketDetailPage = () => {
                 </Text>
 
                 {/* 상품 이미지들 */}
-                {images.slice(0, showFullContent ? images.length : INITIAL_IMAGE_COUNT).map((img, idx) => (
-                    <Image key={idx} source={{ uri: img }} style={styles.productImg} />
+                {Array.isArray(images) && images.slice(0, showFullContent ? images.length : INITIAL_IMAGE_COUNT).map((img, idx) => (
+                    <View key={idx} style={{ justifyContent: 'center', alignItems: 'center' }}>
+                        {imageLoading[idx] && (
+                            <ActivityIndicator
+                                size="large"
+                                color="#22CC6B"
+                                style={{
+                                    position: 'absolute',
+                                    zIndex: 1,
+                                    width: '100%',
+                                    height: '100%',
+                                }}
+                            />
+                        )}
+                        <Image
+                            source={{ uri: img }}
+                            style={styles.productImg}
+                            onLoadEnd={() => {
+                                setImageLoading(prev => {
+                                    const newArr = [...prev];
+                                    newArr[idx] = false;
+                                    return newArr;
+                                });
+                            }}
+                            onError={() => {
+                                setImageLoading(prev => {
+                                    const newArr = [...prev];
+                                    newArr[idx] = false;
+                                    return newArr;
+                                });
+                            }}
+                        />
+                    </View>
                 ))}
 
                 {/* 더보기/접기 버튼 */}
