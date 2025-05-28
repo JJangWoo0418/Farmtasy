@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { SafeAreaView, View, Text, Image, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import styles from '../Components/Css/Market/marketcommentpagestyle';
 import API_CONFIG from '../DB/api';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 const dummyComments = [
     {
@@ -57,6 +57,21 @@ function buildCommentTree(comments) {
     return roots.filter(Boolean);
 }
 
+function countAllComments(comments) {
+    let count = 0;
+    function countRecursive(list) {
+        list.forEach(comment => {
+            if (!comment) return;
+            count += 1;
+            if (comment.children && comment.children.length > 0) {
+                countRecursive(comment.children);
+            }
+        });
+    }
+    countRecursive(comments);
+    return count;
+}
+
 function formatDate(isoString) {
     if (!isoString) return '';
     const date = new Date(isoString);
@@ -92,15 +107,13 @@ const MarketCommentPage = ({ navigation }) => {
 
     // 트리 구조 변환
     const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
+    const totalComments = useMemo(() => countAllComments(commentTree), [commentTree]);
 
     // 댓글/답글 등록
     const handleSend = async () => {
-        console.log('input:', input);
-        console.log('marketId:', marketId);
-        console.log('phone:', phone);
         if (!input.trim()) return;
         try {
-            const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/comment`, {
+            await fetch(`${API_CONFIG.BASE_URL}/api/market/comment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -110,23 +123,20 @@ const MarketCommentPage = ({ navigation }) => {
                     market_comment_parent_id: isReplyInputVisible ? replyToCommentId : null
                 })
             });
-
-            // 응답 전체 출력
-            console.log('response:', response);
-
-            // 응답 body(json) 출력
-            const data = await response.json();
-            console.log('response data:', data);
-
-            if (!response.ok) {
-                console.log('서버 오류:', data);
-            }
-
             setInput('');
-            // 댓글 목록 새로고침 등
+            setIsReplyInputVisible(false);
+            setReplyToCommentId(null);
+            setReplyToName(null);
+
+            // **댓글 목록 즉시 새로고침**
+            fetch(`${API_CONFIG.BASE_URL}/api/market/comment?market_id=${marketId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && Array.isArray(data.comments)) setComments(data.comments);
+                    else setComments([]);
+                });
         } catch (e) {
-            // 네트워크/코드 에러 출력
-            console.log('fetch error:', e);
+            // 에러 처리
         }
     };
 
@@ -183,58 +193,61 @@ const MarketCommentPage = ({ navigation }) => {
     }, [comments]);
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
-                </TouchableOpacity>
-                <Text style={styles.title}>상품 문의</Text>
-                <TouchableOpacity>
-                    <Text style={styles.viewBtn}>글보기</Text>
-                </TouchableOpacity>
-            </View>
-            {/* 문의 개수 */}
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            style={{ flex: 1 }}
+        >
             <SafeAreaView style={styles.container}>
-                <Text style={styles.countText}>문의 {commentTree.length}개</Text>
-                <ScrollView contentContainerStyle={styles.list}>
-                    {renderComments(commentTree)}
-                </ScrollView>
-            </SafeAreaView>
-            {/* 하단 입력창/안내 UI */}
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
-                <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
-                    {isReplyInputVisible && (
-                        <View style={styles.replyPill}>
-                            <Text style={styles.replyPillText}>
-                                {replyToName ? `${replyToName} 에게 답글작성` : '답글 작성'}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setIsReplyInputVisible(false);
-                                    setReplyToName(null);
-                                    setReplyToCommentId(null);
-                                }}
-                            >
-                                <Text style={styles.replyPillCancel}>취소</Text>
+                {/* 헤더 */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>상품 문의</Text>
+                </View>
+                {/* 문의 개수 */}
+                <SafeAreaView style={styles.container}>
+                    <Text style={styles.countText}>문의 {totalComments}개</Text>
+                    <ScrollView contentContainerStyle={styles.list}>
+                        {renderComments(commentTree)}
+                    </ScrollView>
+                </SafeAreaView>
+                {/* 하단 입력창/안내 UI */}
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
+                    <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+                        {isReplyInputVisible && (
+                            <View style={styles.replyPill}>
+                                <Text style={styles.replyPillText}>
+                                    {replyToName ? `${replyToName} 에게 답글작성` : '답글 작성'}
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setIsReplyInputVisible(false);
+                                        setReplyToName(null);
+                                        setReplyToCommentId(null);
+                                    }}
+                                >
+                                    <Text style={styles.replyPillCancel}>취소</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        <View style={styles.inputSection}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="문의 내용을 입력해 주세요"
+                                placeholderTextColor="#999"
+                                value={input}
+                                onChangeText={setInput}
+                            />
+                            <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
+                                <Image source={require('../../assets/arrowrighticon.png')} style={styles.sendIcon} />
                             </TouchableOpacity>
                         </View>
-                    )}
-                    <View style={styles.inputSection}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="문의 내용을 입력해 주세요"
-                            placeholderTextColor="#999"
-                            value={input}
-                            onChangeText={setInput}
-                        />
-                        <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
-                            <Image source={require('../../assets/arrowrighticon.png')} style={styles.sendIcon} />
-                        </TouchableOpacity>
                     </View>
-                </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+        </KeyboardAvoidingView>
     );
 };
 

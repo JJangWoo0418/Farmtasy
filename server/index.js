@@ -2582,6 +2582,25 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
     }
 });
 
+// 상품(장터) 문의(댓글) 개수 조회 API
+app.get('/api/market/comment/count', async (req, res) => {
+    const { market_id } = req.query;
+    if (!market_id) {
+        return res.status(400).json({ success: false, message: 'market_id 필요' });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT COUNT(*) as count FROM Market_comment WHERE market_id = ?`,
+            [market_id]
+        );
+        res.json({ success: true, count: rows[0].count || 0 });
+    } catch (e) {
+        console.error('장터 문의 개수 조회 실패:', e);
+        res.status(500).json({ success: false, message: '장터 문의 개수 조회 실패' });
+    }
+});
+
 // 상품 등록 API
 app.post('/api/market', async (req, res) => {
     try {

@@ -58,6 +58,18 @@ const MarketDetailPage = () => {
     const [imageLoading, setImageLoading] = useState([]);
     const router = useRouter();
 
+    const [inquiryCount, setInquiryCount] = useState(0);
+
+    useEffect(() => {
+        if (!product?.market_id) return;
+        fetch(`${API_CONFIG.BASE_URL}/api/market/comment/count?market_id=${product.market_id}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) setInquiryCount(data.count);
+                else setInquiryCount(0);
+            });
+    }, [product?.market_id]);
+
     useEffect(() => {
         if (productId && userPhone) {
             fetch(`${API_CONFIG.BASE_URL}/api/market/${productId}/like?phone=${userPhone}`)
@@ -317,7 +329,9 @@ const MarketDetailPage = () => {
                     {/* 여기서 하트 아이콘 제거 */}
                     {/* <FontAwesome name="heart-o" size={22} color="#222" /> */}
                     {/* 상품 문의 개수 텍스트 */}
-                    <Text style={styles.inquiryCountText}>상품 문의 {product.inquiryCount}개</Text>
+                    <Text style={styles.inquiryCountText}>
+                        상품 문의 {inquiryCount}개
+                    </Text>
                     {/* 문의하기 버튼 */}
                     <TouchableOpacity
                         style={styles.inquiryDetailBtn}

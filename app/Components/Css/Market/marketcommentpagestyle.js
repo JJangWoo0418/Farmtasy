@@ -9,11 +9,11 @@ export default StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 18,
+        paddingHorizontal: 16,
         paddingTop: 10,
-        paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2'
+        paddingBottom: 12,
+        borderBottomColor: '#f0f0f0',
+        backgroundColor: '#fff',
     },
     backIcon: {
         width: 24,
@@ -23,7 +23,8 @@ export default StyleSheet.create({
     title: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#222'
+        color: '#222',
+        marginRight: 140
     },
     viewBtn: {
         fontSize: 15,
