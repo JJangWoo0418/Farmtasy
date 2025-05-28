@@ -44,7 +44,8 @@ export default StyleSheet.create({
         marginBottom: 18
     },
     commentContainer: {
-        marginBottom: 18,
+        paddingHorizontal: 8,
+        paddingVertical: 15,
     },
     commentHeader: {
         flexDirection: 'row',
@@ -53,8 +54,7 @@ export default StyleSheet.create({
     commentActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
-        marginLeft: 2
+        marginLeft: 38, // Align with username
     },
     profileImg: {
         width: 32,
@@ -73,14 +73,16 @@ export default StyleSheet.create({
     },
     authorBadge: {
         backgroundColor: '#eee',
-        borderRadius: 6,
-        marginLeft: 6,
-        paddingHorizontal: 5,
-        paddingVertical: 1
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginLeft: 8,
+        marginBottom: 1
     },
     authorBadgeText: {
-        fontSize: 11,
-        color: '#888'
+        fontSize: 10,
+        color: '#666',
+        fontWeight: 'bold',
     },
     time: {
         fontSize: 12,
@@ -88,10 +90,11 @@ export default StyleSheet.create({
         marginTop: 2
     },
     content: {
-        fontSize: 15,
-        color: '#222',
-        marginTop: 4,
-        marginBottom: 2
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#333',
+        marginBottom: 8,
+        marginLeft: 38, // Align with username
     },
     replyPill: {
         position: 'absolute',
@@ -120,12 +123,15 @@ export default StyleSheet.create({
     },
     replyBtn: {
         flexDirection: 'row',
-        alignItems: 'center'
+        alignItems: 'center',
+        marginRight: 15,
     },
     replyIcon: {
-        width: 20,
-        height: 20,
-        marginRight: 2
+        width: 16,
+        height: 16,
+        marginRight: 4,
+        resizeMode: 'contain',
+        marginBottom: 1
     },
     replyText: {
         fontSize: 14,
@@ -169,5 +175,10 @@ export default StyleSheet.create({
         width: 24,
         height: 24,
         resizeMode: 'contain',
-    }
+    },
+    commentInfo: {
+        fontSize: 11,
+        color: '#999',
+        marginLeft: 0,
+    },
 });

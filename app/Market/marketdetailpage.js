@@ -321,7 +321,10 @@ const MarketDetailPage = () => {
                     {/* 문의하기 버튼 */}
                     <TouchableOpacity
                         style={styles.inquiryDetailBtn}
-                        onPress={() => router.push('/Market/marketcommentpage')}
+                        onPress={() => router.push({
+                            pathname: '/Market/marketcommentpage',
+                            params: { marketId: product.market_id, phone: userPhone, ownerPhone: product.phone }
+                        })}
                     >
                         <Text style={styles.inquiryDetailBtnText}>문의하기</Text>
                         <Image source={require('../../assets/arrowrighticon2.png')} style={{ width: 12, height: 12, resizeMode: 'contain' }} />

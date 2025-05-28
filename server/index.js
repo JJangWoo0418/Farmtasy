@@ -2649,6 +2649,50 @@ app.get('/api/market', async (req, res) => {
     }
 });
 
+// 상품(장터) 댓글 목록 조회 API (market_id로만 조회)
+app.get('/api/market/comment', async (req, res) => {
+    const { market_id } = req.query;
+    if (!market_id) {
+        return res.status(400).json({ success: false, message: 'market_id 필요' });
+    }
+
+    try {
+        const [rows] = await pool.query(`
+            SELECT 
+                mc.market_comment_id,
+                mc.market_comment_content,
+                mc.market_comment_created_at,
+                mc.market_comment_parent_id,
+                mc.phone,
+                u.name,
+                u.region,
+                u.introduction,
+                u.profile_image
+            FROM Market_comment mc
+            LEFT JOIN user u ON mc.phone = u.phone
+            WHERE mc.market_id = ?
+            ORDER BY mc.market_comment_created_at ASC
+        `, [market_id]);
+
+        const comments = rows.map(row => ({
+            id: row.market_comment_id,
+            comment_content: row.market_comment_content,
+            time: row.market_comment_created_at,
+            parentId: row.market_comment_parent_id,
+            phone: row.phone,
+            user: row.name || '',
+            region: row.region || '지역 미설정',
+            introduction: row.introduction || '소개 미설정',
+            profile: row.profile_image || ''
+        }));
+
+        res.json({ success: true, comments });
+    } catch (e) {
+        console.error('장터 댓글 조회 실패:', e);
+        res.status(500).json({ success: false, message: '장터 댓글 조회 실패' });
+    }
+});
+
 app.get('/api/market/category/:category', async (req, res) => {
     try {
         // 디버깅을 위한 로그 추가
@@ -2839,36 +2883,21 @@ app.post('/api/market/:id/like', async (req, res) => {
     }
 });
 
-// 댓글 목록 조회
-app.get('/api/market/comment', async (req, res) => {
-    const { market_id } = req.query;
-    if (!market_id) return res.status(400).json({ error: 'market_id required' });
-    try {
-        const [rows] = await db.query(
-            `SELECT * FROM Market_comment WHERE market_id = ? ORDER BY market_comment_created_at ASC`,
-            [market_id]
-        );
-        res.json(rows);
-    } catch (e) {
-        res.status(500).json({ error: 'DB error' });
-    }
-});
 
-// 댓글/대댓글 등록
+// 장터 댓글/대댓글 등록
 app.post('/api/market/comment', async (req, res) => {
     const { market_comment_content, market_id, phone, market_comment_parent_id } = req.body;
     if (!market_comment_content || !market_id || !phone) {
-        return res.status(400).json({ error: '필수값 누락' });
+        return res.status(400).json({ success: false, message: '필수값 누락' });
     }
     try {
-        await db.query(
-            `INSERT INTO Market_comment (market_comment_content, market_id, phone, market_comment_parent_id)
-         VALUES (?, ?, ?, ?)`,
+        await pool.query(
+            `INSERT INTO Market_comment (market_comment_content, market_comment_created_at, market_id, phone, market_comment_parent_id) VALUES (?, NOW(), ?, ?, ?)`,
             [market_comment_content, market_id, phone, market_comment_parent_id || null]
         );
         res.json({ success: true });
     } catch (e) {
-        res.status(500).json({ error: 'DB error' });
+        res.status(500).json({ success: false, message: '장터 댓글 작성 실패' });
     }
 });
 
