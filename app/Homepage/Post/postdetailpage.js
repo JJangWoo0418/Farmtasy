@@ -91,7 +91,7 @@ const PostDetailPage = () => {
         });
 
         // 대댓글은 시간순 정렬
-        const sortedChildComments = [...childComments].sort((a, b) => 
+        const sortedChildComments = [...childComments].sort((a, b) =>
             new Date(a.time) - new Date(b.time)
         );
 
@@ -272,7 +272,7 @@ const PostDetailPage = () => {
             const data = await response.json();
             if (data.success) {
                 setIsBookmarked(data.is_bookmarked);
-                
+
                 // 북마크 애니메이션
                 Animated.sequence([
                     Animated.timing(bookmarkScaleAnim, {
@@ -545,7 +545,7 @@ const PostDetailPage = () => {
                     </View>
 
                     {/* 스크롤 가능한 내용 */}
-                    <ScrollView 
+                    <ScrollView
                         ref={scrollViewRef}
                         style={styles.scrollView}
                         contentContainerStyle={{ paddingBottom: isCommentInputVisible ? 60 : isReplyInputVisible ? 100 : 80 }}
@@ -553,9 +553,9 @@ const PostDetailPage = () => {
                         {/* 게시글 내용 */}
                         <View style={styles.postContainer}>
                             <View style={styles.postHeader}>
-                                <Image 
-                                    source={post.profile_image ? { uri: post.profile_image } : require('../../../assets/usericon.png')} 
-                                    style={styles.profileImg} 
+                                <Image
+                                    source={post.profile_image ? { uri: post.profile_image } : require('../../../assets/usericon.png')}
+                                    style={styles.profileImg}
                                 />
                                 <View style={styles.userInfoContainer}>
                                     <Text style={styles.username}>[{post.region || '지역 미설정'}] {post.user}</Text>
@@ -591,11 +591,11 @@ const PostDetailPage = () => {
                             {post.image_urls && post.image_urls.flat().length > 0 && (
                                 <View style={styles.postImages}>
                                     {post.image_urls.flat().map((url, idx) => (
-                                        <Image 
-                                            key={url + idx} 
-                                            source={{ uri: url }} 
-                                            style={styles.postImage} 
-                                            resizeMode="cover" 
+                                        <Image
+                                            key={url + idx}
+                                            source={{ uri: url }}
+                                            style={styles.postImage}
+                                            resizeMode="cover"
                                         />
                                     ))}
                                 </View>
@@ -605,9 +605,9 @@ const PostDetailPage = () => {
                         {/* 좋아요 / 댓글 수 */}
                         <View style={styles.statsRow}>
                             <View style={styles.statsItem}>
-                                <Image 
-                                    source={require('../../../assets/heartgreenicon.png')} 
-                                    style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]} 
+                                <Image
+                                    source={require('../../../assets/heartgreenicon.png')}
+                                    style={[styles.statsIcon, { width: 22, height: 22, resizeMode: 'contain' }]}
                                 />
                                 <Text style={styles.statsText}>{likeCount}</Text>
                             </View>
@@ -621,9 +621,9 @@ const PostDetailPage = () => {
                         <View style={styles.actionRow}>
                             <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
                                 <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-                                    <Image 
-                                        source={isLiked ? require('../../../assets/heartgreenicon.png') : require('../../../assets/hearticon.png')} 
-                                        style={styles.actionIcon} 
+                                    <Image
+                                        source={isLiked ? require('../../../assets/heartgreenicon.png') : require('../../../assets/hearticon.png')}
+                                        style={styles.actionIcon}
                                     />
                                 </Animated.View>
                                 <Text style={styles.actionText}>좋아요</Text>
@@ -634,14 +634,14 @@ const PostDetailPage = () => {
                                 backgroundColor: '#eee',
                                 marginHorizontal: 12,
                             }} />
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.actionButton2}
                                 onPress={handleBookmark}
                             >
                                 <Animated.View style={{ transform: [{ scale: bookmarkScaleAnim }] }}>
-                                    <Image 
-                                        source={isBookmarked ? require('../../../assets/bookmarkgreenicon.png') : require('../../../assets/bookmarkicon.png')} 
-                                        style={styles.actionIcon} 
+                                    <Image
+                                        source={isBookmarked ? require('../../../assets/bookmarkgreenicon.png') : require('../../../assets/bookmarkicon.png')}
+                                        style={styles.actionIcon}
                                     />
                                 </Animated.View>
                                 <Text style={styles.actionText}>저장</Text>

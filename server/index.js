@@ -2655,7 +2655,7 @@ app.get('/api/market/category/:category', async (req, res) => {
         console.log('받은 카테고리 파라미터:', req.params.category);
         const category = decodeURIComponent(req.params.category);
         console.log('디코딩된 카테고리:', category);
-        
+
         const categoryMapping = {
             '제초용품': '제초용품',
             '농자재': '농자재',
@@ -2668,9 +2668,9 @@ app.get('/api/market/category/:category', async (req, res) => {
         };
 
         console.log('매핑된 DB 카테고리:', categoryMapping[category]);
-        
+
         const dbCategory = categoryMapping[category];
-        
+
         if (!dbCategory) {
             console.log('카테고리 매핑 실패');
             return res.status(404).json({ error: '존재하지 않는 카테고리입니다.' });
@@ -2691,9 +2691,9 @@ app.get('/api/market/category/:category', async (req, res) => {
             FROM market
             WHERE market_category = ?
         `, [dbCategory]);
-        
+
         console.log('조회된 상품 수:', products.length);
-        
+
         res.json(products);
     } catch (error) {
         console.error('카테고리별 상품 조회 에러:', error);
@@ -2836,6 +2836,39 @@ app.post('/api/market/:id/like', async (req, res) => {
         res.status(500).json({ error: e.message });
     } finally {
         conn.release();
+    }
+});
+
+// 댓글 목록 조회
+app.get('/api/market/comment', async (req, res) => {
+    const { market_id } = req.query;
+    if (!market_id) return res.status(400).json({ error: 'market_id required' });
+    try {
+        const [rows] = await db.query(
+            `SELECT * FROM Market_comment WHERE market_id = ? ORDER BY market_comment_created_at ASC`,
+            [market_id]
+        );
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ error: 'DB error' });
+    }
+});
+
+// 댓글/대댓글 등록
+app.post('/api/market/comment', async (req, res) => {
+    const { market_comment_content, market_id, phone, market_comment_parent_id } = req.body;
+    if (!market_comment_content || !market_id || !phone) {
+        return res.status(400).json({ error: '필수값 누락' });
+    }
+    try {
+        await db.query(
+            `INSERT INTO Market_comment (market_comment_content, market_id, phone, market_comment_parent_id)
+         VALUES (?, ?, ?, ?)`,
+            [market_comment_content, market_id, phone, market_comment_parent_id || null]
+        );
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: 'DB error' });
     }
 });
 

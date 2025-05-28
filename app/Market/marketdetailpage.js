@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet, Platform, 
 import { FontAwesome } from '@expo/vector-icons';
 import styles from '../Components/Css/Market/marketdetailpagestyle';
 import { useNavigation } from '@react-navigation/native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import API_CONFIG from '../DB/api';
 
 const product = {
@@ -56,6 +56,7 @@ const MarketDetailPage = () => {
     const userPhone = params.phone; // 이렇게 받아서 사용
 
     const [imageLoading, setImageLoading] = useState([]);
+    const router = useRouter();
 
     useEffect(() => {
         if (productId && userPhone) {
@@ -100,7 +101,7 @@ const MarketDetailPage = () => {
             Alert.alert('에러', '로그인 정보가 없습니다.');
             return;
         }
-    
+
         try {
             if (!isLiked) {
                 // 좋아요 추가
@@ -318,7 +319,10 @@ const MarketDetailPage = () => {
                     {/* 상품 문의 개수 텍스트 */}
                     <Text style={styles.inquiryCountText}>상품 문의 {product.inquiryCount}개</Text>
                     {/* 문의하기 버튼 */}
-                    <TouchableOpacity style={styles.inquiryDetailBtn}>
+                    <TouchableOpacity
+                        style={styles.inquiryDetailBtn}
+                        onPress={() => router.push('/Market/marketcommentpage')}
+                    >
                         <Text style={styles.inquiryDetailBtnText}>문의하기</Text>
                         <Image source={require('../../assets/arrowrighticon2.png')} style={{ width: 12, height: 12, resizeMode: 'contain' }} />
                     </TouchableOpacity>
