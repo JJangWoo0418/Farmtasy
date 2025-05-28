@@ -109,6 +109,12 @@ const MarketCommentPage = ({ navigation }) => {
     const commentTree = useMemo(() => buildCommentTree(comments), [comments]);
     const totalComments = useMemo(() => countAllComments(commentTree), [commentTree]);
 
+    const onReplyPress = (comment) => {
+        setIsReplyInputVisible(true);
+        setReplyToCommentId(comment.id);
+        setReplyToName(comment.user || comment.phone);
+    };
+
     // 댓글/답글 등록
     const handleSend = async () => {
         if (!input.trim()) return;
@@ -124,9 +130,6 @@ const MarketCommentPage = ({ navigation }) => {
                 })
             });
             setInput('');
-            setIsReplyInputVisible(false);
-            setReplyToCommentId(null);
-            setReplyToName(null);
 
             // **댓글 목록 즉시 새로고침**
             fetch(`${API_CONFIG.BASE_URL}/api/market/comment?market_id=${marketId}`)
@@ -170,19 +173,21 @@ const MarketCommentPage = ({ navigation }) => {
                 {/* 댓글 내용 */}
                 <Text style={styles.content}>{comment.comment_content}</Text>
                 {/* 답글쓰기 버튼 */}
-                <View style={styles.commentActions}>
-                    <TouchableOpacity
-                        style={styles.replyBtn}
-                        onPress={() => {
-                            setIsReplyInputVisible(true);
-                            setReplyToCommentId(comment.id);
-                            setReplyToName(comment.user || comment.phone);
-                        }}
-                    >
-                        <Image source={require('../../assets/commenticon.png')} style={styles.replyIcon} />
-                        <Text style={styles.replyText}>답글쓰기</Text>
-                    </TouchableOpacity>
-                </View>
+                {depth === 0 && (
+                    <View style={styles.commentActions}>
+                        <TouchableOpacity
+                            style={styles.replyBtn}
+                            onPress={() => {
+                                setIsReplyInputVisible(true);
+                                setReplyToCommentId(comment.id);
+                                setReplyToName(comment.user || comment.phone);
+                            }}
+                        >
+                            <Image source={require('../../assets/commenticon.png')} style={styles.replyIcon} />
+                            <Text style={styles.replyText}>답글쓰기</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
                 {comment.children && comment.children.length > 0 && renderComments(comment.children, depth + 1)}
             </View>
         ));
