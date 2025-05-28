@@ -137,15 +137,20 @@ const MarketDetailPage = () => {
 
     const handleShare = async () => {
         try {
-            // 판매글 링크 생성 (실제 서비스의 도메인으로 변경 필요)
-            const productUrl = `https://farmtasy.com/market/${product.id}`;
-
-            const shareMessage = `${product.title}\n\n${productUrl}`;
-
+            if (!product || !product.market_name || !product.market_id || !product.market_price) {
+                alert('상품 정보가 없습니다.');
+                return;
+            }
+            const productName = product.market_name;
+            const productPrice = Number(product.market_price).toLocaleString() + '원';
+            const productUrl = `https://farmtasy.com/market/${product.market_id}`;
+    
+            // 제목, 가격, 링크 순서로 메시지 작성
+            const shareMessage = `[ ${productName} ]\n\n[ ${productPrice} ]\n\n${productUrl}\n\n팜타지 장터에서 확인하세요!`;
+    
             await Share.share({
                 message: shareMessage,
-                title: product.title,
-                url: productUrl // iOS에서 사용
+                title: productName,
             });
         } catch (error) {
             console.log('공유하기 에러:', error);
