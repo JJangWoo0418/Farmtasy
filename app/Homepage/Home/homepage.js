@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert, Platform, ToastAndroid } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert, Platform, ToastAndroid, StyleSheet } from 'react-native';
 import styles from '../../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../../Navigator/BottomTabNavigator';
@@ -752,65 +752,76 @@ const HomePage = () => {
                         <Image source={require('../../../assets/closeicon.png')} style={{ width: 30, height: 30 }} />
                     </TouchableOpacity>
 
-                    <Text style={styles.drawerTitle}>정보</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => {
-                        router.push({
-                            pathname: 'Homepage/Profile/profilepage',
-                            params: {
-                                userData: route.params?.userData,
-                                phone: route.params?.phone,
-                                name: route.params?.name,
-                                region: route.params?.region
-                            }
-                        });
-                    }}>
-                        <Image source={require('../../../assets/profileicon2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>프로필</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.drawerTitle}>장터</Text>
-                    <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../../assets/shopicon2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>장터</Text>
-                    </TouchableOpacity>
+                    <ScrollView 
+                        style={styles.drawerScroll}
+                        contentContainerStyle={styles.drawerScrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <Text style={styles.drawerTitle}>정보</Text>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => {
+                            router.push({
+                                pathname: 'Homepage/Profile/profilepage',
+                                params: {
+                                    userData: route.params?.userData,
+                                    phone: route.params?.phone,
+                                    name: route.params?.name,
+                                    region: route.params?.region
+                                }
+                            });
+                        }}>
+                            <Image source={require('../../../assets/profileicon2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>프로필</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.drawerTitle}>장터</Text>
+                        <TouchableOpacity style={styles.drawerItem}>
+                            <Image source={require('../../../assets/shopicon2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>장터</Text>
+                        </TouchableOpacity>
 
-                    <Text style={styles.drawerTitle}>농사 정보</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage' })}>
-                        <Image source={require('../../../assets/directdeposit2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>면적 직불금 계산기</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../../assets/quoteicon2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>작물 시세</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../../assets/weathericon2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>날씨</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem}>
-                        <Image source={require('../../../assets/bugicon2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>병해충</Text>
-                    </TouchableOpacity>
+                        <Text style={styles.drawerTitle}>농사 정보</Text>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage' })}>
+                            <Image source={require('../../../assets/directdeposit2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>면적 직불금 계산기</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.drawerItem}>
+                            <Image source={require('../../../assets/quoteicon2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>작물 시세</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.drawerItem}>
+                            <Image source={require('../../../assets/weathericon2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>날씨</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.drawerItem}>
+                            <Image source={require('../../../assets/bugicon2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>병해충</Text>
+                        </TouchableOpacity>
 
-                    <Text style={styles.drawerTitle}>농사 게시판</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('자유주제')}>
-                        <Image source={require('../../../assets/freetopic2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>자유주제</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사공부')}>
-                        <Image source={require('../../../assets/studyfarming2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>농사공부</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사질문')}>
-                        <Image source={require('../../../assets/farmingquestions2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>농사질문</Text>
-                    </TouchableOpacity>
+                        <Text style={styles.drawerTitle}>농사 게시판</Text>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('자유주제')}>
+                            <Image source={require('../../../assets/freetopic2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>자유주제</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사공부')}>
+                            <Image source={require('../../../assets/studyfarming2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>농사공부</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => goToPostPage('농사질문')}>
+                            <Image source={require('../../../assets/farmingquestions2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>농사질문</Text>
+                        </TouchableOpacity>
 
-                    <Text style={styles.drawerTitle}>AI</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Chatbot/questionpage' })}>
-                        <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
-                        <Text style={styles.drawerText}>질문하기</Text>
-                    </TouchableOpacity>
+                        <Text style={styles.drawerTitle}>AI</Text>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Chatbot/questionpage' })}>
+                            <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>질문하기</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/AIOT/aiot' })}>
+                            <Image source={require('../../../assets/fruit.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>과일 당도 측정하기</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
                 </Animated.View>
+                
             </View>
 
             <View style={styles.searchBarContainer}>
@@ -1082,5 +1093,7 @@ const HomePage = () => {
         </View>
     );
 };
+
+
 
 export default HomePage;

@@ -424,5 +424,12 @@ export default StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    drawerScroll: {
+        flex: 1,
+        width: '100%'
+    },
+    drawerScrollContent: {
+        paddingBottom: 20
+    },
 });
 
