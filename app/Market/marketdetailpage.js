@@ -79,7 +79,21 @@ const MarketDetailPage = () => {
             Alert.alert('에러', '로그인 정보가 없습니다.');
             return;
         }
-
+    
+        // 하트 애니메이션 추가
+        Animated.sequence([
+            Animated.timing(heartScale, {
+                toValue: 1.3,
+                duration: 100,
+                useNativeDriver: true,
+            }),
+            Animated.timing(heartScale, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    
         try {
             if (!isLiked) {
                 // 좋아요 추가
