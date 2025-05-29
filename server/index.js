@@ -2758,6 +2758,7 @@ app.post('/api/market', async (req, res) => {
 
 // server/index.js
 
+// 전체 상품 조회 API
 app.get('/api/market', async (req, res) => {
     try {
         console.log('=== 마켓 상품 목록 API 호출됨 ===');
@@ -2772,8 +2773,10 @@ app.get('/api/market', async (req, res) => {
                 market_content,
                 market_created_at,
                 market_update_at,
-                phone
+                phone,
+                market_status
             FROM market
+            WHERE market_status IN ('판매중', '예약중')
         `;
         const [products] = await pool.query(query);
         console.log('조회된 상품 수:', products.length);
@@ -2828,9 +2831,9 @@ app.get('/api/market/comment', async (req, res) => {
     }
 });
 
+// 카테고리별 상품 조회 API
 app.get('/api/market/category/:category', async (req, res) => {
     try {
-        // 디버깅을 위한 로그 추가
         console.log('받은 카테고리 파라미터:', req.params.category);
         const category = decodeURIComponent(req.params.category);
         console.log('디코딩된 카테고리:', category);
@@ -2855,6 +2858,7 @@ app.get('/api/market/category/:category', async (req, res) => {
             return res.status(404).json({ error: '존재하지 않는 카테고리입니다.' });
         }
 
+        // market_status 컬럼 추가하고 조건 수정
         const [products] = await pool.query(`
             SELECT 
                 market_id,
@@ -2866,9 +2870,11 @@ app.get('/api/market/category/:category', async (req, res) => {
                 market_content,
                 market_created_at,
                 market_update_at,
-                phone
+                phone,
+                market_status
             FROM market
-            WHERE market_category = ?
+            WHERE market_category = ? 
+            AND (market_status = '판매중' OR market_status = '예약중')  // 명시적으로 상태 지정
         `, [dbCategory]);
 
         console.log('조회된 상품 수:', products.length);
