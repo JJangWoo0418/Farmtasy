@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { SafeAreaView, View, Text, Image, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, View, Text, Image, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import styles from '../Components/Css/Market/marketcommentpagestyle';
 import API_CONFIG from '../DB/api';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -147,13 +147,12 @@ const MarketCommentPage = ({ navigation }) => {
     const renderComments = useCallback((comments, depth = 0) => {
         return comments.filter(Boolean).map(comment => (
             <View key={comment.id} style={[styles.commentContainer, depth > 0 && { marginLeft: 25 * depth, marginTop: 10, paddingLeft: 8, marginBottom: -20 }]}>
-                {/* 댓글 헤더 */}
                 <View style={styles.commentHeader}>
                     <Image
                         source={comment.profile ? { uri: comment.profile } : require('../../assets/usericon.png')}
                         style={styles.profileImg}
                     />
-                    <View>
+                    <View style={{ flex: 1, position: 'relative' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             <Text style={styles.username}>
                                 [{comment.region || '지역 미설정'}] {comment.user || comment.phone}
@@ -167,12 +166,40 @@ const MarketCommentPage = ({ navigation }) => {
                         <Text style={styles.commentInfo}>
                             {comment.introduction} · {formatDate(comment.time)}
                         </Text>
+                        <TouchableOpacity
+                            style={depth > 0 ? styles.replyMoreBtn : styles.commentMoreBtn}
+                            onPress={() => {
+                                Alert.alert(
+                                    "댓글 신고",
+                                    "이 댓글을 신고하시겠습니까?",
+                                    [
+                                        {
+                                            text: "아니요",
+                                            style: "cancel"
+                                        },
+                                        {
+                                            text: "예",
+                                            onPress: () => {
+                                                Alert.alert(
+                                                    "신고 완료",
+                                                    "댓글이 신고되었습니다.",
+                                                    [{ text: "확인" }],
+                                                    { cancelable: true }
+                                                );
+                                            }
+                                        }
+                                    ]
+                                );
+                            }}
+                        >
+                            <Image
+                                source={require('../../assets/moreicon.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}  // 인라인 스타일로 변경
+                            />
+                        </TouchableOpacity>
                     </View>
-                    {/* 신고 버튼 등 필요시 추가 */}
                 </View>
-                {/* 댓글 내용 */}
                 <Text style={styles.content}>{comment.comment_content}</Text>
-                {/* 답글쓰기 버튼 */}
                 {depth === 0 && (
                     <View style={styles.commentActions}>
                         <TouchableOpacity

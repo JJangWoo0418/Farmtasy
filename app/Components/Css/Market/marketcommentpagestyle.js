@@ -182,4 +182,24 @@ export default StyleSheet.create({
         color: '#999',
         marginLeft: 0,
     },
+    commentMoreBtn: {
+        width: 20,
+        height: 20,
+        resizeMode: 'cover',
+        position: 'absolute',
+        right: 8,
+        top: 1,
+        marginLeft: 0,
+        marginBottom: 0
+    },
+    replyMoreBtn: {
+        width: 20,
+        height: 20,
+        resizeMode: 'contain',
+        position: 'absolute',
+        right: 0,
+        top: 1,
+        marginLeft: 0,
+        marginBottom: 0
+    },
 });
