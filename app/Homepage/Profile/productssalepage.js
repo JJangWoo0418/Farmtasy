@@ -29,7 +29,28 @@ const ProductssalePage = () => {
         }).start();
     };
 
-    
+    const handleDelete = async (marketId) => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/${marketId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                Alert.alert('알림', '상품이 삭제되었습니다.');
+                // 목록 새로고침
+                fetchInterestedProducts();
+            } else {
+                Alert.alert('오류', '상품 삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('상품 삭제 실패:', error);
+            Alert.alert('오류', '상품 삭제 중 오류가 발생했습니다.');
+        }
+    };
 
     const handleStatusChange = async (newStatus, marketId) => {
         try {
@@ -133,6 +154,18 @@ const ProductssalePage = () => {
                             }
                         },
                         {
+                            text: "수정하기",
+                            onPress: () => {
+                                router.push({
+                                    pathname: '/Market/marketeditpage',
+                                    params: { 
+                                        productId: item.market_id,
+                                        phone: phone
+                                    }
+                                });
+                            }
+                        },
+                        {
                             text: "판매중으로 변경",
                             onPress: () => handleStatusChange('판매중', item.market_id)
                         },
@@ -143,6 +176,26 @@ const ProductssalePage = () => {
                         {
                             text: "거래완료로 변경",
                             onPress: () => handleStatusChange('거래완료', item.market_id)
+                        },
+                        {
+                            text: "삭제하기",
+                            onPress: () => {
+                                Alert.alert(
+                                    "상품 삭제",
+                                    "정말로 이 상품을 삭제하시겠습니까?",
+                                    [
+                                        {
+                                            text: "취소",
+                                            style: "cancel"
+                                        },
+                                        {
+                                            text: "삭제",
+                                            style: "destructive",
+                                            onPress: () => handleDelete(item.market_id)
+                                        }
+                                    ]
+                                );
+                            }
                         },
                         {
                             text: "취소",

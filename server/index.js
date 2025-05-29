@@ -2582,6 +2582,58 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
     }
 });
 
+// 상품 삭제 API
+app.delete('/api/market/:marketId', async (req, res) => {
+    try {
+        const { marketId } = req.params;
+        const { phone } = req.body;
+
+        if (!marketId || !phone) {
+            return res.status(400).json({
+                success: false,
+                message: '필수 정보가 누락되었습니다.'
+            });
+        }
+
+        // 상품이 존재하는지와 권한이 있는지 확인
+        const [market] = await pool.query(
+            'SELECT * FROM market WHERE market_id = ? AND phone = ?',
+            [marketId, phone]
+        );
+
+        if (market.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '상품을 찾을 수 없거나 권한이 없습니다.'
+            });
+        }
+
+        // 상품 삭제
+        await pool.query(
+            'DELETE FROM market WHERE market_id = ?',
+            [marketId]
+        );
+
+        // 관련된 관심 상품도 삭제
+        await pool.query(
+            'DELETE FROM market_likes WHERE market_id = ?',
+            [marketId]
+        );
+
+        res.json({
+            success: true,
+            message: '상품이 삭제되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('상품 삭제 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 상품(장터) 문의(댓글) 개수 조회 API
 app.get('/api/market/comment/count', async (req, res) => {
     const { market_id } = req.query;

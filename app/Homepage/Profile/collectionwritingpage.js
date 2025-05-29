@@ -549,7 +549,7 @@ const CollectionWritingpage = () => {
                         bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                         isBookmarked={bookmarkedPosts[item.id] || false}
                         navigateToDetail={() => {
-                            navigation.push('Homepage/postdetailpage', {
+                            navigation.push('Homepage/Post/postdetailpage', {
                                 post: { ...item, phone: item.phone },
                                 introduction: item.introduction || '소개 미설정',
                                 phone,
