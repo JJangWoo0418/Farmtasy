@@ -2601,6 +2601,42 @@ app.get('/api/market/comment/count', async (req, res) => {
     }
 });
 
+// 관심 상품 목록 조회 API (수정)
+app.get('/api/market/likes', async (req, res) => {
+    console.log('관심 상품 목록 조회 API 호출됨');
+    try {
+        const { phone } = req.query;
+
+        if (!phone) {
+            return res.status(400).json({
+                success: false,
+                message: '전화번호가 필요합니다.'
+            });
+        }
+
+        // market_likes와 market 테이블을 JOIN하여 한 번에 모든 정보 가져오기
+        const [likes] = await pool.query(
+            `SELECT m.* 
+             FROM market m
+             INNER JOIN market_likes ml ON m.market_id = ml.market_id
+             WHERE ml.phone = ?`,
+            [phone]
+        );
+
+        res.json({
+            success: true,
+            likes: likes
+        });
+
+    } catch (error) {
+        console.error('관심 상품 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 상품 등록 API
 app.post('/api/market', async (req, res) => {
     try {
@@ -2783,6 +2819,7 @@ app.get('/api/market/:id', async (req, res) => {
         res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
+
 
 // server/index.js
 app.get('/api/user/:phone', async (req, res) => {

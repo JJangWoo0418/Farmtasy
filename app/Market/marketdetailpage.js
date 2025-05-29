@@ -6,40 +6,6 @@ import { useNavigation } from '@react-navigation/native';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import API_CONFIG from '../DB/api';
 
-const product = {
-    id: '12345', // 판매글 고유 ID 공유 기능을 위한 것.
-    region: '충북음성',
-    name: '이준호',
-    profileImg: require('../../assets/usericon.png'),
-    time: '1시간 전',
-    title: '로타리장착 국제기시동경운기 판매',
-    price: 1000000,
-    content: `1.판매물품 : 로타리장착 국제기시동경운기 판매합니다.
-2.판매지역 및 직거래 : 충남 금산군 추부면. 금산로2816-11
-3.생산년도 : 모름년식 판매
-4.판매가격 : 100만원
-5.전화번호 : 010-7922-7114
-6.기타사항기록 : 로타리장착 경운기 입니다.
-상차작업비 별도입니다.
-국제 기시동 경운기입니다.
-실사용시동잘됨, 상태 매우좋습니다.
-7.참조 : 빠른 답을 원하신다면, 전화나 문자가 빠릅니다.
-화물, 택배 착불 입니다.
-가격절충 안됩니다. 반품 × 환불 ×
-카드(부가세별도)결제가능.
-경운기 조금정리한다고 수리안된거 사셔서
-고생하지 마시고 2의 새거처럼 완벽하게
-수리된거 사셔서 마음편히 쓰세요.
-6개월 A/S 해드립니다.
-더많은농기계를 보고싶으시다면
-네이버에서 도윤농기계 검색하세요.`,
-    images: [
-        require('../../assets/장터 샘플 이미지2.png'),
-        require('../../assets/장터 샘플 이미지3.jpg'),
-    ],
-    inquiryCount: 0,
-};
-
 const MarketDetailPage = () => {
     const navigation = useNavigation();
     const [showFullContent, setShowFullContent] = useState(false);
