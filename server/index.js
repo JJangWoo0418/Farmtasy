@@ -2601,6 +2601,86 @@ app.get('/api/market/comment/count', async (req, res) => {
     }
 });
 
+// 판매 상품 목록 조회 API (상태별 필터링)
+app.get('/api/market/sales', async (req, res) => {
+    console.log('판매 상품 목록 조회 API 호출됨');
+    try {
+        const { phone, status } = req.query;
+
+        if (!phone || !status) {
+            return res.status(400).json({
+                success: false,
+                message: '필수 정보가 누락되었습니다.'
+            });
+        }
+
+        // 상태에 따라 상품 목록 조회
+        const [items] = await pool.query(
+            'SELECT * FROM market WHERE phone = ? AND market_status = ? ORDER BY market_created_at DESC',
+            [phone, status]
+        );
+
+        res.json({
+            success: true,
+            items: items
+        });
+
+    } catch (error) {
+        console.error('상품 목록 조회 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
+// 상품 상태 변경 API
+app.put('/api/market/:marketId/status', async (req, res) => {
+    console.log('상품 상태 변경 API 호출됨');
+    try {
+        const { marketId } = req.params;
+        const { market_status, phone } = req.body;
+
+        if (!marketId || !market_status || !phone) {
+            return res.status(400).json({
+                success: false,
+                message: '필수 정보가 누락되었습니다.'
+            });
+        }
+
+        // 상품이 존재하는지 확인
+        const [market] = await pool.query(
+            'SELECT * FROM market WHERE market_id = ? AND phone = ?',
+            [marketId, phone]
+        );
+
+        if (market.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '상품을 찾을 수 없거나 권한이 없습니다.'
+            });
+        }
+
+        // 상태 변경
+        await pool.query(
+            'UPDATE market SET market_status = ? WHERE market_id = ?',
+            [market_status, marketId]
+        );
+
+        res.json({
+            success: true,
+            message: '상태가 변경되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('상태 변경 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 관심 상품 목록 조회 API (수정)
 app.get('/api/market/likes', async (req, res) => {
     console.log('관심 상품 목록 조회 API 호출됨');

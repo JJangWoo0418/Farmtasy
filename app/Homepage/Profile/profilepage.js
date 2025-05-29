@@ -208,7 +208,20 @@ const ProfilePage = () => {
                     <Text style={styles.sectionText}>관심 상품</Text>
                     <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.sectionRow}>
+                <TouchableOpacity style={styles.sectionRow} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/Profile/productssalepage',
+                            params: {
+                                userData: userData,
+                                phone: route.params?.phone,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
+                            }
+                        });
+                    }}>
                     <Image source={require('../../../assets/coinicon.png')} style={styles.sectionIcon} />
                     <Text style={styles.sectionText}>판매 중 상품</Text>
                     <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />

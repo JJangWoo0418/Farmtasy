@@ -20,6 +20,11 @@ export default StyleSheet.create({
         fontWeight: 'bold',
         paddingLeft: 120
     },
+    headerTitle2: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        paddingLeft: 108
+    },
     backIcon: {
         width: 24,
         height: 24,
@@ -35,6 +40,13 @@ export default StyleSheet.create({
         paddingHorizontal: 2,
         marginBottom: 2,
         marginLeft: 1
+    },
+    columnWrapper2: {
+        justifyContent: 'space-between',
+        paddingHorizontal: 2,
+        marginBottom: 2,
+        marginLeft: 1,
+        marginTop: 5
     },
     productCard: {
         flex: 1,
@@ -93,6 +105,7 @@ export default StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 5
     },
     emptyText: {
         fontSize: 16,
@@ -131,5 +144,37 @@ export default StyleSheet.create({
         resizeMode: 'cover',
         marginBottom: 8,
         backgroundColor: '#eee',
+    },
+    tabContainer: {
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F2F2F2',
+
+    },
+    tabWrapper: {
+        flexDirection: 'row',
+        position: 'relative',
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: 8,
+        alignItems: 'center',
+        zIndex: 1,
+    },
+    tabText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    selectedTabText: {
+        color: '#22CC6B',
+        fontWeight: 'bold',
+    },
+    tabIndicator: {
+        position: 'absolute',
+        bottom: 0,
+        height: 2,
+        width: '33.33%',  // 탭 개수에 따라 조정
+        backgroundColor: '#22CC6B',
+        zIndex: 0,
     },
 });
