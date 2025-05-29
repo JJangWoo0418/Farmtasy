@@ -2582,6 +2582,77 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
     }
 });
 
+// 상품 수정 API
+app.put('/api/market/:marketId', async (req, res) => {
+    try {
+        const { marketId } = req.params;
+        const { 
+            name,
+            market_name,
+            market_category,
+            market_price,
+            market_image_url,
+            market_content,
+            phone
+        } = req.body;
+
+        // 필수 정보 검증
+        if (!marketId || !market_name || !market_category || !market_price || !market_image_url || !market_content || !phone) {
+            return res.status(400).json({
+                success: false,
+                message: '필수 정보가 누락되었습니다.'
+            });
+        }
+
+        // 상품이 존재하는지와 권한이 있는지 확인
+        const [market] = await pool.query(
+            'SELECT * FROM market WHERE market_id = ? AND phone = ?',
+            [marketId, phone]
+        );
+
+        if (market.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '상품을 찾을 수 없거나 권한이 없습니다.'
+            });
+        }
+
+        // 상품 정보 업데이트
+        await pool.query(`
+            UPDATE market 
+            SET 
+                name = ?,
+                market_name = ?,
+                market_category = ?,
+                market_price = ?,
+                market_image_url = ?,
+                market_content = ?,
+                market_update_at = CURRENT_TIMESTAMP
+            WHERE market_id = ?
+        `, [
+            name,
+            market_name,
+            market_category,
+            market_price,
+            market_image_url,
+            market_content,
+            marketId
+        ]);
+
+        res.json({
+            success: true,
+            message: '상품이 수정되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('상품 수정 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 상품 삭제 API
 app.delete('/api/market/:marketId', async (req, res) => {
     try {

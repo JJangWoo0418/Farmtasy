@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert, Keyboard, TouchableWithoutFeedback, Animated, Easing, Modal, ScrollView, Platform, KeyboardAvoidingView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import styles from '../Components/Css/Market/marketuploadstyle';
@@ -18,21 +18,57 @@ const categories = [
     { label: '기타', icon: require('../../assets/etc.png') },
 ];
 
-const MarketUpload = () => {
+const MarketUpdate = () => {
     const params = useLocalSearchParams();
     const [imageUris, setImageUris] = useState([]);
     const [namePlaceholder, setNamePlaceholder] = useState('상품명과 중량을 입력해 주세요');
     const [pricePlaceholder, setPricePlaceholder] = useState('상품 가격을 입력해 주세요.');
     const [descPlaceholder, setDescPlaceholder] = useState('상품의 옵션, 상태, 수확 과정 등 상세하게 작성할수록 더 쉽게 판매할 수 있어요.');
     const [showCategory, setShowCategory] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState(params.category || '');
+    const [selectedCategory, setSelectedCategory] = useState('');
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const [price, setPrice] = useState('');
-    const [phone, setPhone] = useState(params.phone || '010-1234-5678');
+    const [phone, setPhone] = useState('');
     const [productName, setProductName] = useState('');
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [userName, setUserName] = useState(params.name || '');
+    const [userName, setUserName] = useState('');
+    const [isInitialized, setIsInitialized] = useState(false);  // 초기화 상태 추가
+    const [originalProduct, setOriginalProduct] = useState(null); // 원본 상품 데이터 저장
+
+    // 기존 상품 정보 파싱
+    useEffect(() => {
+        if (params.productData) {
+            try {
+                const product = JSON.parse(params.productData);
+                console.log('파싱된 상품 데이터:', product); // 디버깅용
+                
+                setOriginalProduct(product); // 원본 상품 데이터 저장
+                setProductName(product.market_name);
+                setSelectedCategory(product.market_category);
+                setPrice(product.market_price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+                setDescription(product.market_content);
+                setPhone(params.phone);
+                setUserName(product.name);
+
+                // 이미지 URL 처리
+                let imageUrls = product.market_image_url;
+                if (typeof imageUrls === 'string') {
+                    try {
+                        imageUrls = JSON.parse(imageUrls);
+                    } catch (e) {
+                        console.error('이미지 URL 파싱 오류:', e);
+                        imageUrls = [];
+                    }
+                }
+                if (Array.isArray(imageUrls)) {
+                    setImageUris(imageUrls);
+                }
+            } catch (error) {
+                console.error('상품 데이터 파싱 오류:', error);
+            }
+        }
+    }, [params.productData]);
 
     const openCategorySheet = () => {
         setShowCategory(true);
@@ -136,27 +172,32 @@ const MarketUpload = () => {
             Alert.alert('알림', '모든 필수 항목을 입력해주세요.');
             return;
         }
-
+    
         setIsLoading(true);
         try {
-            // 1. S3에 이미지 업로드
+            // 1. S3에 이미지 업로드 (새로 추가된 이미지만)
             const uploadedImageUrls = [];
             for (const uri of imageUris) {
+                // 기존 S3 URL인 경우 그대로 사용
+                if (uri.startsWith('https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/')) {
+                    uploadedImageUrls.push(uri);
+                    continue;
+                }
+    
+                // 새로운 이미지인 경우 S3에 업로드
                 const fileName = `market/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
                 const response = await fetch(uri);
                 const blob = await response.blob();
-
-                // Presigned URL 요청
+    
                 const presignResponse = await axios.post(`${API_CONFIG.BASE_URL}/api/s3/presign`, {
                     fileName,
                     fileType: 'image/jpeg'
                 });
-
+    
                 if (!presignResponse.data.url) {
                     throw new Error('Presigned URL을 받지 못했습니다.');
                 }
-
-                // S3에 업로드
+    
                 const uploadResponse = await fetch(presignResponse.data.url, {
                     method: 'PUT',
                     body: blob,
@@ -164,19 +205,18 @@ const MarketUpload = () => {
                         'Content-Type': 'image/jpeg'
                     }
                 });
-
+    
                 if (!uploadResponse.ok) {
                     throw new Error('이미지 업로드에 실패했습니다.');
                 }
-
-                // 실제 이미지 URL 저장
+    
                 const imageUrl = `https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/${fileName}`;
                 uploadedImageUrls.push(imageUrl);
             }
-
-            // 2. 상품 정보 등록
+    
+            // 2. 상품 정보 업데이트
             const marketData = {
-                name: userName,
+                name: params.name || '짱우', // 기본값 설정
                 market_name: productName,
                 market_category: selectedCategory,
                 market_price: parseInt(price.replace(/,/g, '')),
@@ -184,41 +224,27 @@ const MarketUpload = () => {
                 market_content: description,
                 phone: phone
             };
-
-            console.log('상품 등록 요청 데이터:', marketData);
-
-            const response = await axios.post(`${API_CONFIG.BASE_URL}/api/market`, marketData);
-
+    
+            console.log('수정 요청 데이터:', marketData); // 디버깅용
+    
+            const response = await axios.put(
+                `${API_CONFIG.BASE_URL}/api/market/${params.productId}`, 
+                marketData
+            );
+    
             if (response.data.success) {
-                Alert.alert('성공', '상품이 등록되었습니다.', [
+                Alert.alert('성공', '상품이 수정되었습니다.', [
                     {
                         text: '확인',
-                        onPress: () => router.push({
-                            pathname: '/Market/market',
-                            params: {
-                                category: selectedCategory,
-                                phone: phone,
-                                name: userName,           // 유저 이름 추가
-                            }
-                        })
+                        onPress: () => router.back()
                     }
                 ]);
             } else {
-                throw new Error(response.data.message || '상품 등록에 실패했습니다.');
+                throw new Error(response.data.message || '상품 수정에 실패했습니다.');
             }
         } catch (error) {
-            console.error('상품 등록 실패:', error);
-            let errorMessage = '상품 등록에 실패했습니다.';
-
-            if (error.response) {
-                // 서버에서 응답이 왔지만 에러인 경우
-                errorMessage = error.response.data.message || errorMessage;
-            } else if (error.request) {
-                // 요청은 보냈지만 응답이 없는 경우
-                errorMessage = '서버에 연결할 수 없습니다.';
-            }
-
-            Alert.alert('오류', errorMessage);
+            console.error('상품 수정 실패:', error);
+            Alert.alert('오류', '상품 수정에 실패했습니다.');
         } finally {
             setIsLoading(false);
         }
@@ -282,7 +308,7 @@ const MarketUpload = () => {
                             <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
                                 <Image source={require('../../assets/gobackicon.png')} style={styles.backIcon} />
                             </TouchableOpacity>
-                            <Text style={styles.headerTitle}>장터 글쓰기</Text>
+                            <Text style={styles.headerTitle}>장터 게시글 수정</Text>
                         </View>
 
                         {/* 사진 업로드 미리보기 */}
@@ -371,17 +397,11 @@ const MarketUpload = () => {
                         {/* 등록 버튼 */}
                         <TouchableOpacity
                             style={[styles.submitBtn, (!isFormValid || isLoading) && styles.submitBtnDisabled]}
-                            onPress={() => {
-                                if (!isFormValid) {
-                                    Alert.alert('알림', '모든 필수 항목과 이미지를 입력해주세요.');
-                                    return;
-                                }
-                                handleSubmit();
-                            }}
+                            onPress={handleSubmit}
                             disabled={!isFormValid || isLoading}
                         >
                             <Text style={styles.submitBtnText}>
-                                {isLoading ? '등록 중...' : '등록'}
+                                {isLoading ? '수정 중...' : '수정하기'}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -391,4 +411,4 @@ const MarketUpload = () => {
     );
 };
 
-export default MarketUpload;
+export default MarketUpdate;

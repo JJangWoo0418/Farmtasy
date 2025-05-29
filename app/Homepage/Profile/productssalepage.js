@@ -36,9 +36,9 @@ const ProductssalePage = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: phone })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 Alert.alert('알림', '상품이 삭제되었습니다.');
                 // 목록 새로고침
@@ -57,14 +57,14 @@ const ProductssalePage = () => {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/${marketId}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     market_status: newStatus,
-                    phone: phone 
+                    phone: phone
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 // 상태 변경 성공 시 목록 새로고침
                 fetchInterestedProducts();
@@ -92,16 +92,16 @@ const ProductssalePage = () => {
                 '예약중': '예약중',
                 '거래완료': '거래완료'
             };
-    
+
             // API 호출 시 상태 파라미터 추가
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/sales?phone=${phone}&status=${statusMap[selectedTab]}`);
             const data = await response.json();
-    
+
             if (!data.success) {
                 console.log('상품 목록을 가져오는데 실패했습니다.');
                 return;
             }
-    
+
             setItems(data.items);
         } catch (error) {
             console.error('상품을 가져오는데 실패했습니다:', error);
@@ -109,7 +109,7 @@ const ProductssalePage = () => {
             setLoading(false);
         }
     };
-    
+
     // selectedTab이 변경될 때마다 목록 새로고침
     useEffect(() => {
         if (phone) {
@@ -135,102 +135,111 @@ const ProductssalePage = () => {
 
         return (
             <TouchableOpacity
-            style={styles.productCard}
-            onPress={() => {
-                Alert.alert(
-                    "상품 관리",
-                    "원하는 작업을 선택하세요",
-                    [
-                        {
-                            text: "게시글 보기",
-                            onPress: () => {
-                                router.push({
-                                    pathname: '/Market/marketdetailpage',
-                                    params: { 
-                                        productId: item.market_id,
-                                        phone: phone
-                                    }
-                                });
-                            }
-                        },
-                        {
-                            text: "수정하기",
-                            onPress: () => {
-                                router.push({
-                                    pathname: '/Market/marketeditpage',
-                                    params: { 
-                                        productId: item.market_id,
-                                        phone: phone
-                                    }
-                                });
-                            }
-                        },
-                        {
-                            text: "판매중으로 변경",
-                            onPress: () => handleStatusChange('판매중', item.market_id)
-                        },
-                        {
-                            text: "예약중으로 변경",
-                            onPress: () => handleStatusChange('예약중', item.market_id)
-                        },
-                        {
-                            text: "거래완료로 변경",
-                            onPress: () => handleStatusChange('거래완료', item.market_id)
-                        },
-                        {
-                            text: "삭제하기",
-                            onPress: () => {
-                                Alert.alert(
-                                    "상품 삭제",
-                                    "정말로 이 상품을 삭제하시겠습니까?",
-                                    [
-                                        {
-                                            text: "취소",
-                                            style: "cancel"
-                                        },
-                                        {
-                                            text: "삭제",
-                                            style: "destructive",
-                                            onPress: () => handleDelete(item.market_id)
+                style={styles.productCard}
+                onPress={() => {
+                    Alert.alert(
+                        "상품 관리",
+                        "원하는 작업을 선택하세요",
+                        [
+                            {
+                                text: "게시글 보기",
+                                onPress: () => {
+                                    router.push({
+                                        pathname: '/Market/marketdetailpage',
+                                        params: {
+                                            productId: item.market_id,
+                                            phone: phone
                                         }
-                                    ]
-                                );
+                                    });
+                                }
+                            },
+                            {
+                                text: "수정하기",
+                                onPress: () => {
+                                    router.push({
+                                        pathname: '/Market/marketupdatepage',
+                                        params: {
+                                            productId: item.market_id,
+                                            phone: phone,
+                                            // 상품 정보 전달
+                                            productData: JSON.stringify({
+                                                market_name: item.market_name,
+                                                market_price: item.market_price,
+                                                market_category: item.market_category,
+                                                market_content: item.market_content,
+                                                market_image_url: item.market_image_url,
+                                                market_status: item.market_status
+                                            })
+                                        }
+                                    });
+                                }
+                            },
+                            {
+                                text: "판매중으로 변경",
+                                onPress: () => handleStatusChange('판매중', item.market_id)
+                            },
+                            {
+                                text: "예약중으로 변경",
+                                onPress: () => handleStatusChange('예약중', item.market_id)
+                            },
+                            {
+                                text: "거래완료로 변경",
+                                onPress: () => handleStatusChange('거래완료', item.market_id)
+                            },
+                            {
+                                text: "삭제하기",
+                                onPress: () => {
+                                    Alert.alert(
+                                        "상품 삭제",
+                                        "정말로 이 상품을 삭제하시겠습니까?",
+                                        [
+                                            {
+                                                text: "취소",
+                                                style: "cancel"
+                                            },
+                                            {
+                                                text: "삭제",
+                                                style: "destructive",
+                                                onPress: () => handleDelete(item.market_id)
+                                            }
+                                        ]
+                                    );
+                                }
+                            },
+                            {
+                                text: "취소",
+                                style: "cancel"
                             }
-                        },
-                        {
-                            text: "취소",
-                            style: "cancel"
-                        }
-                    ]
-                );
-            }}
-        >
-            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                {imageLoading && (
-                    <ActivityIndicator
-                        size="large"
-                        color="#22CC6B"
-                        style={{
-                            position: 'absolute',
-                            zIndex: 1,
-                            width: '100%',
-                            height: '100%',
-                        }}
+                        ]
+                    );
+                }}
+            >
+                <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    {imageLoading && (
+                        <ActivityIndicator
+                            size="large"
+                            color="#22CC6B"
+                            style={{
+                                position: 'absolute',
+                                zIndex: 1,
+                                width: '100%',
+                                height: '100%',
+                            }}
+                        />
+                    )}
+                    <Image
+                        source={imageUrl ? { uri: imageUrl } : require('../../../assets/cameraicon3.png')}
+                        style={styles.productImg}
+                        onLoadEnd={() => setImageLoading(false)}
+                        onError={() => setImageLoading(false)}
                     />
-                )}
-                <Image
-                    source={imageUrl ? { uri: imageUrl } : require('../../../assets/cameraicon3.png')}
-                    style={styles.productImg}
-                    onLoadEnd={() => setImageLoading(false)}
-                    onError={() => setImageLoading(false)}
-                />
-            </View>
-            <Text style={styles.productTitle}>{item.market_name}</Text>
-            <Text style={styles.price}>{Number(item.market_price).toLocaleString()}원</Text>
-            <View style={styles.productDetails}>
-                <Text style={styles.productLocation}>{item.market_category}</Text>
-            </View>
-        </TouchableOpacity>
+                </View>
+                <Text style={styles.productTitle}>{item.market_name}</Text>
+                <Text style={styles.price}>{Number(item.market_price).toLocaleString()}원</Text>
+                <View style={styles.productDetails}>
+                    <Text style={styles.productLocation}>{item.market_category}</Text>
+                </View>
+            </TouchableOpacity>
         );
     };
 
