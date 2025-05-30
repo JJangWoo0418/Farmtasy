@@ -147,31 +147,6 @@ const Market = () => {
         return data;
     };
 
-    // 데모 판매 글 데이터 (전체 목록용)
-    const demoProducts = [
-        {
-            id: 1,
-            image: require('../../assets/sampleimage.jpg'), // 이미지 경로 수정
-            title: '중고하우스파이프 31.8mm 25.4mm',
-            price: '99,999원',
-            category: '농자재',
-        },
-        {
-            id: 2,
-            image: require('../../assets/장터 샘플 이미지2.png'), // 이미지 경로 수정
-            title: '땅콩씨앗 30g',
-            price: '5,000원',
-            category: '종자/모종',
-        },
-        {
-            id: 3,
-            image: require('../../assets/장터 샘플 이미지3.jpg'), // 이미지 경로 수정
-            title: '고품질 상토 50L',
-            price: '25,000원',
-            category: '비료/상토',
-        }
-    ];
-
     // 로컬 addToCart 함수 구현
     const addToCart = (item) => {
         const existingItem = cartItems.find(cartItem => cartItem.id === item.id);
@@ -209,8 +184,8 @@ const Market = () => {
             case '최신순':
                 result.sort((a, b) => new Date(b.market_created_at) - new Date(a.market_created_at));
                 break;
-            case '오래된 순':
-                result.sort((a, b) => new Date(a.market_created_at) - new Date(b.market_created_at));
+            case '좋아요 순':
+                result.sort((a, b) => (b.market_like || 0) - (a.market_like || 0));
                 break;
             case '낮은 가격순':
                 result.sort((a, b) => Number(a.market_price) - Number(b.market_price));
@@ -227,7 +202,7 @@ const Market = () => {
 
     const ProductItem = ({ item, onPress, styles }) => {
         const [loading, setLoading] = React.useState(true);
-    
+
         let imageUrl = '';
         try {
             let arr = [];
@@ -240,11 +215,11 @@ const Market = () => {
         } catch (e) {
             imageUrl = '';
         }
-    
+
         if (item.isPlaceholder) {
             return <View style={[styles.productCard, { backgroundColor: 'transparent', borderWidth: 0, elevation: 0 }]} />;
         }
-    
+
         return (
             <TouchableOpacity
                 style={styles.productCard}
@@ -276,6 +251,10 @@ const Market = () => {
                     <View style={styles.productDetails}>
                         <Text style={styles.productLocation}>{item.market_category}</Text>
                     </View>
+                    <View style={styles.likeContainer}>
+                        <Image source={require('../../assets/heartgreenicon.png')} style={styles.heartgreenIcon} />
+                        <Text style={styles.likeCount}>{item.market_like || 0}</Text>
+                    </View>
                 </View>
             </TouchableOpacity>
         );
@@ -287,7 +266,7 @@ const Market = () => {
             onPress={() => {
                 router.push({
                     pathname: '/Market/marketdetailpage',
-                    params: { 
+                    params: {
                         productId: item.market_id,
                         phone
                     }
@@ -684,7 +663,7 @@ const Market = () => {
                                 <FontAwesome name="times" size={20} color="#555" />
                             </TouchableOpacity>
                         </View>
-                        {['최신순', '오래된 순', '낮은 가격순', '높은 가격순'].map(option => (
+                        {['최신순', '좋아요 순', '낮은 가격순', '높은 가격순'].map(option => (
                             <TouchableOpacity
                                 key={option}
                                 style={styles.sortOptionItem}

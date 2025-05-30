@@ -500,6 +500,20 @@ const styles = StyleSheet.create({
     selectedFilterButtonText: {
         color: '#fff',
     },
+    likeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    likeCount: {
+        fontSize: 14,
+        color: '#666',
+    },
+    heartgreenIcon: {
+        width: 14,
+        height: 14,
+        resizeMode: 'contain',
+    },
 });
 
 export default styles; 

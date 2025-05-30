@@ -2582,6 +2582,7 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
     }
 });
 
+
 // 상품 수정 API
 app.put('/api/market/:marketId', async (req, res) => {
     try {
@@ -2593,7 +2594,8 @@ app.put('/api/market/:marketId', async (req, res) => {
             market_price,
             market_image_url,
             market_content,
-            phone
+            phone,
+            market_like
         } = req.body;
 
         // 필수 정보 검증
@@ -2627,6 +2629,7 @@ app.put('/api/market/:marketId', async (req, res) => {
                 market_price = ?,
                 market_image_url = ?,
                 market_content = ?,
+                market_like = ?,
                 market_update_at = CURRENT_TIMESTAMP
             WHERE market_id = ?
         `, [
@@ -2636,6 +2639,7 @@ app.put('/api/market/:marketId', async (req, res) => {
             market_price,
             market_image_url,
             market_content,
+            market_like || 0, // market_like가 없으면 0으로 설정
             marketId
         ]);
 
@@ -2881,7 +2885,6 @@ app.post('/api/market', async (req, res) => {
 
 // server/index.js
 
-// 전체 상품 조회 API
 app.get('/api/market', async (req, res) => {
     try {
         console.log('=== 마켓 상품 목록 API 호출됨 ===');
@@ -2897,7 +2900,8 @@ app.get('/api/market', async (req, res) => {
                 market_created_at,
                 market_update_at,
                 phone,
-                market_status
+                market_status,
+                market_like
             FROM market
             WHERE market_status IN ('판매중', '예약중')
         `;
