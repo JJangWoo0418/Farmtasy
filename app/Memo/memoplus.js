@@ -172,11 +172,11 @@ export default function MemoPlus() {
               <TouchableOpacity
                 style={styles.qrGenButton}
                 onPress={() => {
-                  const qrValueToSet = name ? `${name}_${Date.now()}` : `${Date.now()}`;
+                  // 10000부터 99999까지의 랜덤 숫자 생성
+                  const randomNum = Math.floor(Math.random() * 90000) + 10000;
+                  const qrValueToSet = randomNum.toString();
                   console.log('=== QR코드 생성 ===');
                   console.log('생성된 QR값:', qrValueToSet);
-                  console.log('작물 이름:', name);
-                  console.log('타임스탬프:', Date.now());
                   setQrValue(qrValueToSet);
                   setShowQR(true);
                 }}
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   container: { backgroundColor: '#fff', padding: 16, flexGrow: 1 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, justifyContent: 'space-between', marginTop: -15 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  title: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1 , marginRight: 20},
+  title: { fontWeight: 'bold', fontSize: 18, textAlign: 'center', flex: 1, marginRight: 20 },
   deleteIcon: { width: 22, height: 22, resizeMode: 'contain', marginRight: 4 },
   photoBox: {
     width: '100%',
@@ -257,9 +257,9 @@ const styles = StyleSheet.create({
   },
   photo: { width: '100%', height: '100%', borderRadius: 16 },
   icon: { width: 60, height: 60, marginBottom: 8 },
-  photoText: {fontSize: 16, color: '#222', fontWeight: 'bold' },
-  label: {fontWeight: 'bold', fontSize: 20, marginTop: 15, marginBottom: 4 },
-  
+  photoText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
+  label: { fontWeight: 'bold', fontSize: 20, marginTop: 15, marginBottom: 4 },
+
   input: {
     borderRadius: 8,
     paddingHorizontal: 12,

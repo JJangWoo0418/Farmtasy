@@ -28,8 +28,8 @@ const ProfilePage = () => {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/user?phone=${route.params?.phone}`);
             const data = await response.json();
             setUserData(data);
-            setIntroduction(data.introduction || '한 줄 프로필을 입력해주세요');
-            setAboutMe(data.about_me || '내 소개를 입력해주세요');
+            setIntroduction(data.introduction || '한 줄 프로필이 아직 없습니다');
+            setAboutMe(data.about_me || '내 소개가 아직 없습니다');
         } catch (error) {
             console.error('사용자 정보 조회 실패:', error);
         }

@@ -63,7 +63,6 @@ const Map = () => {
     const [isFarmModalVisible, setIsFarmModalVisible] = useState(false);
     const [showCropActionModal, setShowCropActionModal] = useState(false);
     const [selectedCrop, setSelectedCrop] = useState(null);
-    const [createSuccessModalVisible, setCreateSuccessModalVisible] = useState(false);
     const [farmActionModal, setFarmActionModal] = useState({ visible: false, area: null });
     // 위치 수정 모드 관련 상태
     const [isModifyingLocation, setIsModifyingLocation] = useState(false);
@@ -757,9 +756,9 @@ const Map = () => {
         }
         setIsModifyingLocation(true);
         setModifyingTarget(crop.cropdetail_id);
-        setModifyingLocation({ 
-            latitude: Number(crop.latitude), 
-            longitude: Number(crop.longitude) 
+        setModifyingLocation({
+            latitude: Number(crop.latitude),
+            longitude: Number(crop.longitude)
         });
         // 현재 위치로 지도 이동
         setRegion({
@@ -789,7 +788,7 @@ const Map = () => {
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/location/${modifyingTarget}`, {
                 method: 'PUT',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
@@ -810,20 +809,29 @@ const Map = () => {
             const result = await response.json();
             console.log('위치 수정 성공:', result);
 
-            // 성공 모달 표시
-            setModifySuccessModalVisible(true);
-            
-            // 상태 초기화
-            setIsModifyingLocation(false);
-            setModifyingTarget(null);
-            setModifyingLocation(null);
+            // 성공 Alert 표시
+            Alert.alert(
+                '위치 수정 완료',
+                '위치가 성공적으로 수정되었습니다.',
+                [
+                    {
+                        text: '확인',
+                        onPress: () => {
+                            // 상태 초기화
+                            setIsModifyingLocation(false);
+                            setModifyingTarget(null);
+                            setModifyingLocation(null);
+                        }
+                    }
+                ]
+            );
 
             // 지도 패치 먼저 실행
             await fetchCrops();
 
             // 패치 완료 후 UI 업데이트
-            setManagedCrops(prevCrops => 
-                prevCrops.map(crop => 
+            setManagedCrops(prevCrops =>
+                prevCrops.map(crop =>
                     crop.cropdetail_id === modifyingTarget
                         ? {
                             ...crop,
@@ -982,7 +990,31 @@ const Map = () => {
                 return;
             }
             // 저장 성공 시 성공 모달 표시
-            setCreateSuccessModalVisible(true);
+            Alert.alert(
+                '상세작물 생성 완료',
+                '상세작물이 성공적으로 생성되었습니다.',
+                [
+                    {
+                        text: '확인',
+                        onPress: () => {
+                            router.push({
+                                pathname: '/Memo/memolist',
+                                params: {
+                                    userData: params.userData,
+                                    phone: params.phone,
+                                    name: params.name,
+                                    region: params.region,
+                                    introduction: params.introduction,
+                                    farmId: params.farmId,
+                                    farmName: params.farmName,
+                                    cropId: params.cropId,
+                                    detailId: params.detailId,
+                                }
+                            });
+                        }
+                    }
+                ]
+            );
             setSaving(false);
             return;
         } catch (e) {
@@ -1456,42 +1488,6 @@ const Map = () => {
             </Modal>
 
             <Modal
-                visible={createSuccessModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setCreateSuccessModalVisible(false)}
-            >
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>상세작물 생성 완료</Text>
-                        <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>상세작물이 성공적으로 생성되었습니다.</Text>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setCreateSuccessModalVisible(false);
-                                router.push({
-                                    pathname: '/Memo/memolist',
-                                    params: {
-                                        userData: params.userData,
-                                        phone: params.phone,
-                                        name: params.name,
-                                        region: params.region,
-                                        introduction: params.introduction,
-                                        farmId: params.farmId,
-                                        farmName: params.farmName,
-                                        cropId: params.cropId,
-                                        detailId: params.detailId,
-                                    }
-                                });
-                            }}
-                            style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-
-            <Modal
                 visible={farmActionModal.visible}
                 transparent
                 animationType="fade"
@@ -1528,27 +1524,6 @@ const Map = () => {
                                 <Text style={{ fontSize: 16 }}>취소</Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* 위치 수정 성공 모달 */}
-            <Modal
-                visible={modifySuccessModalVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setModifySuccessModalVisible(false)}
-            >
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>위치 수정 완료</Text>
-                        <Text style={{ fontSize: 16, marginBottom: 20, textAlign: 'center' }}>위치가 성공적으로 수정되었습니다.</Text>
-                        <TouchableOpacity
-                            onPress={() => setModifySuccessModalVisible(false)}
-                            style={{ backgroundColor: '#22CC6B', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24 }}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>확인</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
