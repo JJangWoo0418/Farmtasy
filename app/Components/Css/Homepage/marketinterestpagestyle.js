@@ -177,4 +177,20 @@ export default StyleSheet.create({
         backgroundColor: '#22CC6B',
         zIndex: 0,
     },
+    likeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 4,
+        alignSelf: 'flex-start', // 왼쪽 정렬로 변경
+    },
+    heartgreenIcon: {
+        width: 14,
+        height: 14,
+        resizeMode: 'contain',
+    },
+    likeCount: {
+        fontSize: 14,
+        color: '#666',
+    },
 });

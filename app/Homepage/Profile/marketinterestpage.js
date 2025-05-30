@@ -91,6 +91,10 @@ const MarketInterestPage = () => {
                 <View style={styles.productDetails}>
                     <Text style={styles.productLocation}>{item.market_category}</Text>
                 </View>
+                <View style={styles.likeContainer}>
+                    <Image source={require('../../../assets/heartgreenicon.png')} style={styles.heartgreenIcon} />
+                    <Text style={styles.likeCount}>{item.market_like || 0}</Text>
+                </View>
             </TouchableOpacity>
         );
     };
