@@ -33,6 +33,7 @@ export default StyleSheet.create({
     label: {
         fontSize: 12,
         color: '#333',
+        fontWeight: 'bold',
     },
     activeTab: {
         backgroundColor: '#eee',
