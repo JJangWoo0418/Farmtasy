@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'black',
   },
-  photo: { width: '100%', height: '100%', borderRadius: 16 },
+  photo: { width: '110%', height: '110%', borderRadius: 16 },
   icon: { width: 60, height: 60, marginBottom: 8 },
   photoText: { fontSize: 16, color: '#222', fontWeight: 'bold' },
   label: { fontWeight: 'bold', fontSize: 20, marginTop: 15, marginBottom: 4 },

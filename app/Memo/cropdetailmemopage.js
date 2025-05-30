@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Modal, TextInput, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/Memo/cropdetailmemopagestyle';
@@ -20,9 +20,13 @@ export default function CropDetailMemoPage() {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [deleteSuccessModalVisible, setDeleteSuccessModalVisible] = useState(false);
 
+
     // 예시 데이터 (실제 데이터는 props나 API로 받아오세요)
     const cropName = params.name || '나의 소중한 감자밭 1호';
     const cropImage = 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc';
+
+    // ScrollView에 ref 추가
+    const scrollViewRef = useRef(null);
 
     useEffect(() => {
         if (params.memo && params.memo !== '[]') {
@@ -197,17 +201,17 @@ export default function CropDetailMemoPage() {
     };
 
     const handleUpdateMemo = async (idx, key, value) => {
-        const updatedMemos = memos.map((memo, i) => 
+        const updatedMemos = memos.map((memo, i) =>
             i === idx ? { ...memo, [key]: value } : memo
         );
         setMemos(updatedMemos);
-    
+
         // 디버깅 로그 추가
         console.log('메모 저장 요청:', {
             detailId: params.detailId,
             memo: updatedMemos
         });
-    
+
         try {
             const res = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
                 method: 'PUT',
@@ -222,17 +226,20 @@ export default function CropDetailMemoPage() {
         }
     };
 
-    // 메모 추가 버튼 클릭 시 저장도 함께 수행
+    // handleAddMemoCard 함수 수정
     const handleAddMemoCard = async () => {
-        const newMemos = [...memos, { title: '', content: '' }];
+        // 새로운 메모를 배열의 맨 앞에 추가
+        const newMemos = [{ title: '', content: '' }, ...memos];
         setMemos(newMemos);
-        
+
         try {
             await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ memo: newMemos }),
             });
+            // 메모 추가 후 스크롤을 맨 위로 올림
+            scrollViewRef.current?.scrollTo({ y: 0, animated: true });
         } catch (e) {
             console.error('메모 추가 실패:', e);
             Alert.alert('오류', '메모 추가에 실패했습니다.');
@@ -243,7 +250,7 @@ export default function CropDetailMemoPage() {
     const handleDeleteMemoCard = async (idx) => {
         const newMemos = memos.filter((_, i) => i !== idx);
         setMemos(newMemos);
-        
+
         try {
             await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
                 method: 'PUT',
@@ -379,6 +386,7 @@ export default function CropDetailMemoPage() {
 
                 {/* 메모 카드만 스크롤 */}
                 <ScrollView
+                    ref={scrollViewRef}
                     style={styles.memoCardWrapper}
                     contentContainerStyle={{ paddingBottom: 40 }}
                     keyboardShouldPersistTaps="handled"

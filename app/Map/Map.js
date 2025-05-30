@@ -1177,7 +1177,7 @@ const Map = () => {
                             <Polygon
                                 coordinates={area.coordinates}
                                 strokeColor="green"
-                                strokeWidth={3}
+                                strokeWidth={4}
                                 fillColor="rgba(0, 255, 0, 0.1)"
                                 tappable={true}
                                 onPress={() => {
@@ -1234,7 +1234,7 @@ const Map = () => {
                                 shadowRadius: 5,
                                 elevation: 5
                             }}>
-                                <Image source={require('../../assets/planticon2.png')} style={{ width: 30, height: 30 }} />
+                                <Image source={require('../../assets/planticon2.png')} style={{ width: 20, height: 20 }} />
                             </View>
                         </Marker>
                     );
@@ -1261,6 +1261,7 @@ const Map = () => {
                         coordinates={drawnPath}
                         strokeColor={modifyingAreaId ? "orange" : "rgba(0, 255, 0, 0.8)"}
                         strokeWidth={4}
+                        zIndex={1000}
                     />
                 )}
 
