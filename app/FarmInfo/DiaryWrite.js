@@ -360,7 +360,7 @@ export default function DiaryWrite() {
 
   // MarketPriceScreen 작물추가 모달 완전 동일하게 복제
   const renderCropModal = () => (
-    <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={closeModal}>
+    <Modal visible={modalVisible} animationType="fade" transparent onRequestClose={closeModal}>
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           {renderModalHeader()}

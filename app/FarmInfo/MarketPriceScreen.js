@@ -1062,7 +1062,7 @@ export default function MarketPriceScreen() {
       {/* Modal: 작물 추가 */}
       <Modal
         visible={modalVisible}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={closeModal}
       >
