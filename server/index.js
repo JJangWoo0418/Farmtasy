@@ -2998,10 +2998,11 @@ app.get('/api/market/category/:category', async (req, res) => {
                 market_created_at,
                 market_update_at,
                 phone,
-                market_status
+                market_status,
+                market_like
             FROM market
             WHERE market_category = ? 
-            AND (market_status = '판매중' OR market_status = '예약중')  // 명시적으로 상태 지정
+            AND (market_status = '판매중' OR market_status = '예약중')
         `, [dbCategory]);
 
         console.log('조회된 상품 수:', products.length);
