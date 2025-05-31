@@ -27,6 +27,11 @@ export default StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 125
     },
+    title2: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginLeft: 105
+    },
     topicBox: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -2958,6 +2958,64 @@ app.get('/api/market/comment', async (req, res) => {
     }
 });
 
+// 게시글 수정 API
+app.put('/api/post/:postId', async (req, res) => {
+    console.log('게시글 수정 API 호출됨');
+    const { postId } = req.params;
+    const { post_content, image_urls, post_category } = req.body;
+    
+    try {
+        console.log('수정 요청된 post_id:', postId);
+        console.log('수정할 데이터:', req.body);
+
+        // 1. 먼저 해당 게시글이 존재하는지 확인
+        const [post] = await pool.query(
+            'SELECT * FROM post WHERE post_id = ?',
+            [postId]
+        );
+
+        console.log('조회된 게시글:', post);
+
+        if (post.length === 0) {
+            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+        }
+
+        // 2. 게시글 수정
+        const [updateResult] = await pool.query(
+            `UPDATE post 
+             SET post_content = ?, 
+                 image_urls = ?, 
+                 post_category = ?,
+                 post_update_at = CURRENT_TIMESTAMP
+             WHERE post_id = ?`,
+            [post_content, JSON.stringify(image_urls), post_category, postId]
+        );
+
+        console.log('수정 결과:', updateResult);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(400).json({ message: '게시글 수정에 실패했습니다.' });
+        }
+
+        // 3. 수정된 게시글 정보 조회
+        const [updatedPost] = await pool.query(
+            'SELECT * FROM post WHERE post_id = ?',
+            [postId]
+        );
+
+        res.status(200).json({ 
+            message: '게시글이 성공적으로 수정되었습니다.',
+            post: updatedPost[0]
+        });
+    } catch (error) {
+        console.error('게시글 수정 중 오류 발생:', error);
+        res.status(500).json({ 
+            message: '게시글 수정 중 오류가 발생했습니다.',
+            error: error.message 
+        });
+    }
+});
+
 // 게시글 삭제 API
 app.delete('/api/post/:postId', async (req, res) => {
     console.log('게시글 삭제 API 호출됨');

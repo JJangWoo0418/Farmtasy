@@ -5,6 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import API_CONFIG from '../../DB/api';
 import userIcon from '../../../assets/usericon.png'; // 실제 경로에 맞게 수정
 import Toast from 'react-native-root-toast';
+import { router } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -565,7 +566,8 @@ const CollectionWritingpage = () => {
                                     {
                                         text: "수정",
                                         onPress: () => {
-                                            navigation.push('Homepage/Post/postdetailpage', {
+                                            console.log('수정할 게시글 데이터:', item); // 데이터 확인용 로그
+                                            navigation.navigate('Homepage/Post/postupdatepage', {
                                                 post: { ...item, phone: item.phone },
                                                 introduction: item.introduction || '소개 미설정',
                                                 phone,
@@ -573,7 +575,19 @@ const CollectionWritingpage = () => {
                                                 region,
                                                 profile,
                                                 introduction,
-                                                isEditing: true
+                                                isEditing: true,
+                                                editData: {
+                                                    post_id: item.id,
+                                                    category: item.category,
+                                                    text: item.text,
+                                                    image_urls: item.image_urls || [],
+                                                    time: item.time,
+                                                    user: item.user,
+                                                    region: item.region,
+                                                    profile_image: item.profile_image,
+                                                    likes: item.likes,
+                                                    commentCount: item.commentCount
+                                                }
                                             });
                                         }
                                     },
@@ -583,17 +597,17 @@ const CollectionWritingpage = () => {
                                             try {
                                                 console.log('삭제할 게시글 정보:', item);
                                                 console.log('삭제할 id:', item.id);  // post_id 대신 id 사용
-                                        
+
                                                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/${item.id}`, {  // item.post_id를 item.id로 변경
                                                     method: 'DELETE',
                                                     headers: {
                                                         'Content-Type': 'application/json'
                                                     }
                                                 });
-                                                
+
                                                 const data = await response.json();
                                                 console.log('서버 응답:', data);
-                                                
+
                                                 if (response.ok) {
                                                     setPosts(prevPosts => prevPosts.filter(post => post.id !== item.id));  // post_id를 id로 변경
                                                     Alert.alert("알림", "게시글이 삭제되었습니다.");
