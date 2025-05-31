@@ -429,11 +429,6 @@ const CollectionWritingpage = () => {
                     ToastAndroid.SHORT
                 );
             } else {
-                Alert.alert(
-                    result.is_bookmarked
-                        ? '북마크 리스트에 추가되었습니다.'
-                        : '북마크가 해제되었습니다.'
-                );
             }
         } catch (error) {
             // 에러 처리 (필요시)
@@ -531,7 +526,7 @@ const CollectionWritingpage = () => {
     // renderPost useCallback으로 고정
     const renderPost = useCallback(
         ({ item }) => {
-            // 애니메이션 값 초기화
+            // 애니메이션 값 초기화 (원래대로 복구)
             if (!heartAnimationsRef.current[item.id]) {
                 heartAnimationsRef.current[item.id] = new Animated.Value(1);
             }
@@ -549,15 +544,74 @@ const CollectionWritingpage = () => {
                         bookmarkAnimation={bookmarkAnimationsRef.current[item.id]}
                         isBookmarked={bookmarkedPosts[item.id] || false}
                         navigateToDetail={() => {
-                            navigation.push('Homepage/Post/postdetailpage', {
-                                post: { ...item, phone: item.phone },
-                                introduction: item.introduction || '소개 미설정',
-                                phone,
-                                name,
-                                region,
-                                profile,
-                                introduction
-                            });
+                            Alert.alert(
+                                "게시글 관리",
+                                "원하시는 작업을 선택해주세요",
+                                [
+                                    {
+                                        text: "게시글 보기",
+                                        onPress: () => {
+                                            navigation.push('Homepage/Post/postdetailpage', {
+                                                post: { ...item, phone: item.phone },
+                                                introduction: item.introduction || '소개 미설정',
+                                                phone,
+                                                name,
+                                                region,
+                                                profile,
+                                                introduction
+                                            });
+                                        }
+                                    },
+                                    {
+                                        text: "수정",
+                                        onPress: () => {
+                                            navigation.push('Homepage/Post/postdetailpage', {
+                                                post: { ...item, phone: item.phone },
+                                                introduction: item.introduction || '소개 미설정',
+                                                phone,
+                                                name,
+                                                region,
+                                                profile,
+                                                introduction,
+                                                isEditing: true
+                                            });
+                                        }
+                                    },
+                                    {
+                                        text: "삭제",
+                                        onPress: async () => {
+                                            try {
+                                                console.log('삭제할 게시글 정보:', item);
+                                                console.log('삭제할 id:', item.id);  // post_id 대신 id 사용
+                                        
+                                                const response = await fetch(`${API_CONFIG.BASE_URL}/api/post/${item.id}`, {  // item.post_id를 item.id로 변경
+                                                    method: 'DELETE',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    }
+                                                });
+                                                
+                                                const data = await response.json();
+                                                console.log('서버 응답:', data);
+                                                
+                                                if (response.ok) {
+                                                    setPosts(prevPosts => prevPosts.filter(post => post.id !== item.id));  // post_id를 id로 변경
+                                                    Alert.alert("알림", "게시글이 삭제되었습니다.");
+                                                } else {
+                                                    Alert.alert("오류", data.message || "게시글 삭제에 실패했습니다.");
+                                                }
+                                            } catch (error) {
+                                                console.error('게시글 삭제 에러:', error);
+                                                Alert.alert("오류", "게시글 삭제 중 오류가 발생했습니다.");
+                                            }
+                                        }
+                                    },
+                                    {
+                                        text: "취소",
+                                        style: "cancel"
+                                    }
+                                ]
+                            );
                         }}
                         formatDate={formatDate}
                     />

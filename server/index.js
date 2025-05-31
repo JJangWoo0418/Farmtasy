@@ -2958,6 +2958,67 @@ app.get('/api/market/comment', async (req, res) => {
     }
 });
 
+// 게시글 삭제 API
+app.delete('/api/post/:postId', async (req, res) => {
+    console.log('게시글 삭제 API 호출됨');
+    const { postId } = req.params;
+    
+    try {
+        console.log('삭제 요청된 post_id:', postId);
+
+        // 1. 먼저 해당 게시글이 존재하는지 확인
+        const [post] = await pool.query(
+            'SELECT * FROM post WHERE post_id = ?',
+            [postId]
+        );
+
+        console.log('조회된 게시글:', post);
+
+        if (post.length === 0) {
+            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+        }
+
+        // 2. 관련된 데이터 먼저 삭제
+        // 2-1. 좋아요 삭제
+        await pool.query(
+            'DELETE FROM post_likes WHERE post_id = ?',  // post_like를 post_likes로 수정
+            [postId]
+        );
+
+        // 2-2. 댓글 삭제
+        await pool.query(
+            'DELETE FROM comment WHERE post_id = ?',
+            [postId]
+        );
+
+        // 2-3. 북마크 삭제
+        await pool.query(
+            'DELETE FROM post_bookmarks WHERE post_id = ?',
+            [postId]
+        );
+
+        // 3. 마지막으로 게시글 삭제
+        const [deleteResult] = await pool.query(
+            'DELETE FROM post WHERE post_id = ?',
+            [postId]
+        );
+
+        console.log('삭제 결과:', deleteResult);
+
+        if (deleteResult.affectedRows === 0) {
+            return res.status(400).json({ message: '게시글 삭제에 실패했습니다.' });
+        }
+
+        res.status(200).json({ message: '게시글이 성공적으로 삭제되었습니다.' });
+    } catch (error) {
+        console.error('게시글 삭제 중 오류 발생:', error);
+        res.status(500).json({ 
+            message: '게시글 삭제 중 오류가 발생했습니다.',
+            error: error.message 
+        });
+    }
+});
+
 // 카테고리별 상품 조회 API
 app.get('/api/market/category/:category', async (req, res) => {
     try {
