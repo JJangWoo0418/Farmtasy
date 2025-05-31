@@ -371,16 +371,18 @@ export default StyleSheet.create({
         height: '100%',
         backgroundColor: 'rgba(0,0,0,0.2)',
         zIndex: 100,
-        flexDirection: 'row',
-        marginBottom: 0,
     },
 
     drawerStatic: {
-        width: SCREEN_WIDTH * 0.55, // ✅ 화면의 절반 너비로 조정
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        width: SCREEN_WIDTH * 0.55,
         backgroundColor: 'white',
         paddingTop: 20,
         paddingHorizontal: 20,
-        zIndex: 20,
+        zIndex: 101,
         shadowColor: '#000',
         shadowOffset: { width: 2, height: 0 },
         shadowOpacity: 0.3,
