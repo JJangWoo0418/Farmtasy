@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Animated, FlatList } from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, Animated, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../Components/Css/Market/marketstyle';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
@@ -62,6 +62,38 @@ const Market = () => {
     const [searchText, setSearchText] = useState('');
 
     const [selectedCategory, setSelectedCategory] = useState(null);
+
+    // 알림 관련 상태 추가
+    const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+
+    // 알림 모달 열 때 알림 목록 불러오기
+    const openNotificationModal = () => {
+        setIsNotificationModalVisible(true);
+        fetchNotifications();
+    };
+
+    // 알림 목록 가져오기
+    const fetchNotifications = async () => {
+        setIsLoadingNotifications(true);
+        try {
+            const response = await axios.get(`${API_CONFIG.BASE_URL}/api/notifications?phone=${phone}`);
+            if (response.data.success) {
+                setNotifications(response.data.notifications);
+            }
+        } catch (error) {
+            console.error('알림 조회 실패:', error);
+        } finally {
+            setIsLoadingNotifications(false);
+        }
+    };
+
+    // 알림 내용 요약 함수
+    const getSummary = (text) => {
+        if (!text) return '';
+        return text.length > 20 ? text.substring(0, 20) + '...' : text;
+    };
 
 
     // API 호출
@@ -162,6 +194,46 @@ const Market = () => {
             updatedCart = [...cartItems, { ...item, quantity: 1 }];
         }
         setCartItems(updatedCart);
+    };
+
+    // 날짜 포맷팅 함수 수정
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+
+        try {
+            // 이미 포맷팅된 날짜 문자열인 경우 연도 제거하고 24시간 형식으로 변환
+            if (dateString.includes('년') && dateString.includes('월') && dateString.includes('일')) {
+                const timeMatch = dateString.match(/(\d+):(\d+)/);
+                if (timeMatch) {
+                    const hour = parseInt(timeMatch[1]);
+                    const minute = timeMatch[2];
+                    return dateString
+                        .replace(/\d{4}년\s/, '')
+                        .replace(/오전\s/, '')
+                        .replace(/오후\s/, '')
+                        .replace(/\d+:\d+/, `${hour.toString().padStart(2, '0')}:${minute}`);
+                }
+                return dateString
+                    .replace(/\d{4}년\s/, '')
+                    .replace(/오전\s/, '')
+                    .replace(/오후\s/, '');
+            }
+
+            // ISO 형식의 날짜인 경우
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hour = date.getHours().toString().padStart(2, '0');
+            const minute = date.getMinutes().toString().padStart(2, '0');
+
+            return `${month}월 ${day}일 ${hour}:${minute}`;
+        } catch (error) {
+            return '';
+        }
     };
 
     // 로컬 removeFromCart 함수 구현
@@ -292,10 +364,118 @@ const Market = () => {
                     />
                 </View>
 
-                <TouchableOpacity style={styles.bellIconWrapper}>
-                    <Image source={require('../../assets/bellicon.png')} />
+                <TouchableOpacity
+                    style={styles.bellIconWrapper}
+                    onPress={openNotificationModal}  // 알림 모달 열기 함수 연결
+                >
+                    <Image source={require('../../assets/bellicon.png')} style={styles.bellIcon} />
                 </TouchableOpacity>
             </View>
+
+            {/* 알림 모달 */}
+            <Modal
+                visible={isNotificationModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setIsNotificationModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>알림</Text>
+                            <TouchableOpacity
+                                onPress={() => setIsNotificationModalVisible(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>닫기</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.notificationList}>
+                            {notifications.length > 0 ? (
+                                notifications.map((notification, index) => (
+                                    <View
+                                        key={`${notification.notification_id}_${index}`}  // 고유한 key 생성
+                                        style={styles.notificationItem}
+                                    >
+                                        <Text style={styles.actorName}>
+                                            {notification.actor_name}
+                                        </Text>
+                                        <Text style={styles.notificationText}>
+                                            {notification.type === 'POST_LIKE' && (
+                                                <>
+                                                    내 게시글에 좋아요를 눌렀습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.post_content)}"</Text>
+                                                </>
+                                            )}
+                                            {notification.type === 'MARKET_POST_LIKE' && (
+                                                <>
+                                                    내 장터글에 좋아요를 눌렀습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>
+                                                </>
+                                            )}
+                                            {notification.type === 'COMMENT_LIKE' && (
+                                                <>
+                                                    내 댓글에 좋아요를 눌렀습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                                                    {'\n'}
+                                                    (게시글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_post_content)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'POST_COMMENT' && (
+                                                <>
+                                                    내 게시글에 댓글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                                                    {'\n'}(게시글 : <Text style={styles.highlightText}>"{getSummary(notification.post_content)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'COMMENT_REPLY' && (
+                                                <>
+                                                    내 댓글에 답글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>
+                                                        "{getSummary(notification.comment_content)}"  {/* 다른 사람이 작성한 답글 내용 */}
+                                                    </Text>
+                                                    {'\n'}
+                                                    (내 댓글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_comment_content)}"</Text>)
+                                                    {'\n'}
+                                                    (게시글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_post_content)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'MARKET_COMMENT' && (
+                                                <>
+                                                    내 장터글에 댓글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.market_comment_content)}"</Text>
+                                                    {'\n'}(장터글 : <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'MARKET_COMMENT_REPLY' && (
+                                                <>
+                                                    내 장터 댓글에 답글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>
+                                                        "{getSummary(notification.market_comment_content)}"  {/* 다른 사람이 작성한 답글 내용 */}
+                                                    </Text>
+                                                    {'\n'}
+                                                    (내 댓글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_market_comment_content)}"</Text>)
+                                                    {'\n'}
+                                                    (장터글 : <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>)
+                                                </>
+                                            )}
+                                        </Text>
+                                        <Text style={styles.notificationTime}>
+                                            {formatDate(notification.created_at)}
+                                        </Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <View style={styles.emptyNotification}>
+                                    <Text style={styles.emptyNotificationText}>
+                                        새로운 알림이 없습니다.
+                                    </Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
             {/* 카테고리 + 접기/펼치기 버튼 */}
             {!isFolded && (
