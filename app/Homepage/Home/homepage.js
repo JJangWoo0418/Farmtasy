@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert, Platform, ToastAndroid } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, TextInput, Animated, StatusBar, ScrollView, SafeAreaView, ActivityIndicator, Alert, Platform, ToastAndroid, Modal } from 'react-native';
 import styles from '../../Components/Css/Homepage/homepagestyle';
 import { FontAwesome } from '@expo/vector-icons';
 import BottomTabNavigator from '../../Navigator/BottomTabNavigator';
@@ -23,6 +23,33 @@ const HomePage = () => {
     const bookmarkAnimationsRef = useRef({});
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
+
+    const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
+    const [notifications, setNotifications] = useState([]); // 알림 목록 상태
+
+    function getSummary(text, maxLength = 20) {
+        if (!text) return '';
+        return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+    }
+
+    // 알림 목록 불러오기
+    const fetchNotifications = async () => {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications?phone=${phone}`);
+            const data = await response.json();
+            if (data.success) {
+                setNotifications(data.notifications);
+            }
+        } catch (error) {
+            console.error('알림 로딩 실패:', error);
+        }
+    };
+
+    // 알림 모달 열 때 알림 목록 불러오기
+    const openNotificationModal = () => {
+        setIsNotificationModalVisible(true);
+        fetchNotifications();
+    };
 
     const openDrawer = () => {
         setDrawerVisible(true);
@@ -145,6 +172,71 @@ const HomePage = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // 알림 카드 컴포넌트
+    const NotificationCard = ({ notification }) => {
+        return (
+            <View style={styles.notificationCard}>
+                <View style={styles.notificationHeader}>
+                    <Text style={styles.actorName}>{notification.actor_name}</Text>
+                </View>
+
+                <Text style={styles.notificationContent}>
+                    {notification.type === 'POST_LIKE' && (
+                        <>
+                            내 글에 좋아요를 눌렀습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.post_content)}"</Text>
+                        </>
+                    )}
+                    {notification.type === 'MARKET_POST_LIKE' && (
+                        <>
+                            내 장터글에 좋아요를 눌렀습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>
+                        </>
+                    )}
+                    {notification.type === 'COMMENT_LIKE' && (
+                        <>
+                            내 댓글에 좋아요를 눌렀습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                            {'\n'}(게시글: <Text style={styles.highlightText}>"{getSummary(notification.parent_post_content)}"</Text>)
+                        </>
+                    )}
+                    {notification.type === 'POST_COMMENT' && (
+                        <>
+                            내 게시글에 댓글을 남겼습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                            {'\n'}(게시글: <Text style={styles.highlightText}>"{getSummary(notification.post_content)}"</Text>)
+                        </>
+                    )}
+                    {notification.type === 'COMMENT_REPLY' && (
+                        <>
+                            내 댓글에 답글을 남겼습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                            {'\n'}(게시글: <Text style={styles.highlightText}>"{getSummary(notification.parent_post_content)}"</Text>)
+                        </>
+                    )}
+                    {notification.type === 'MARKET_COMMENT' && (
+                        <>
+                            내 장터글에 댓글을 남겼습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.market_comment_content)}"</Text>
+                            {'\n'}(장터글: <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>)
+                        </>
+                    )}
+                    {notification.type === 'MARKET_COMMENT_REPLY' && (
+                        <>
+                            내 장터 댓글에 답글을 남겼습니다:{'\n'}
+                            <Text style={styles.highlightText}>"{getSummary(notification.market_comment_content)}"</Text>
+                            {'\n'}(장터글: <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>)
+                        </>
+                    )}
+                </Text>
+
+                <Text style={styles.notificationTime}>
+                    {formatDate(notification.created_at)}
+                </Text>
+            </View>
+        );
     };
 
     // 날짜 포맷팅 함수 수정
@@ -682,8 +774,11 @@ const HomePage = () => {
                             placeholderTextColor="#aaa"
                         />
                     </View>
-                    <TouchableOpacity style={styles.bellIconWrapper}>
-                        <Image source={require('../../../assets/bellicon.png')} />
+                    <TouchableOpacity
+                        style={styles.bellIconWrapper}
+                        onPress={openNotificationModal}
+                    >
+                        <Image source={require('../../../assets/bellicon.png')} style={styles.bellIcon} />
                     </TouchableOpacity>
                 </View>
                 <View style={styles.menuContainer}>
@@ -764,54 +859,64 @@ const HomePage = () => {
                         <Text style={styles.drawerText}>프로필</Text>
                     </TouchableOpacity>
                     <Text style={styles.drawerTitle}>장터</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Market/market', params: {
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({
+                        pathname: '/Market/market', params: {
                             userData: route.params?.userData,
                             phone: route.params?.phone,
                             name: route.params?.name,
                             region: route.params?.region,
                             introduction: route.params?.introduction
-                        } })}>
+                        }
+                    })}>
                         <Image source={require('../../../assets/shopicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>장터</Text>
                     </TouchableOpacity>
 
                     <Text style={styles.drawerTitle}>농사 정보</Text>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/Home/directpaymentpage', params: {
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({
+                        pathname: '/Homepage/Home/directpaymentpage', params: {
                             userData: route.params?.userData,
                             phone: route.params?.phone,
                             name: route.params?.name,
                             region: route.params?.region
-                        } })}>
+                        }
+                    })}>
                         <Image source={require('../../../assets/directdeposit2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>면적 직불금 계산기</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/FarmInfo/MarketPriceScreen', params: {
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({
+                        pathname: '/FarmInfo/MarketPriceScreen', params: {
                             userData: route.params?.userData,
                             phone: route.params?.phone,
                             name: route.params?.name,
                             region: route.params?.region,
                             introduction: route.params?.introduction
-                        } })}>
+                        }
+                    })}>
                         <Image source={require('../../../assets/quoteicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>작물 시세</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/FarmInfo/Weather', params: {
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({
+                        pathname: '/FarmInfo/Weather', params: {
                             userData: route.params?.userData,
                             phone: route.params?.phone,
                             name: route.params?.name,
                             region: route.params?.region,
                             introduction: route.params?.introduction
-                        } })}>
+                        }
+                    })}>
                         <Image source={require('../../../assets/weathericon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>날씨</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/FarmInfo/Pests', params: {
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({
+                        pathname: '/FarmInfo/Pests', params: {
                             userData: route.params?.userData,
                             phone: route.params?.phone,
                             name: route.params?.name,
                             region: route.params?.region,
                             introduction: route.params?.introduction
-                        } })}>
+                        }
+                    })}>
                         <Image source={require('../../../assets/bugicon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>병해충</Text>
                     </TouchableOpacity>
@@ -852,10 +957,118 @@ const HomePage = () => {
                     />
                 </View>
 
-                <TouchableOpacity style={styles.bellIconWrapper}>
-                    <Image source={require('../../../assets/bellicon.png')} />
+                <TouchableOpacity
+                    style={styles.bellIconWrapper}
+                    onPress={openNotificationModal} // ✅
+                >
+                    <Image source={require('../../../assets/bellicon.png')} style={styles.bellIcon} />
                 </TouchableOpacity>
             </View>
+
+            {/* 알림 모달 */}
+            <Modal
+                visible={isNotificationModalVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setIsNotificationModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>알림</Text>
+                            <TouchableOpacity
+                                onPress={() => setIsNotificationModalVisible(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>닫기</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.notificationList}>
+                            {notifications.length > 0 ? (
+                                notifications.map((notification, index) => (
+                                    <View
+                                        key={`${notification.notification_id}_${index}`}  // 고유한 key 생성
+                                        style={styles.notificationItem}
+                                    >
+                                        <Text style={styles.actorName}>
+                                            {notification.actor_name}
+                                        </Text>
+                                        <Text style={styles.notificationText}>
+                                            {notification.type === 'POST_LIKE' && (
+                                                <>
+                                                    내 게시글에 좋아요를 눌렀습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.post_content)}"</Text>
+                                                </>
+                                            )}
+                                            {notification.type === 'MARKET_POST_LIKE' && (
+                                                <>
+                                                    내 장터글에 좋아요를 눌렀습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>
+                                                </>
+                                            )}
+                                            {notification.type === 'COMMENT_LIKE' && (
+                                                <>
+                                                    내 댓글에 좋아요를 눌렀습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                                                    {'\n'}
+                                                    (게시글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_post_content)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'POST_COMMENT' && (
+                                                <>
+                                                    내 게시글에 댓글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.comment_content)}"</Text>
+                                                    {'\n'}(게시글 : <Text style={styles.highlightText}>"{getSummary(notification.post_content)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'COMMENT_REPLY' && (
+                                                <>
+                                                    내 댓글에 답글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>
+                                                        "{getSummary(notification.comment_content)}"  {/* 다른 사람이 작성한 답글 내용 */}
+                                                    </Text>
+                                                    {'\n'}
+                                                    (내 댓글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_comment_content)}"</Text>)
+                                                    {'\n'}
+                                                    (게시글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_post_content)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'MARKET_COMMENT' && (
+                                                <>
+                                                    내 장터글에 댓글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>"{getSummary(notification.market_comment_content)}"</Text>
+                                                    {'\n'}(장터글 : <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>)
+                                                </>
+                                            )}
+                                            {notification.type === 'MARKET_COMMENT_REPLY' && (
+                                                <>
+                                                    내 장터 댓글에 답글을 남겼습니다 :{'\n'}
+                                                    <Text style={styles.highlightText}>
+                                                        "{getSummary(notification.market_comment_content)}"  {/* 다른 사람이 작성한 답글 내용 */}
+                                                    </Text>
+                                                    {'\n'}
+                                                    (내 댓글 : <Text style={styles.highlightText}>"{getSummary(notification.parent_market_comment_content)}"</Text>)
+                                                    {'\n'}
+                                                    (장터글 : <Text style={styles.highlightText}>"{getSummary(notification.market_name)}"</Text>)
+                                                </>
+                                            )}
+                                        </Text>
+                                        <Text style={styles.notificationTime}>
+                                            {formatDate(notification.created_at)}
+                                        </Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <View style={styles.emptyNotification}>
+                                    <Text style={styles.emptyNotificationText}>
+                                        새로운 알림이 없습니다.
+                                    </Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
             <View style={styles.menuContainer}>
                 <TouchableOpacity style={styles.menuItem} onPress={() => goToPostPage('농사질문')}>
@@ -1057,40 +1270,48 @@ const HomePage = () => {
                 currentTab="홈"
                 onTabPress={(tab) => {
                     if (tab === '질문하기') {
-                        router.push({ pathname: '/Chatbot/questionpage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Chatbot/questionpage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     } else if (tab === '홈') {
-                        router.push({ pathname: '/Homepage/Home/homepage', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Homepage/Home/homepage', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '정보') {
-                        router.push({ pathname: '/FarmInfo/farminfo', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/FarmInfo/farminfo', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                         // 필요시 다른 탭도 추가
                     }
                     else if (tab === '장터') {
-                        router.push({ pathname: '/Market/market', params: {
-                            userData: route.params?.userData,
-                            phone: route.params?.phone,
-                            name: route.params?.name,
-                            region: route.params?.region,
-                            introduction: route.params?.introduction
-                        } });
+                        router.push({
+                            pathname: '/Market/market', params: {
+                                userData: route.params?.userData,
+                                phone: route.params?.phone,
+                                name: route.params?.name,
+                                region: route.params?.region,
+                                introduction: route.params?.introduction
+                            }
+                        });
                     }
                     else if (tab === '내 농장') {
                         router.push({

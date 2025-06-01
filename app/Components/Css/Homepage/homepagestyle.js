@@ -38,9 +38,6 @@ export default StyleSheet.create({
         flex: 1,
         fontSize: 16,
     },
-    bellIcon: {
-        marginLeft: 10,
-    },
     menuContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -317,9 +314,12 @@ export default StyleSheet.create({
 
     bellIconWrapper: {
         paddingHorizontal: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
+    },
+    bellIcon: {
+        width: 25,
+        height: 25,
         resizeMode: 'contain',
+        marginLeft: 0,
     },
     writeButton: {
         position: 'absolute',
@@ -423,6 +423,128 @@ export default StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: '80%',
+        padding: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 3,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 10,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    closeButton: {
+        padding: 5,
+    },
+    closeButtonText: {
+        fontSize: 16,
+        color: 'black',
+    },
+    notificationList: {
+        flex: 1,
+        paddingVertical: 3,
+    },
+    notificationItem: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginHorizontal: 8,
+        marginVertical: 8,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    emptyNotification: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: '#fff',
+        margin: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    emptyNotificationText: {
+        fontSize: 16,
+        color: '#666',
+    },
+    notificationCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginHorizontal: 16,
+        marginVertical: 8,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    notificationHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    actorName: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        paddingBottom: 8,
+    },
+    notificationContent: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 20,
+    },
+    notificationTime: {
+        fontSize: 12,
+        color: '#999',
+        marginTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
+        paddingTop: 8,
+    },
+    highlightText: {
+        color: '#22CC6B',
+        fontWeight: '500',
+    },
+    notificationText: {
+        fontSize: 14,
+        color: '#333',
+        lineHeight: 20,
+    },
+    contentText: {
+        color: '#666',
     },
 });
 

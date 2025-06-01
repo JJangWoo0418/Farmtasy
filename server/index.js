@@ -136,8 +136,16 @@ app.post('/api/register', async (req, res) => {
 
 // 좋아요 저장 API
 app.post('/api/post/post_like', async (req, res) => {
+    console.log('좋아요 저장 API 호출됨');
     try {
         const { postId, like, phone } = req.body;
+
+        // 게시글 작성자 정보 가져오기
+        const [post] = await pool.query(
+            'SELECT phone FROM post WHERE post_id = ?',
+            [postId]
+        );
+        const postAuthorPhone = post[0]?.phone;
 
         // 먼저 현재 좋아요 상태 확인
         const [existingLike] = await pool.query(
@@ -152,27 +160,32 @@ app.post('/api/post/post_like', async (req, res) => {
                     'INSERT INTO post_likes (post_id, user_phone) VALUES (?, ?)',
                     [postId, phone]
                 );
-                // post 테이블의 post_like 수 증가
                 await pool.query(
                     'UPDATE post SET post_like = post_like + 1 WHERE post_id = ?',
                     [postId]
                 );
+                // 알림 생성 (본인 글이 아닐 때만)
+                if (postAuthorPhone && postAuthorPhone !== phone) {
+                    await createNotification({
+                        recipientPhone: postAuthorPhone,
+                        actorPhone: phone,
+                        type: 'POST_LIKE',
+                        targetPostId: postId
+                    });
+                }
             }
         } else {
             // 좋아요 삭제 - 본인이 누른 좋아요만 취소 가능
             if (existingLike.length > 0) {
-                // 좋아요를 누른 사용자가 맞는지 확인
                 const [likeOwner] = await pool.query(
                     'SELECT user_phone FROM post_likes WHERE post_id = ? AND user_phone = ?',
                     [postId, phone]
                 );
-
                 if (likeOwner.length > 0) {
                     await pool.query(
                         'DELETE FROM post_likes WHERE post_id = ? AND user_phone = ?',
                         [postId, phone]
                     );
-                    // post 테이블의 post_like 수 감소
                     await pool.query(
                         'UPDATE post SET post_like = GREATEST(post_like - 1, 0) WHERE post_id = ?',
                         [postId]
@@ -551,8 +564,16 @@ app.post('/api/post', async (req, res) => {
 
 // 댓글 좋아요 API
 app.post('/api/comment/like', async (req, res) => {
+    console.log('댓글 좋아요 API 호출됨');
     try {
         const { commentId, like, phone } = req.body;
+
+        // 댓글 작성자 정보 가져오기
+        const [comment] = await pool.query(
+            'SELECT phone FROM comment WHERE comment_id = ?',
+            [commentId]
+        );
+        const commentAuthorPhone = comment[0]?.phone;
 
         // 먼저 현재 좋아요 상태 확인
         const [existingLike] = await pool.query(
@@ -567,6 +588,15 @@ app.post('/api/comment/like', async (req, res) => {
                     'INSERT INTO comment_likes (comment_id, user_phone) VALUES (?, ?)',
                     [commentId, phone]
                 );
+                // 알림 생성 (본인 댓글이 아닐 때만)
+                if (commentAuthorPhone && commentAuthorPhone !== phone) {
+                    await createNotification({
+                        recipientPhone: commentAuthorPhone,
+                        actorPhone: phone,
+                        type: 'COMMENT_LIKE',
+                        targetCommentId: commentId
+                    });
+                }
             }
         } else {
             // 좋아요 삭제
@@ -658,15 +688,62 @@ app.get('/api/comment', async (req, res) => {
 
 // 댓글 작성 API
 app.post('/api/comment', async (req, res) => {
+    console.log('댓글 작성 API 호출됨');
     const { comment_content, post_id, phone, comment_parent_id } = req.body;
     if (!comment_content || !post_id || !phone) {
         return res.status(400).json({ success: false, message: '필수값 누락' });
     }
     try {
-        await pool.query(
+        // 댓글 저장
+        const [insertResult] = await pool.query(
             `INSERT INTO Comment (comment_content, comment_created_at, post_id, phone, comment_parent_id) VALUES (?, NOW(), ?, ?, ?)`,
             [comment_content, post_id, phone, comment_parent_id || null]
         );
+        const comment_id = insertResult.insertId;
+
+        // 알림 생성
+        if (comment_parent_id) {
+            // 대댓글: 원댓글 작성자에게 알림 (COMMENT_REPLY)
+            const [parentComment] = await pool.query(
+                'SELECT phone, comment_content FROM comment WHERE comment_id = ?',
+                [comment_parent_id]
+            );
+            const parentCommentAuthorPhone = parentComment[0]?.phone;
+            const parentCommentContent = parentComment[0]?.comment_content;
+            
+            if (parentCommentAuthorPhone && parentCommentAuthorPhone !== phone) {
+                await createNotification({
+                    recipientPhone: parentCommentAuthorPhone,
+                    actorPhone: phone,
+                    type: 'COMMENT_REPLY',
+                    targetCommentId: comment_id,  // 수정: 새로 작성된 대댓글의 ID
+                    targetPostId: post_id,
+                    comment_content: comment_content,           // 새로 작성된 대댓글 내용
+                    parent_comment_content: parentCommentContent // 원댓글 내용
+                });
+            }
+        } else {
+            // 일반 댓글: 게시글 작성자에게 알림 (POST_COMMENT)
+            const [post] = await pool.query(
+                'SELECT phone, post_content FROM post WHERE post_id = ?',
+                [post_id]
+            );
+            const postAuthorPhone = post[0]?.phone;
+            const postContent = post[0]?.post_content;
+            
+            if (postAuthorPhone && postAuthorPhone !== phone) {
+                await createNotification({
+                    recipientPhone: postAuthorPhone,
+                    actorPhone: phone,
+                    type: 'POST_COMMENT',
+                    targetPostId: post_id,
+                    targetCommentId: comment_id,
+                    comment_content: comment_content,  // 새로 작성된 댓글 내용
+                    post_content: postContent         // 게시글 내용
+                });
+            }
+        }
+
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: '댓글 작성 실패' });
@@ -3232,7 +3309,7 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
     console.log('장터 댓글 수정 API 호출됨');
     const { commentId } = req.params;
     const { market_comment_content } = req.body;
-    
+
     try {
         console.log('수정 요청된 comment_id:', commentId);
         console.log('수정할 내용:', market_comment_content);
@@ -3246,9 +3323,9 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
         console.log('조회된 댓글:', comment);
 
         if (comment.length === 0) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                message: '댓글을 찾을 수 없습니다.' 
+                message: '댓글을 찾을 수 없습니다.'
             });
         }
 
@@ -3264,9 +3341,9 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
         console.log('수정 결과:', updateResult);
 
         if (updateResult.affectedRows === 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                message: '댓글 수정에 실패했습니다.' 
+                message: '댓글 수정에 실패했습니다.'
             });
         }
 
@@ -3276,7 +3353,7 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
             [commentId]
         );
 
-        res.status(200).json({ 
+        res.status(200).json({
             success: true,
             message: '댓글이 성공적으로 수정되었습니다.',
             comment: updatedComment[0]
@@ -3284,10 +3361,182 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
 
     } catch (error) {
         console.error('장터 댓글 수정 중 오류 발생:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: '댓글 수정 중 오류가 발생했습니다.',
-            error: error.message 
+            error: error.message
+        });
+    }
+});
+
+// 알림 목록 조회 API
+app.get('/api/notifications', async (req, res) => {
+    console.log('알림 목록 조회 API 호출됨');
+    const { phone } = req.query;
+
+    try {
+        const [notifications] = await pool.query(
+            `SELECT n.*, 
+                u.name as actor_name,
+                u.region as actor_region,
+                p.post_content,
+                m.market_name,
+                c.comment_content,
+                mc.market_comment_content,
+                pmc.market_comment_content as parent_market_comment_content,
+                pc.comment_content as parent_comment_content,
+                CASE 
+                    WHEN n.type = 'COMMENT_LIKE' THEN (
+                        SELECT post_content 
+                        FROM post 
+                        WHERE post_id = (
+                            SELECT post_id 
+                            FROM comment 
+                            WHERE comment_id = n.target_comment_id
+                        )
+                    )
+                    ELSE p2.post_content 
+                END as parent_post_content
+            FROM Notifications n
+            LEFT JOIN user u ON n.actor_phone = u.phone
+            LEFT JOIN post p ON n.target_post_id = p.post_id
+            LEFT JOIN market m ON n.target_market_id = m.market_id
+            LEFT JOIN comment c ON n.target_comment_id = c.comment_id
+            LEFT JOIN market_comment mc ON n.target_comment_id = mc.market_comment_id
+            LEFT JOIN market_comment pmc ON mc.market_comment_parent_id = pmc.market_comment_id
+            LEFT JOIN comment pc ON c.comment_parent_id = pc.comment_id
+            LEFT JOIN post p2 ON pc.post_id = p2.post_id
+            WHERE n.recipient_phone = ?
+            ORDER BY n.created_at DESC
+            LIMIT 50`,
+            [phone]
+        );
+
+        // 디버깅을 위한 로그 추가
+        console.log('알림 데이터:', JSON.stringify(notifications, null, 2));
+
+        res.json({
+            success: true,
+            notifications: notifications
+        });
+
+    } catch (error) {
+        console.error('알림 조회 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '알림 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
+
+// 알림 읽음 처리 API
+app.put('/api/notifications/:notificationId/read', async (req, res) => {
+    console.log('알림 읽음 처리 API 호출됨');
+    const { notificationId } = req.params;
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE Notifications SET is_read = 1 WHERE notification_id = ?',
+            [notificationId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '알림을 찾을 수 없습니다.'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: '알림이 읽음 처리되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('알림 읽음 처리 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '알림 읽음 처리 중 오류가 발생했습니다.'
+        });
+    }
+});
+
+// 알림 생성 헬퍼 함수
+async function createNotification({
+    recipientPhone,
+    actorPhone,
+    type,
+    targetCommentId = null,
+    targetPostId = null,
+    targetMarketId = null
+}) {
+    try {
+        const [result] = await pool.query(
+            `INSERT INTO Notifications 
+             (recipient_phone, actor_phone, type, target_comment_id, target_post_id, target_market_id)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [recipientPhone, actorPhone, type, targetCommentId, targetPostId, targetMarketId]
+        );
+        return result.insertId;
+    } catch (error) {
+        console.error('알림 생성 중 오류:', error);
+        return null;
+    }
+}
+
+// 알림 삭제 API
+app.delete('/api/notifications/:notificationId', async (req, res) => {
+    console.log('알림 삭제 API 호출됨');
+    const { notificationId } = req.params;
+
+    try {
+        const [result] = await pool.query(
+            'DELETE FROM Notifications WHERE notification_id = ?',
+            [notificationId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: '알림을 찾을 수 없습니다.'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: '알림이 삭제되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('알림 삭제 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '알림 삭제 중 오류가 발생했습니다.'
+        });
+    }
+});
+
+// 읽지 않은 알림 개수 조회 API
+app.get('/api/notifications/unread/count', async (req, res) => {
+    console.log('읽지 않은 알림 개수 조회 API 호출됨');
+    const { phone } = req.query;
+
+    try {
+        const [result] = await pool.query(
+            'SELECT COUNT(*) as unreadCount FROM Notifications WHERE recipient_phone = ? AND is_read = 0',
+            [phone]
+        );
+
+        res.json({
+            success: true,
+            unreadCount: result[0].unreadCount
+        });
+
+    } catch (error) {
+        console.error('읽지 않은 알림 개수 조회 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '읽지 않은 알림 개수 조회 중 오류가 발생했습니다.'
         });
     }
 });
@@ -3296,7 +3545,7 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
 app.delete('/api/market/comment/:commentId', async (req, res) => {
     console.log('장터 댓글 삭제 API 호출됨');
     const { commentId } = req.params;
-    
+
     try {
         console.log('삭제 요청된 comment_id:', commentId);
 
@@ -3307,9 +3556,9 @@ app.delete('/api/market/comment/:commentId', async (req, res) => {
         );
 
         if (comment.length === 0) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                message: '댓글을 찾을 수 없습니다.' 
+                message: '댓글을 찾을 수 없습니다.'
             });
         }
 
@@ -3322,23 +3571,23 @@ app.delete('/api/market/comment/:commentId', async (req, res) => {
         console.log('삭제 결과:', deleteResult);
 
         if (deleteResult.affectedRows === 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                message: '댓글 삭제에 실패했습니다.' 
+                message: '댓글 삭제에 실패했습니다.'
             });
         }
 
-        res.status(200).json({ 
+        res.status(200).json({
             success: true,
             message: '댓글이 성공적으로 삭제되었습니다.'
         });
 
     } catch (error) {
         console.error('장터 댓글 삭제 중 오류 발생:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: '댓글 삭제 중 오류가 발생했습니다.',
-            error: error.message 
+            error: error.message
         });
     }
 });
@@ -3503,8 +3752,9 @@ app.delete('/api/market/:id/like', async (req, res) => {
     }
 });
 
-// 좋아요 추가
+// 장터 게시글 좋아요 추가 
 app.post('/api/market/:id/like', async (req, res) => {
+    console.log('장터 게시글 좋아요 추가 API 호출됨');
     const { id } = req.params;
     const { phone } = req.body;
     const conn = await pool.getConnection();
@@ -3525,6 +3775,21 @@ app.post('/api/market/:id/like', async (req, res) => {
                 [id]
             );
             console.log('UPDATE 결과:', updateResult);
+
+            // 3. 알림 생성 (본인 글이 아닐 때만)
+            const [market] = await conn.query(
+                'SELECT phone FROM market WHERE market_id = ?',
+                [id]
+            );
+            const marketAuthorPhone = market[0]?.phone;
+            if (marketAuthorPhone && marketAuthorPhone !== phone) {
+                await createNotification({
+                    recipientPhone: marketAuthorPhone,
+                    actorPhone: phone,
+                    type: 'MARKET_POST_LIKE',
+                    targetMarketId: id
+                });
+            }
         }
 
         await conn.commit();
@@ -3546,10 +3811,56 @@ app.post('/api/market/comment', async (req, res) => {
         return res.status(400).json({ success: false, message: '필수값 누락' });
     }
     try {
-        await pool.query(
+        // 장터 댓글 저장
+        const [insertResult] = await pool.query(
             `INSERT INTO Market_comment (market_comment_content, market_comment_created_at, market_id, phone, market_comment_parent_id) VALUES (?, NOW(), ?, ?, ?)`,
             [market_comment_content, market_id, phone, market_comment_parent_id || null]
         );
+        const market_comment_id = insertResult.insertId;
+
+        // 알림 생성
+        if (market_comment_parent_id) {
+            // 대댓글: 원댓글 작성자에게 알림 (MARKET_COMMENT_REPLY)
+            const [parentComment] = await pool.query(
+                'SELECT phone, market_comment_content FROM market_comment WHERE market_comment_id = ?',
+                [market_comment_parent_id]
+            );
+            const parentCommentAuthorPhone = parentComment[0]?.phone;
+            const parentCommentContent = parentComment[0]?.market_comment_content;
+            
+            if (parentCommentAuthorPhone && parentCommentAuthorPhone !== phone) {
+                await createNotification({
+                    recipientPhone: parentCommentAuthorPhone,
+                    actorPhone: phone,
+                    type: 'MARKET_COMMENT_REPLY',
+                    targetCommentId: market_comment_id,  // 수정: 새로 작성된 대댓글의 ID
+                    targetMarketId: market_id,
+                    market_comment_content: market_comment_content,           // 새로 작성된 대댓글 내용
+                    parent_market_comment_content: parentCommentContent       // 원댓글 내용
+                });
+            }
+        } else {
+            // 일반 댓글: 장터글 작성자에게 알림 (MARKET_COMMENT)
+            const [market] = await pool.query(
+                'SELECT phone, market_name FROM market WHERE market_id = ?',
+                [market_id]
+            );
+            const marketAuthorPhone = market[0]?.phone;
+            const marketName = market[0]?.market_name;
+            
+            if (marketAuthorPhone && marketAuthorPhone !== phone) {
+                await createNotification({
+                    recipientPhone: marketAuthorPhone,
+                    actorPhone: phone,
+                    type: 'MARKET_COMMENT',
+                    targetMarketId: market_id,
+                    targetCommentId: market_comment_id,
+                    market_comment_content: market_comment_content,  // 새로 작성된 댓글 내용
+                    market_name: marketName                        // 장터글 제목
+                });
+            }
+        }
+
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: '장터 댓글 작성 실패' });
