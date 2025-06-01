@@ -93,6 +93,66 @@ const MarketCommentPage = ({ navigation }) => {
     const [isReplyInputVisible, setIsReplyInputVisible] = useState(false);
     const [replyToCommentId, setReplyToCommentId] = useState(null);
     const [replyToName, setReplyToName] = useState(null);
+    const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
+    const [editingCommentId, setEditingCommentId] = useState(null); // 수정 중인 댓글 ID
+    const [editingCommentContent, setEditingCommentContent] = useState(''); // 수정 중인 댓글 내용
+
+    // 댓글 수정 함수
+    const handleEditComment = async () => {
+        if (!editingCommentContent.trim()) {
+            Alert.alert('알림', '내용을 입력해주세요.');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/comment/${editingCommentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    market_comment_content: editingCommentContent
+                })
+            });
+
+            if (response.ok) {
+                // 댓글 목록 새로고침
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/market/comment?market_id=${marketId}`);
+                const data = await res.json();
+                if (data.success && Array.isArray(data.comments)) {
+                    setComments(data.comments);
+                }
+
+                // 수정 모드 종료
+                setIsEditing(false);
+                setEditingCommentId(null);
+                setEditingCommentContent('');
+
+                // 수정 완료 알림
+                Alert.alert(
+                    "수정 완료",
+                    "댓글이 수정되었습니다.",
+                    [{ text: "확인" }],
+                    { cancelable: true }
+                );
+            }
+        } catch (error) {
+            Alert.alert('오류', '댓글 수정에 실패했습니다.');
+        }
+    };
+
+    // 수정 시작 함수
+    const startEditing = (comment) => {
+        setIsEditing(true);
+        setEditingCommentId(comment.id);
+        setEditingCommentContent(comment.comment_content);
+    };
+
+    // 수정 취소 함수
+    const cancelEditing = () => {
+        setIsEditing(false);
+        setEditingCommentId(null);
+        setEditingCommentContent('');
+    };
 
     // 댓글 목록 불러오기
     useEffect(() => {
@@ -169,32 +229,97 @@ const MarketCommentPage = ({ navigation }) => {
                         <TouchableOpacity
                             style={depth > 0 ? styles.replyMoreBtn : styles.commentMoreBtn}
                             onPress={() => {
-                                Alert.alert(
-                                    "댓글 신고",
-                                    "이 댓글을 신고하시겠습니까?",
-                                    [
-                                        {
-                                            text: "아니요",
-                                            style: "cancel"
-                                        },
-                                        {
-                                            text: "예",
-                                            onPress: () => {
-                                                Alert.alert(
-                                                    "신고 완료",
-                                                    "댓글이 신고되었습니다.",
-                                                    [{ text: "확인" }],
-                                                    { cancelable: true }
-                                                );
+                                // 현재 로그인한 유저가 댓글 작성자인 경우
+                                if (String(comment.phone) === String(phone)) {
+                                    Alert.alert(
+                                        "댓글 관리",
+                                        "댓글을 관리하시겠습니까?",
+                                        [
+                                            {
+                                                text: "수정",
+                                                onPress: () => startEditing(comment)
+                                            },
+                                            {
+                                                text: "삭제",
+                                                style: "destructive",
+                                                onPress: async () => {
+                                                    Alert.alert(
+                                                        "댓글 삭제",
+                                                        "정말로 이 댓글을 삭제하시겠습니까?",
+                                                        [
+                                                            {
+                                                                text: "취소",
+                                                                style: "cancel"
+                                                            },
+                                                            {
+                                                                text: "삭제",
+                                                                style: "destructive",
+                                                                onPress: async () => {
+                                                                    try {
+                                                                        const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/comment/${comment.id}`, {
+                                                                            method: 'DELETE',
+                                                                        });
+
+                                                                        if (response.ok) {
+                                                                            // 댓글 목록 새로고침
+                                                                            const res = await fetch(`${API_CONFIG.BASE_URL}/api/market/comment?market_id=${marketId}`);
+                                                                            const data = await res.json();
+                                                                            if (data.success && Array.isArray(data.comments)) {
+                                                                                setComments(data.comments);
+                                                                            }
+
+                                                                            // 삭제 완료 알림
+                                                                            Alert.alert(
+                                                                                "삭제 완료",
+                                                                                "댓글이 삭제되었습니다.",
+                                                                                [{ text: "확인" }],
+                                                                                { cancelable: true }
+                                                                            );
+                                                                        }
+                                                                    } catch (error) {
+                                                                        Alert.alert('오류', '댓글 삭제에 실패했습니다.');
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    );
+                                                }
+                                            },
+                                            {
+                                                text: "취소",
+                                                style: "cancel"
                                             }
-                                        }
-                                    ]
-                                );
+                                        ]
+                                    );
+                                } else {
+                                    // 다른 유저의 댓글인 경우 신고 기능
+                                    Alert.alert(
+                                        "댓글 신고",
+                                        "이 댓글을 신고하시겠습니까?",
+                                        [
+                                            {
+                                                text: "아니요",
+                                                style: "cancel"
+                                            },
+                                            {
+                                                text: "예",
+                                                onPress: () => {
+                                                    Alert.alert(
+                                                        "신고 완료",
+                                                        "댓글이 신고되었습니다.",
+                                                        [{ text: "확인" }],
+                                                        { cancelable: true }
+                                                    );
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }
                             }}
                         >
                             <Image
                                 source={require('../../assets/moreicon.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}  // 인라인 스타일로 변경
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
                             />
                         </TouchableOpacity>
                     </View>
@@ -264,16 +389,34 @@ const MarketCommentPage = ({ navigation }) => {
                                 </TouchableOpacity>
                             </View>
                         )}
+                        {isEditing && (
+                            <View style={styles.replyPill}>
+                                <Text style={styles.replyPillText}>
+                                    댓글 수정
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={cancelEditing}
+                                >
+                                    <Text style={styles.replyPillCancel}>취소</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                         <View style={styles.inputSection}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="문의 내용을 입력해 주세요"
+                                placeholder={isEditing ? "댓글을 수정해주세요" : "문의 내용을 입력해 주세요"}
                                 placeholderTextColor="#999"
-                                value={input}
-                                onChangeText={setInput}
+                                value={isEditing ? editingCommentContent : input}
+                                onChangeText={isEditing ? setEditingCommentContent : setInput}
                             />
-                            <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
-                                <Image source={require('../../assets/arrowrighticon.png')} style={styles.sendIcon} />
+                            <TouchableOpacity
+                                style={styles.sendBtn}
+                                onPress={isEditing ? handleEditComment : handleSend}
+                            >
+                                <Image
+                                    source={isEditing ? require('../../assets/arrowrighticon.png') : require('../../assets/arrowrighticon.png')}
+                                    style={styles.sendIcon}
+                                />
                             </TouchableOpacity>
                         </View>
                     </View>

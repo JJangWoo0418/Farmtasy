@@ -3227,6 +3227,122 @@ app.delete('/api/comment/:commentId', async (req, res) => {
     }
 });
 
+// 장터 댓글 수정 API
+app.put('/api/market/comment/:commentId', async (req, res) => {
+    console.log('장터 댓글 수정 API 호출됨');
+    const { commentId } = req.params;
+    const { market_comment_content } = req.body;
+    
+    try {
+        console.log('수정 요청된 comment_id:', commentId);
+        console.log('수정할 내용:', market_comment_content);
+
+        // 1. 먼저 해당 댓글이 존재하는지 확인
+        const [comment] = await pool.query(
+            'SELECT * FROM market_comment WHERE market_comment_id = ?',
+            [commentId]
+        );
+
+        console.log('조회된 댓글:', comment);
+
+        if (comment.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                message: '댓글을 찾을 수 없습니다.' 
+            });
+        }
+
+        // 2. 댓글 수정
+        const [updateResult] = await pool.query(
+            `UPDATE market_comment 
+             SET market_comment_content = ?,
+                 market_comment_update_at = CURRENT_TIMESTAMP
+             WHERE market_comment_id = ?`,
+            [market_comment_content, commentId]
+        );
+
+        console.log('수정 결과:', updateResult);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: '댓글 수정에 실패했습니다.' 
+            });
+        }
+
+        // 3. 수정된 댓글 정보 조회
+        const [updatedComment] = await pool.query(
+            'SELECT * FROM market_comment WHERE market_comment_id = ?',
+            [commentId]
+        );
+
+        res.status(200).json({ 
+            success: true,
+            message: '댓글이 성공적으로 수정되었습니다.',
+            comment: updatedComment[0]
+        });
+
+    } catch (error) {
+        console.error('장터 댓글 수정 중 오류 발생:', error);
+        res.status(500).json({ 
+            success: false,
+            message: '댓글 수정 중 오류가 발생했습니다.',
+            error: error.message 
+        });
+    }
+});
+
+// 장터 댓글 삭제 API
+app.delete('/api/market/comment/:commentId', async (req, res) => {
+    console.log('장터 댓글 삭제 API 호출됨');
+    const { commentId } = req.params;
+    
+    try {
+        console.log('삭제 요청된 comment_id:', commentId);
+
+        // 1. 먼저 해당 댓글이 존재하는지 확인
+        const [comment] = await pool.query(
+            'SELECT * FROM market_comment WHERE market_comment_id = ?',
+            [commentId]
+        );
+
+        if (comment.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                message: '댓글을 찾을 수 없습니다.' 
+            });
+        }
+
+        // 2. 댓글 삭제
+        const [deleteResult] = await pool.query(
+            'DELETE FROM market_comment WHERE market_comment_id = ?',
+            [commentId]
+        );
+
+        console.log('삭제 결과:', deleteResult);
+
+        if (deleteResult.affectedRows === 0) {
+            return res.status(400).json({ 
+                success: false,
+                message: '댓글 삭제에 실패했습니다.' 
+            });
+        }
+
+        res.status(200).json({ 
+            success: true,
+            message: '댓글이 성공적으로 삭제되었습니다.'
+        });
+
+    } catch (error) {
+        console.error('장터 댓글 삭제 중 오류 발생:', error);
+        res.status(500).json({ 
+            success: false,
+            message: '댓글 삭제 중 오류가 발생했습니다.',
+            error: error.message 
+        });
+    }
+});
+
 // 카테고리별 상품 조회 API
 app.get('/api/market/category/:category', async (req, res) => {
     try {
