@@ -3412,12 +3412,26 @@ app.get('/api/notifications', async (req, res) => {
             [phone]
         );
 
-        // 디버깅을 위한 로그 추가
-        console.log('알림 데이터:', JSON.stringify(notifications, null, 2));
+        // 읽지 않은 알림이 있는지 확인
+        const [unreadCount] = await pool.query(
+            `SELECT COUNT(*) as count 
+            FROM Notifications 
+            WHERE recipient_phone = ? AND is_read = 0`,
+            [phone]
+        );
+
+        // 모달이 열릴 때 모든 알림을 읽음 처리
+        await pool.query(
+            `UPDATE Notifications 
+            SET is_read = 1 
+            WHERE recipient_phone = ? AND is_read = 0`,
+            [phone]
+        );
 
         res.json({
             success: true,
-            notifications: notifications
+            notifications: notifications,
+            hasUnreadNotifications: unreadCount[0].count > 0
         });
 
     } catch (error) {
@@ -3430,22 +3444,18 @@ app.get('/api/notifications', async (req, res) => {
 });
 
 // 알림 읽음 처리 API
-app.put('/api/notifications/:notificationId/read', async (req, res) => {
+app.post('/api/notifications/read', async (req, res) => {
     console.log('알림 읽음 처리 API 호출됨');
-    const { notificationId } = req.params;
+    const { phone } = req.body;
 
     try {
-        const [result] = await pool.query(
-            'UPDATE Notifications SET is_read = 1 WHERE notification_id = ?',
-            [notificationId]
+        // 해당 사용자의 모든 알림을 읽음 처리
+        await pool.query(
+            `UPDATE Notifications 
+            SET is_read = 1 
+            WHERE recipient_phone = ? AND is_read = 0`,
+            [phone]
         );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: '알림을 찾을 수 없습니다.'
-            });
-        }
 
         res.json({
             success: true,

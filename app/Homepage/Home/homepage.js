@@ -26,30 +26,62 @@ const HomePage = () => {
 
     const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
     const [notifications, setNotifications] = useState([]); // 알림 목록 상태
+    const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
     function getSummary(text, maxLength = 20) {
         if (!text) return '';
         return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
     }
 
-    // 알림 목록 불러오기
+    // 알림 목록 가져오기 함수
     const fetchNotifications = async () => {
+        if (!phone) return;
+        
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications?phone=${phone}`);
             const data = await response.json();
             if (data.success) {
                 setNotifications(data.notifications);
+                setHasUnreadNotifications(data.hasUnreadNotifications);
             }
         } catch (error) {
-            console.error('알림 로딩 실패:', error);
+            console.error('알림 조회 실패:', error);
         }
     };
 
-    // 알림 모달 열 때 알림 목록 불러오기
-    const openNotificationModal = () => {
-        setIsNotificationModalVisible(true);
-        fetchNotifications();
+    // 알림 읽음 처리 함수
+    const markNotificationsAsRead = async () => {
+        if (!phone) return;
+        
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications/read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ phone }),
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                setHasUnreadNotifications(false);
+            }
+        } catch (error) {
+            console.error('알림 읽음 처리 실패:', error);
+        }
     };
+
+    // 알림 모달 열기 함수
+    const openNotificationModal = async () => {
+        setIsNotificationModalVisible(true);
+        await fetchNotifications();
+        await markNotificationsAsRead(); // 알림 아이콘 클릭 시 읽음 처리
+    };
+
+    // 페이지 진입 시 알림 상태 확인
+    useEffect(() => {
+        fetchNotifications();
+    }, [phone]);
 
     const openDrawer = () => {
         setDrawerVisible(true);
@@ -959,9 +991,15 @@ const HomePage = () => {
 
                 <TouchableOpacity
                     style={styles.bellIconWrapper}
-                    onPress={openNotificationModal} // ✅
+                    onPress={openNotificationModal}
                 >
-                    <Image source={require('../../../assets/bellicon.png')} style={styles.bellIcon} />
+                    <Image 
+                        source={hasUnreadNotifications 
+                            ? require('../../../assets/bellicon2.png')
+                            : require('../../../assets/bellicon.png')
+                        } 
+                        style={styles.bellIcon} 
+                    />
                 </TouchableOpacity>
             </View>
 
