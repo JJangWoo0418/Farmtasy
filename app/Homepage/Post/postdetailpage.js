@@ -25,9 +25,69 @@ const PostDetailPage = () => {
     const [isReplyInputVisible, setIsReplyInputVisible] = useState(false); // 대댓글 입력창 표시 여부
     const [replyToCommentId, setReplyToCommentId] = useState(null); // 대댓글 대상 댓글 id
     const [replyToName, setReplyToName] = useState(null); // 대댓글 대상 유저 이름
+    const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
+    const [editingCommentId, setEditingCommentId] = useState(null); // 수정 중인 댓글 ID
+    const [editingCommentContent, setEditingCommentContent] = useState(''); // 수정 중인 댓글 내용
 
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
+
+    // 댓글 수정 함수
+    const handleEditComment = async () => {
+        if (!editingCommentContent.trim()) {
+            Alert.alert('알림', '내용을 입력해주세요.');
+            return;
+        }
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment/${editingCommentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    comment_content: editingCommentContent
+                })
+            });
+
+            if (response.ok) {
+                // 댓글 목록 새로고침
+                const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
+                const data = await res.json();
+                setComments(Array.isArray(data) ? data : []);
+
+                // 수정 모드 종료
+                setIsEditing(false);
+                setEditingCommentId(null);
+                setEditingCommentContent('');
+
+                // 수정 완료 알림
+                Alert.alert(
+                    "수정 완료",
+                    "댓글이 수정되었습니다.",
+                    [{ text: "확인" }],
+                    { cancelable: true }
+                );
+            }
+        } catch (error) {
+            Alert.alert('오류', '댓글 수정에 실패했습니다.');
+        }
+    };
+
+    // 댓글 관리 메뉴의 수정 버튼 클릭 시
+    const startEditing = (comment) => {
+        setIsEditing(true);
+        setEditingCommentId(comment.id);
+        setEditingCommentContent(comment.comment_content);
+        // 스크롤을 입력창으로 이동
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+    };
+
+    // 수정 취소 함수
+    const cancelEditing = () => {
+        setIsEditing(false);
+        setEditingCommentId(null);
+        setEditingCommentContent('');
+    };
 
     // 날짜 포맷 함수 추가
     const formatDate = (isoString) => {
@@ -368,17 +428,95 @@ const PostDetailPage = () => {
                             </View>
                             <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
                         </View>
-                        <TouchableOpacity style={styles.commentMoreBtn2} onPress={() => {
-                            Alert.alert(
-                                "신고하기",
-                                "유저를 신고하시겠습니까?",
-                                [
-                                    { text: "유저 신고하기", onPress: () => console.log("유저 신고하기") },
-                                    { text: "취소", style: "cancel" }
-                                ],
-                                { cancelable: true }
-                            );
-                        }}>
+                        <TouchableOpacity
+                            style={styles.commentMoreBtn2}
+                            onPress={() => {
+                                // 현재 로그인한 유저가 댓글 작성자인 경우
+                                if (String(comment.phone) === String(phone)) {
+                                    Alert.alert(
+                                        "댓글 관리",
+                                        "댓글을 관리하시겠습니까?",
+                                        [
+                                            {
+                                                text: "수정",
+                                                onPress: () => startEditing(comment)
+                                            },
+                                            {
+                                                text: "삭제",
+                                                style: "destructive",
+                                                onPress: async () => {
+                                                    Alert.alert(
+                                                        "댓글 삭제",
+                                                        "정말로 이 댓글을 삭제하시겠습니까?",
+                                                        [
+                                                            {
+                                                                text: "취소",
+                                                                style: "cancel"
+                                                            },
+                                                            {
+                                                                text: "삭제",
+                                                                style: "destructive",
+                                                                onPress: async () => {
+                                                                    try {
+                                                                        const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment/${comment.id}`, {
+                                                                            method: 'DELETE',
+                                                                        });
+
+                                                                        if (response.ok) {
+                                                                            // 댓글 목록 새로고침
+                                                                            const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
+                                                                            const data = await res.json();
+                                                                            setComments(Array.isArray(data) ? data : []);
+
+                                                                            // 삭제 완료 알림 추가
+                                                                            Alert.alert(
+                                                                                "삭제 완료",
+                                                                                "댓글이 삭제되었습니다.",
+                                                                                [{ text: "확인" }],
+                                                                                { cancelable: true }
+                                                                            );
+                                                                        }
+                                                                    } catch (error) {
+                                                                        Alert.alert('오류', '댓글 삭제에 실패했습니다.');
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    );
+                                                }
+                                            },
+                                            {
+                                                text: "취소",
+                                                style: "cancel"
+                                            }
+                                        ]
+                                    );
+                                } else {
+                                    // 다른 유저의 댓글인 경우 신고 기능
+                                    Alert.alert(
+                                        "댓글 신고",
+                                        "이 댓글을 신고하시겠습니까?",
+                                        [
+                                            {
+                                                text: "아니요",
+                                                style: "cancel"
+                                            },
+                                            {
+                                                text: "예",
+                                                onPress: () => {
+                                                    Alert.alert(
+                                                        "신고 완료",
+                                                        "댓글이 신고되었습니다.",
+                                                        [{ text: "확인" }],
+                                                        { cancelable: true }
+                                                    );
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }
+                            }}
+                        >
                             <Image source={require('../../../assets/moreicon.png')} style={styles.commentMoreBtn2} />
                         </TouchableOpacity>
                     </View>
@@ -432,29 +570,96 @@ const PostDetailPage = () => {
                             </View>
                             <Text style={styles.commentInfo}>{comment.introduction || '소개 미설정'} · {formatDate(comment.time)}</Text>
                         </View>
-                        <TouchableOpacity style={styles.commentMoreBtn} onPress={() => {
-                            Alert.alert(
-                                "댓글 신고",
-                                "이 댓글을 신고하시겠습니까?",
-                                [
-                                    {
-                                        text: "아니요",
-                                        style: "cancel"
-                                    },
-                                    {
-                                        text: "예",
-                                        onPress: () => {
-                                            Alert.alert(
-                                                "신고 완료",
-                                                "댓글이 신고되었습니다.",
-                                                [{ text: "확인" }],
-                                                { cancelable: true }
-                                            );
-                                        }
-                                    }
-                                ]
-                            );
-                        }}>
+                        <TouchableOpacity
+                            style={styles.commentMoreBtn}
+                            onPress={() => {
+                                // 현재 로그인한 유저가 댓글 작성자인 경우
+                                // 현재 로그인한 유저가 댓글 작성자인 경우
+                                if (String(comment.phone) === String(phone)) {
+                                    Alert.alert(
+                                        "댓글 관리",
+                                        "댓글을 관리하시겠습니까?",
+                                        [
+                                            {
+                                                text: "수정",
+                                                onPress: () => startEditing(comment)
+                                            },
+                                            {
+                                                text: "삭제",
+                                                style: "destructive",
+                                                onPress: async () => {
+                                                    Alert.alert(
+                                                        "댓글 삭제",
+                                                        "정말로 이 댓글을 삭제하시겠습니까?",
+                                                        [
+                                                            {
+                                                                text: "취소",
+                                                                style: "cancel"
+                                                            },
+                                                            {
+                                                                text: "삭제",
+                                                                style: "destructive",
+                                                                onPress: async () => {
+                                                                    try {
+                                                                        const response = await fetch(`${API_CONFIG.BASE_URL}/api/comment/${comment.id}`, {
+                                                                            method: 'DELETE',
+                                                                        });
+
+                                                                        if (response.ok) {
+                                                                            // 댓글 목록 새로고침
+                                                                            const res = await fetch(`${API_CONFIG.BASE_URL}/api/comment?post_id=${post.id}&user_phone=${phone}`);
+                                                                            const data = await res.json();
+                                                                            setComments(Array.isArray(data) ? data : []);
+
+                                                                            // 삭제 완료 알림 추가
+                                                                            Alert.alert(
+                                                                                "삭제 완료",
+                                                                                "댓글이 삭제되었습니다.",
+                                                                                [{ text: "확인" }],
+                                                                                { cancelable: true }
+                                                                            );
+                                                                        }
+                                                                    } catch (error) {
+                                                                        Alert.alert('오류', '댓글 삭제에 실패했습니다.');
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    );
+                                                }
+                                            },
+                                            {
+                                                text: "취소",
+                                                style: "cancel"
+                                            }
+                                        ]
+                                    );
+                                } else {
+                                    // 다른 유저의 댓글인 경우 기존 신고 기능
+                                    Alert.alert(
+                                        "댓글 신고",
+                                        "이 댓글을 신고하시겠습니까?",
+                                        [
+                                            {
+                                                text: "아니요",
+                                                style: "cancel"
+                                            },
+                                            {
+                                                text: "예",
+                                                onPress: () => {
+                                                    Alert.alert(
+                                                        "신고 완료",
+                                                        "댓글이 신고되었습니다.",
+                                                        [{ text: "확인" }],
+                                                        { cancelable: true }
+                                                    );
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }
+                            }}
+                        >
                             <Image source={require('../../../assets/moreicon.png')} style={styles.commentMoreBtn} />
                         </TouchableOpacity>
                     </View>
@@ -671,7 +876,7 @@ const PostDetailPage = () => {
                             position: 'absolute',
                             left: 0,
                             right: 0,
-                            bottom: 59, // 입력창 높이만큼 위로
+                            bottom: 59,
                             flexDirection: 'row',
                             alignItems: 'center',
                             justifyContent: 'space-between',
@@ -696,16 +901,48 @@ const PostDetailPage = () => {
                             </TouchableOpacity>
                         </View>
                     )}
+                    {isEditing && (
+                        <View style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 59,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#f5f6fa',
+                            paddingHorizontal: 14,
+                            paddingVertical: 6,
+                            marginHorizontal: 0,
+                            marginBottom: 2,
+                            zIndex: 2,
+                        }}>
+                            <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 15 }}>
+                                댓글 수정
+                            </Text>
+                            <TouchableOpacity
+                                onPress={cancelEditing}
+                            >
+                                <Text style={{ color: '#22CC6B', fontWeight: 'bold', fontSize: 15 }}>취소</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                     <View style={styles.commentInputSection}>
                         <TextInput
                             style={styles.commentInput}
-                            placeholder="댓글을 입력해 주세요"
+                            placeholder={isEditing ? "댓글을 수정해주세요" : "댓글을 입력해 주세요"}
                             placeholderTextColor="#999"
-                            value={commentInput}
-                            onChangeText={setCommentInput}
+                            value={isEditing ? editingCommentContent : commentInput}
+                            onChangeText={isEditing ? setEditingCommentContent : setCommentInput}
                         />
-                        <TouchableOpacity style={styles.sendButton} onPress={handleSendComment}>
-                            <Image source={require('../../../assets/arrowrighticon.png')} style={styles.icon} />
+                        <TouchableOpacity
+                            style={styles.sendButton}
+                            onPress={isEditing ? handleEditComment : handleSendComment}
+                        >
+                            <Image
+                                source={isEditing ? require('../../../assets/arrowrighticon.png') : require('../../../assets/arrowrighticon.png')}
+                                style={styles.icon}
+                            />
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -2587,7 +2587,7 @@ app.post('/api/ai/pest-diagnosis', async (req, res) => {
 app.put('/api/market/:marketId', async (req, res) => {
     try {
         const { marketId } = req.params;
-        const { 
+        const {
             name,
             market_name,
             market_category,
@@ -2963,7 +2963,7 @@ app.put('/api/post/:postId', async (req, res) => {
     console.log('게시글 수정 API 호출됨');
     const { postId } = req.params;
     const { post_content, image_urls, post_category } = req.body;
-    
+
     try {
         console.log('수정 요청된 post_id:', postId);
         console.log('수정할 데이터:', req.body);
@@ -3003,15 +3003,15 @@ app.put('/api/post/:postId', async (req, res) => {
             [postId]
         );
 
-        res.status(200).json({ 
+        res.status(200).json({
             message: '게시글이 성공적으로 수정되었습니다.',
             post: updatedPost[0]
         });
     } catch (error) {
         console.error('게시글 수정 중 오류 발생:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: '게시글 수정 중 오류가 발생했습니다.',
-            error: error.message 
+            error: error.message
         });
     }
 });
@@ -3020,7 +3020,7 @@ app.put('/api/post/:postId', async (req, res) => {
 app.delete('/api/post/:postId', async (req, res) => {
     console.log('게시글 삭제 API 호출됨');
     const { postId } = req.params;
-    
+
     try {
         console.log('삭제 요청된 post_id:', postId);
 
@@ -3036,43 +3036,193 @@ app.delete('/api/post/:postId', async (req, res) => {
             return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
         }
 
-        // 2. 관련된 데이터 먼저 삭제
-        // 2-1. 좋아요 삭제
-        await pool.query(
-            'DELETE FROM post_likes WHERE post_id = ?',  // post_like를 post_likes로 수정
-            [postId]
-        );
+        // 2. 트랜잭션 시작
+        await pool.query('START TRANSACTION');
 
-        // 2-2. 댓글 삭제
-        await pool.query(
-            'DELETE FROM comment WHERE post_id = ?',
-            [postId]
-        );
+        try {
+            // 3. 관련된 데이터 삭제 (순서 중요)
+            // 3-1. 댓글 좋아요 삭제
+            await pool.query(
+                'DELETE cl FROM comment_likes cl INNER JOIN comment c ON cl.comment_id = c.comment_id WHERE c.post_id = ?',
+                [postId]
+            );
 
-        // 2-3. 북마크 삭제
-        await pool.query(
-            'DELETE FROM post_bookmarks WHERE post_id = ?',
-            [postId]
-        );
+            // 3-2. 댓글 삭제
+            await pool.query(
+                'DELETE FROM comment WHERE post_id = ?',
+                [postId]
+            );
 
-        // 3. 마지막으로 게시글 삭제
-        const [deleteResult] = await pool.query(
-            'DELETE FROM post WHERE post_id = ?',
-            [postId]
-        );
+            // 3-3. 게시글 좋아요 삭제
+            await pool.query(
+                'DELETE FROM post_likes WHERE post_id = ?',
+                [postId]
+            );
 
-        console.log('삭제 결과:', deleteResult);
+            // 3-4. 게시글 북마크 삭제
+            await pool.query(
+                'DELETE FROM post_bookmarks WHERE post_id = ?',
+                [postId]
+            );
 
-        if (deleteResult.affectedRows === 0) {
-            return res.status(400).json({ message: '게시글 삭제에 실패했습니다.' });
+            // 3-5. 마지막으로 게시글 삭제
+            const [deleteResult] = await pool.query(
+                'DELETE FROM post WHERE post_id = ?',
+                [postId]
+            );
+
+            // 4. 트랜잭션 커밋
+            await pool.query('COMMIT');
+
+            console.log('삭제 결과:', deleteResult);
+
+            if (deleteResult.affectedRows === 0) {
+                return res.status(400).json({ message: '게시글 삭제에 실패했습니다.' });
+            }
+
+            res.status(200).json({
+                message: '게시글이 성공적으로 삭제되었습니다.'
+            });
+
+        } catch (error) {
+            // 5. 오류 발생 시 롤백
+            await pool.query('ROLLBACK');
+            throw error;
         }
 
-        res.status(200).json({ message: '게시글이 성공적으로 삭제되었습니다.' });
     } catch (error) {
         console.error('게시글 삭제 중 오류 발생:', error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: '게시글 삭제 중 오류가 발생했습니다.',
-            error: error.message 
+            error: error.message
+        });
+    }
+});
+
+// 댓글 수정 API
+app.put('/api/comment/:commentId', async (req, res) => {
+    console.log('댓글 수정 API 호출됨');
+    const { commentId } = req.params;
+    const { comment_content } = req.body;
+
+    try {
+        console.log('수정 요청된 comment_id:', commentId);
+        console.log('수정할 내용:', comment_content);
+
+        // 1. 먼저 해당 댓글이 존재하는지 확인
+        const [comment] = await pool.query(
+            'SELECT * FROM comment WHERE comment_id = ?',
+            [commentId]
+        );
+
+        console.log('조회된 댓글:', comment);
+
+        if (comment.length === 0) {
+            return res.status(404).json({ message: '댓글을 찾을 수 없습니다.' });
+        }
+
+        // 2. 댓글 수정
+        const [updateResult] = await pool.query(
+            `UPDATE comment 
+             SET comment_content = ?,
+                 comment_update_at = CURRENT_TIMESTAMP
+             WHERE comment_id = ?`,
+            [comment_content, commentId]
+        );
+
+        console.log('수정 결과:', updateResult);
+
+        if (updateResult.affectedRows === 0) {
+            return res.status(400).json({ message: '댓글 수정에 실패했습니다.' });
+        }
+
+        // 3. 수정된 댓글 정보 조회
+        const [updatedComment] = await pool.query(
+            'SELECT * FROM comment WHERE comment_id = ?',
+            [commentId]
+        );
+
+        res.status(200).json({
+            message: '댓글이 성공적으로 수정되었습니다.',
+            comment: updatedComment[0]
+        });
+
+    } catch (error) {
+        console.error('댓글 수정 중 오류 발생:', error);
+        res.status(500).json({
+            message: '댓글 수정 중 오류가 발생했습니다.',
+            error: error.message
+        });
+    }
+});
+
+// 댓글 삭제 API
+app.delete('/api/comment/:commentId', async (req, res) => {
+    console.log('댓글 삭제 API 호출됨');
+    const { commentId } = req.params;
+
+    try {
+        console.log('삭제 요청된 comment_id:', commentId);
+
+        // 1. 먼저 해당 댓글이 존재하는지 확인
+        const [comment] = await pool.query(
+            'SELECT * FROM comment WHERE comment_id = ?',
+            [commentId]
+        );
+
+        console.log('조회된 댓글:', comment);
+
+        if (comment.length === 0) {
+            return res.status(404).json({ message: '댓글을 찾을 수 없습니다.' });
+        }
+
+        // 2. 트랜잭션 시작
+        await pool.query('START TRANSACTION');
+
+        try {
+            // 3. 관련된 데이터 삭제 (순서 중요)
+            // 3-1. 댓글 좋아요 삭제
+            await pool.query(
+                'DELETE FROM comment_likes WHERE comment_id = ?',
+                [commentId]
+            );
+
+            // 3-2. 대댓글 삭제 (해당 댓글의 대댓글들)
+            await pool.query(
+                'DELETE FROM comment WHERE comment_parent_id = ?',
+                [commentId]
+            );
+
+            // 3-3. 마지막으로 댓글 삭제
+            const [deleteResult] = await pool.query(
+                'DELETE FROM comment WHERE comment_id = ?',
+                [commentId]
+            );
+
+            // 4. 트랜잭션 커밋
+            await pool.query('COMMIT');
+
+            console.log('삭제 결과:', deleteResult);
+
+            if (deleteResult.affectedRows === 0) {
+                return res.status(400).json({ message: '댓글 삭제에 실패했습니다.' });
+            }
+
+            res.status(200).json({
+                message: '댓글이 성공적으로 삭제되었습니다.'
+            });
+
+        } catch (error) {
+            // 5. 오류 발생 시 롤백
+            await pool.query('ROLLBACK');
+            throw error;
+        }
+
+    } catch (error) {
+        console.error('댓글 삭제 중 오류 발생:', error);
+        res.status(500).json({
+            message: '댓글 삭제 중 오류가 발생했습니다.',
+            error: error.message
         });
     }
 });
