@@ -3,6 +3,7 @@ import { fetchWeather } from '../Css/FarmInfo/WeatherAPI';
 import { getBaseDateTime } from './timeUtils';
 import { getMidLandRegId } from './regionMapper';
 import * as Location from 'expo-location';
+import * as FileSystem from 'expo-file-system';
 
 // 기상 상태에 따른 이모지 매핑
 const weatherEmojiMap = {
@@ -122,11 +123,20 @@ export const getWeatherData = async (dateStr) => {
             return await getTodayWeather();
         }
         
-        // 과거 데이터는 임시 데이터 반환 (실제 데이터가 준비되면 CSV 파일 로딩으로 대체)
+        // 과거 데이터는 JSON 파일에서 가져오기
         const userLocation = await getUserLocation();
+        const jsonData = await readWeatherDataFromJson(dateStr);
+        
+        if (jsonData) {
+            return {
+                ...jsonData,
+                location: userLocation
+            };
+        }
+
         return {
-            minTemp: '15',
-            maxTemp: '25',
+            minTemp: '-',
+            maxTemp: '-',
             weatherEmoji: '☀',
             location: userLocation
         };
@@ -141,14 +151,26 @@ export const getWeatherData = async (dateStr) => {
     }
 };
 
-// CSV 파일에서 과거 기온 데이터를 읽어오는 함수
+// 과거 기온 데이터를 가져오는 함수
 export const getHistoricalTemperature = async (date) => {
     try {
         const userLocation = await getUserLocation();
-        // 임시 데이터 반환 (실제 데이터가 준비되면 CSV 파일 로딩으로 대체)
+        // OBS_ASOS JSON을 읽는 대신 기본값 반환
+        /*
+        const jsonData = await readWeatherDataFromJson(date);
+        
+        if (jsonData) {
+            return {
+                minTemp: jsonData.minTemp,
+                maxTemp: jsonData.maxTemp,
+                location: userLocation
+            };
+        }
+        */
+
         return {
-            minTemp: 15,
-            maxTemp: 25,
+            minTemp: '-',
+            maxTemp: '-',
             location: userLocation
         };
     } catch (error) {

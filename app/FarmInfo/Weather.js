@@ -11,6 +11,26 @@ import * as Location from 'expo-location';
 import { getHistoricalTemperature } from '../Components/Utils/weatherUtils';
 import { useWeather, WeatherProvider } from '../context/WeatherContext';
 import { router } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+// import { Asset } from 'expo-asset'; // Asset 더 이상 사용 안 함
+
+// 평균 기온 JSON 데이터 (파일에서 로드)
+let avgTempData = [];
+
+// JSON 데이터 로드 함수
+const loadAvgTempData = async () => {
+  try {
+    // require를 사용하여 JSON 데이터를 객체로 가져온 뒤 사용
+    // 이 방식은 FileSystem 접근 오류를 우회합니다.
+    const jsonData = require('../../assets/avg_daily_temp_no_year.json');
+    // require 결과를 바로 사용하지 않고 깊은 복사 후 사용 (안정성 확보)
+    avgTempData = JSON.parse(JSON.stringify(jsonData));
+
+    console.log('[평균 기온 JSON] 데이터 로드 성공', avgTempData.length);
+  } catch (error) {
+    console.error('[평균 기온 JSON] 데이터 로드 실패:', error);
+  }
+};
 
 //농장 좌표(음성)
 const FARM_COORDS = {
@@ -47,6 +67,11 @@ const WeatherContent = () => {
   useEffect(() => {
     loadWeather();
   }, [mode]);
+
+  // 컴포넌트 마운트 시 평균 기온 데이터 로드
+  useEffect(() => {
+    loadAvgTempData();
+  }, []);
 
   const getLocationName = async (latitude, longitude) => {
     try {
@@ -536,12 +561,8 @@ const WeatherContent = () => {
             
             const emoji = getWeatherEmoji(pty, sky);
             
-            console.log(`[시간대별 날씨] 시간: ${hour}시, PTY: ${pty}, SKY: ${sky}, 이모지: ${emoji}`);
-            
-            const isCurrentHour = groupData.time === currentTimeStr;
-
             // 풍향(VEC)과 풍속(WSD) 정보 추출
-            const wsd = data['WSD'] ? data['WSD'] : '-'; // 풍속
+            const wsd = data['WSD'] ? data['WSD'] : '0'; // 풍속이 없거나 '-'인 경우 0으로 표시
             const vec = data['VEC'] ? data['VEC'] : '-'; // 풍향(도)
 
             // 풍향(도수)을 8방위 이모지로 변환하는 함수
@@ -559,6 +580,10 @@ const WeatherContent = () => {
               return '·';
             };
             const windEmoji = getWindDirectionEmoji(vec);
+            
+            console.log(`[시간대별 날씨] 시간: ${hour}시, PTY: ${pty}, SKY: ${sky}, 이모지: ${emoji}, 풍향: ${windEmoji}, 풍속: ${wsd}`);
+            
+            const isCurrentHour = groupData.time === currentTimeStr;
 
           return (
               <View key={idx} style={[
@@ -577,7 +602,9 @@ const WeatherContent = () => {
                   isCurrentHour && styles.weatherTempCurrent
                 ]}>{t1h}</Text>
                 {/* 풍향(이모지) + 풍속(m/s) 표시, 습도 대신 */}
-                <Text style={styles.weatherValue}>{windEmoji} {wsd}</Text>
+                <Text style={styles.weatherValue}>
+                  {windEmoji} {wsd === '-' ? '0' : wsd}
+                </Text>
             </View>
           );
           }).filter(Boolean)}
@@ -743,36 +770,30 @@ const WeatherContent = () => {
           const amRainProb = weeklyData[`rnSt${midIndex}Am`];
           const pmRainProb = weeklyData[`rnSt${midIndex}Pm`];
           
-          // 기온 데이터 - 단기예보의 최근 기온을 기반으로 예측
-          let minTemp = '-';
-          let maxTemp = '-';
+          // 기온 데이터 - API에서 받은 값 또는 평균 기온 사용
+          let minTemp = weeklyData[`taMin${midIndex}`] || '-';
+          let maxTemp = weeklyData[`taMax${midIndex}`] || '-';
 
-          if (shortTermMin && shortTermMax) {
-            // 날씨 상태에 따른 기온 조정
-            const weather = weeklyData[`wf${midIndex}Am`] || weeklyData[`wf${midIndex}Pm`] || '';
-            let tempAdjustment = 0;
-            
-            if (weather && weather.includes('맑음')) tempAdjustment = 1;
-            else if (weather && weather.includes('구름많음')) tempAdjustment = 0;
-            else if (weather && weather.includes('흐림')) tempAdjustment = -1;
-            
-            // 단기예보 데이터를 기반으로 예측
-            minTemp = Math.round(parseInt(shortTermMin) + tempAdjustment);
-            maxTemp = Math.round(parseInt(shortTermMax) + tempAdjustment);
-            
-            // 최저/최고 기온의 차이 유지 (최대 12도 차이 제한)
-            const tempDiff = Math.min(parseInt(shortTermMax) - parseInt(shortTermMin), 12);
-            if (maxTemp - minTemp < tempDiff) {
-              maxTemp = minTemp + tempDiff;
+          // API 데이터가 없을 경우 JSON 데이터 사용
+          if (minTemp === '-' || maxTemp === '-') {
+            const today = new Date();
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + i); // i는 4부터 7까지
+            const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+            const day = targetDate.getDate().toString().padStart(2, '0');
+            const formattedDate = `${month}-${day}`;
+
+            const avgData = avgTempData.find(item => item.date === formattedDate);
+
+            if (avgData) {
+              console.log(`[주간 날씨] ${i}일차 (${formattedDate}) 평균 기온 사용: 최저 ${avgData.avg_min_temp}°, 최고 ${avgData.avg_max_temp}°`);
+              // 평균 기온 데이터를 반올림하여 사용
+              if (minTemp === '-') minTemp = Math.round(avgData.avg_min_temp);
+              if (maxTemp === '-') maxTemp = Math.round(avgData.avg_max_temp);
+            } else {
+              console.warn(`[주간 날씨] ${i}일차 (${formattedDate}) 평균 기온 데이터 없음.`);
             }
           }
-
-          console.log(`[중기예보] ${i}일차 기온 데이터:`, {
-            날짜: `${month}/${day}`,
-            최저기온: minTemp,
-            최고기온: maxTemp,
-            날씨상태: weeklyData[`wf${midIndex}Am`] || weeklyData[`wf${midIndex}Pm`]
-          });
 
           weeklyArray.push({
             date: `${month}/${day}`,
@@ -900,6 +921,10 @@ const WeatherContent = () => {
                   })()}
                 </Text>
               )}
+              <Text style={styles.weatherValue}>
+                {weatherData.response.body.items.item.find(item => item.category === 'POP')?.fcstValue || '강수 없음'}
+                {weatherData.response.body.items.item.find(item => item.category === 'POP')?.fcstValue ? '%' : ''}
+              </Text>
             </>
           ) : (
             <Text style={styles.noWarning}>날씨 데이터를 불러올 수 없습니다.</Text>
