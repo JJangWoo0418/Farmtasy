@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, Animated, Alert, TextInput, Modal, KeyboardAvoidingView, Platform, Keyboard, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import styles from '../../Components/Css/Homepage/postdetailpagestyle'; // 스타일 파일 import
 import API_CONFIG from '../../DB/api';
@@ -28,9 +28,25 @@ const PostDetailPage = () => {
     const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
     const [editingCommentId, setEditingCommentId] = useState(null); // 수정 중인 댓글 ID
     const [editingCommentContent, setEditingCommentContent] = useState(''); // 수정 중인 댓글 내용
+    const [imageLoadingStates, setImageLoadingStates] = useState({});
 
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
+
+    // 이미지 로딩 핸들러 함수 추가 (다른 함수들 근처에 추가)
+    const handleImageLoadStart = (imageUrl) => {
+        setImageLoadingStates(prev => ({
+            ...prev,
+            [imageUrl]: true
+        }));
+    };
+
+    const handleImageLoadEnd = (imageUrl) => {
+        setImageLoadingStates(prev => ({
+            ...prev,
+            [imageUrl]: false
+        }));
+    };
 
     // 댓글 수정 함수
     const handleEditComment = async () => {
@@ -796,12 +812,20 @@ const PostDetailPage = () => {
                             {post.image_urls && post.image_urls.flat().length > 0 && (
                                 <View style={styles.postImages}>
                                     {post.image_urls.flat().map((url, idx) => (
-                                        <Image
-                                            key={url + idx}
-                                            source={{ uri: url }}
-                                            style={styles.postImage}
-                                            resizeMode="cover"
-                                        />
+                                        <View key={url + idx}>
+                                            <Image
+                                                source={{ uri: url }}
+                                                style={styles.postImage}
+                                                resizeMode="cover"
+                                                onLoadStart={() => handleImageLoadStart(url)}
+                                                onLoadEnd={() => handleImageLoadEnd(url)}
+                                            />
+                                            {imageLoadingStates[url] && (
+                                                <View style={styles.loadingContainer}>
+                                                    <ActivityIndicator size="large" color="#22CC6B" />
+                                                </View>
+                                            )}
+                                        </View>
                                     ))}
                                 </View>
                             )}

@@ -421,5 +421,25 @@ export default StyleSheet.create({
         height: 24,
         resizeMode: 'contain',
     },
+    imageContainer: {
+        position: 'relative',
+        width: '100%',
+        height: 300,
+        marginBottom: 10,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        overflow: 'hidden',
+    },
+    loadingContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        zIndex: 1,
+    },
     // ... add more styles if needed for replies, input fields, etc.
 });
