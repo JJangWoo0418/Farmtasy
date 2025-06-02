@@ -1034,8 +1034,8 @@ const HomePage = () => {
                                                 router.push({
                                                     pathname: '/Market/marketdetailpage',
                                                     params: {
-                                                        productId: item.market_id,
-                                                        phone
+                                                        productId: product.market_id,
+                                                        phone: params.phone
                                                     }
                                                 });
                                             }}
