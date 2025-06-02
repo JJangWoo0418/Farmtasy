@@ -185,6 +185,25 @@ export default function MemoPlus() {
               </TouchableOpacity>
             )}
           </View>
+          {showQR && qrValue && (
+            <View style={{
+              backgroundColor: 'white',
+              padding: 8,
+              borderRadius: 8,
+              marginTop: 12,
+              width: '41%'
+            }}>
+              <Text style={{
+                fontSize: 14,
+                color: '#333',
+                textAlign: 'center',
+                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                fontWeight: 'bold',
+              }}>
+                {qrValue}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* 위치 선택 버튼 */}

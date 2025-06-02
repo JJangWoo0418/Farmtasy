@@ -1358,7 +1358,15 @@ const Map = () => {
                     <TouchableOpacity style={styles.menuButton} onPress={handleQrScanPress}>
                         <Text style={styles.menuButtonText}>QR스캔</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuButton} onPress={handleWeatherPress}>
+                    <TouchableOpacity style={styles.menuButton} onPress={() => router.push({
+                        pathname: '/FarmInfo/Weather', params: {
+                            userData: route.params?.userData,
+                            phone: route.params?.phone,
+                            name: route.params?.name,
+                            region: route.params?.region,
+                            introduction: route.params?.introduction
+                        }
+                    })}>
                         <Text style={styles.menuButtonText}>날씨</Text>
                     </TouchableOpacity>
                 </Animated.View>

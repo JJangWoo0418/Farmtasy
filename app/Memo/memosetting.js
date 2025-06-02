@@ -50,12 +50,12 @@ export default function MemoSetting() {
             try {
                 console.log('=== QR코드 가져오기 시작 ===');
                 console.log('요청 URL:', `${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
-                
+
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
                 const data = await response.json();
-                
+
                 console.log('서버 응답:', data);
-                
+
                 if (response.ok && data.detail_qr_code) {
                     console.log('QR코드 가져오기 성공:', data.detail_qr_code);
                     setQrValue(data.detail_qr_code);
@@ -205,11 +205,11 @@ export default function MemoSetting() {
         console.log('=== QR코드 생성 시작 ===');
         console.log('현재 작물 이름:', name);
         console.log('현재 detailId:', params.detailId);
-        
+
         const qrValueToSet = name ? `${name}_${Date.now()}` : `${Date.now()}`;
         console.log('생성된 QR값:', qrValueToSet);
         console.log('타임스탬프:', Date.now());
-        
+
         setQrValue(qrValueToSet);
         setShowQR(true);
 
@@ -218,7 +218,7 @@ export default function MemoSetting() {
             console.log('=== QR코드 DB 업데이트 시작 ===');
             console.log('업데이트 URL:', `${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`);
             console.log('업데이트할 QR값:', qrValueToSet);
-            
+
             fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/${params.detailId}`, {
                 method: 'PUT',
                 headers: {
@@ -226,14 +226,14 @@ export default function MemoSetting() {
                 },
                 body: JSON.stringify({ detail_qr_code: qrValueToSet }),
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('QR코드 DB 업데이트 성공:', data);
-            })
-            .catch(error => {
-                console.error('=== QR코드 DB 업데이트 실패 ===');
-                console.error('에러 내용:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    console.log('QR코드 DB 업데이트 성공:', data);
+                })
+                .catch(error => {
+                    console.error('=== QR코드 DB 업데이트 실패 ===');
+                    console.error('에러 내용:', error);
+                });
         } else {
             console.log('=== QR코드 DB 업데이트 실패 ===');
             console.log('detailId가 없어서 DB 업데이트를 할 수 없습니다.');
@@ -342,11 +342,11 @@ export default function MemoSetting() {
                 {/* 사진 추가 */}
                 <TouchableOpacity style={styles.photoBox} onPress={pickImage} activeOpacity={0.8}>
                     {image && image.startsWith('https://farmtasybucket.s3.ap-northeast-2.amazonaws.com/') ? (
-                        <Image 
-                            source={{ uri: image }} 
-                            style={styles.photo} 
+                        <Image
+                            source={{ uri: image }}
+                            style={styles.photo}
                             resizeMode="cover"
-                            onError={() => setImage(null)} 
+                            onError={() => setImage(null)}
                         />
                     ) : (
                         <>
@@ -383,10 +383,29 @@ export default function MemoSetting() {
                             </TouchableOpacity>
                         )}
                     </View>
+                    {showQR && qrValue && (
+                        <View style={{
+                            backgroundColor: 'white',
+                            padding: 8,
+                            borderRadius: 8,
+                            marginTop: 12,
+                            width: '41%'
+                        }}>
+                            <Text style={{
+                                fontSize: 14,
+                                color: '#333',
+                                textAlign: 'center',
+                                fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                                fontWeight: 'bold',
+                            }}>
+                                {qrValue}
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* 수정 완료 버튼 */}
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.locationButton}
                     onPress={handleUpdate}
                 >

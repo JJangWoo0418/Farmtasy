@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Modal, TextInput, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Modal, TextInput, Keyboard, TouchableWithoutFeedback, Alert, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/Memo/cropdetailmemopagestyle';
 import * as ImagePicker from 'expo-image-picker';
@@ -373,7 +373,7 @@ export default function CropDetailMemoPage() {
                         <Text style={styles.actionText}>작물 위치</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionButton} onPress={() => {
-                        console.log('QR코드 값:', params.detail_qr_code);
+                        console.log('QR코드 값:', qrCode); // params.detail_qr_code 대신 qrCode 사용
                         setQrModalVisible(true);
                     }}>
                         <Image source={require('../../assets/qricon.png')} style={styles.actionIcon} />
@@ -436,7 +436,6 @@ export default function CropDetailMemoPage() {
                     <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>메모 추가</Text>
                 </TouchableOpacity>
 
-                {/* QR코드 모달 */}
                 <Modal
                     visible={qrModalVisible}
                     transparent
@@ -447,11 +446,41 @@ export default function CropDetailMemoPage() {
                         <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, alignItems: 'center', minWidth: 240 }}>
                             <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 18 }}>QR 코드</Text>
                             {qrCode ? (
-                                <QRCode value={qrCode} size={120} />
+                                <>
+                                    <QRCode value={qrCode} size={120} style={{ marginTop: 30 }} />
+                                    <View style={{
+                                        padding: 8,
+                                        borderRadius: 8,
+                                        marginTop: 12,
+                                        width: '100%',
+                                    }}>
+                                        <Text style={{
+                                            fontSize: 14,
+                                            color: '#333',
+                                            textAlign: 'center',
+                                            fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                                            fontWeight: 'bold',
+                                        }}>
+                                            {qrCode}
+                                        </Text>
+                                    </View>
+                                </>
                             ) : (
                                 <Text style={{ fontSize: 16, marginBottom: 20 }}>QR코드 정보 없음</Text>
                             )}
-                            <TouchableOpacity onPress={() => setQrModalVisible(false)} style={{ backgroundColor: '#22C55E', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 24, marginTop: 20 }}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    console.log('현재 qrCode 값:', qrCode); // 여기로 콘솔 로그 이동
+                                    setQrModalVisible(false);
+                                }}
+                                style={{
+                                    backgroundColor: '#22C55E',
+                                    borderRadius: 8,
+                                    paddingVertical: 8,
+                                    paddingHorizontal: 24,
+                                    marginTop: 20
+                                }}
+                            >
                                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>닫기</Text>
                             </TouchableOpacity>
                         </View>
