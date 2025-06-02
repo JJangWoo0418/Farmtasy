@@ -546,5 +546,62 @@ export default StyleSheet.create({
     contentText: {
         color: '#666',
     },
+    searchResultsContainer: {
+        position: 'absolute',
+        top: 60, // 검색창 아래 위치
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        maxHeight: 300,
+        zIndex: 1000,
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        borderRadius: 8,
+        marginHorizontal: 16,
+    },
+    searchResultsList: {
+        maxHeight: 300,
+    },
+    searchResultItem: {
+        flexDirection: 'row',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        alignItems: 'center',
+    },
+    searchResultImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 4,
+        marginRight: 12,
+    },
+    searchResultInfo: {
+        flex: 1,
+    },
+    searchResultName: {
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 4,
+    },
+    searchResultPrice: {
+        fontSize: 14,
+        color: '#22CC6B',
+        fontWeight: 'bold',
+    },
+    noResultsText: {
+        padding: 16,
+        textAlign: 'center',
+        color: '#666',
+    },
+    searchResultImage: {
+        width: 50,
+        height: 50,
+        borderRadius: 4,
+        marginRight: 12,
+        backgroundColor: '#f5f5f5', // 이미지가 없을 때 배경색
+    },
 });
 

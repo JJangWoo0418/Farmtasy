@@ -21,12 +21,38 @@ const HomePage = () => {
     const [bookmarkedPosts, setBookmarkedPosts] = useState({});
     const heartAnimationsRef = useRef({});
     const bookmarkAnimationsRef = useRef({});
+    const params = useLocalSearchParams();  // 이 줄 추가
 
     const drawerAnim = useRef(new Animated.Value(-300)).current; // 왼쪽에서 숨겨진 상태
 
     const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
     const [notifications, setNotifications] = useState([]); // 알림 목록 상태
     const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // 검색 함수
+    const handleSearch = async (text) => {
+        setSearchQuery(text);
+        if (text.trim().length > 0) {
+            setIsSearching(true);
+            try {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/search?query=${encodeURIComponent(text)}`);
+                const data = await response.json();
+                console.log('검색 결과:', data); // 검색 결과 데이터 확인
+                if (data.success) {
+                    setSearchResults(data.products);
+                }
+            } catch (error) {
+                console.error('검색 실패:', error);
+            }
+        } else {
+            setSearchResults([]);
+        }
+        setIsSearching(false);
+    };
 
     function getSummary(text, maxLength = 20) {
         if (!text) return '';
@@ -36,7 +62,7 @@ const HomePage = () => {
     // 알림 목록 가져오기 함수
     const fetchNotifications = async () => {
         if (!phone) return;
-        
+
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications?phone=${phone}`);
             const data = await response.json();
@@ -52,7 +78,7 @@ const HomePage = () => {
     // 알림 읽음 처리 함수
     const markNotificationsAsRead = async () => {
         if (!phone) return;
-        
+
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}/api/notifications/read`, {
                 method: 'POST',
@@ -61,7 +87,7 @@ const HomePage = () => {
                 },
                 body: JSON.stringify({ phone }),
             });
-            
+
             const data = await response.json();
             if (data.success) {
                 setHasUnreadNotifications(false);
@@ -986,19 +1012,70 @@ const HomePage = () => {
                         style={styles.searchInput}
                         placeholder=" 지금 필요한 농자재 검색"
                         placeholderTextColor="#aaa"
+                        value={searchQuery}
+                        onChangeText={handleSearch}
                     />
                 </View>
+
+                {/* 검색 결과 표시 */}
+                {searchQuery.length > 0 && (
+                    <View style={styles.searchResultsContainer}>
+                        {isSearching ? (
+                            <ActivityIndicator size="small" color="#22CC6B" />
+                        ) : searchResults.length > 0 ? (
+                            <ScrollView style={styles.searchResultsList}>
+                                {searchResults.map((product) => {
+                                    console.log('제품 이미지 URL:', product.market_image_url); // 각 제품의 이미지 URL 확인
+                                    return (
+                                        <TouchableOpacity
+                                            key={product.market_id}
+                                            style={styles.searchResultItem}
+                                            onPress={() => {
+                                                router.push({
+                                                    pathname: '/Market/marketdetailpage',
+                                                    params: {
+                                                        productId: item.market_id,
+                                                        phone
+                                                    }
+                                                });
+                                            }}
+                                        >
+                                            <Image
+                                                source={{
+                                                    uri: product.market_image_url ?
+                                                        (Array.isArray(product.market_image_url) ?
+                                                            product.market_image_url[0] :
+                                                            'https://via.placeholder.com/50') :
+                                                        'https://via.placeholder.com/50'
+                                                }}
+                                                style={styles.searchResultImage}
+                                            />
+                                            <View style={styles.searchResultInfo}>
+                                                <Text style={styles.searchResultName}>{product.market_name}</Text>
+                                                <Text style={styles.searchResultPrice}>
+                                                    {product.market_price.toLocaleString()}원
+                                                </Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        ) : (
+                            <Text style={styles.noResultsText}>검색 결과가 없습니다.</Text>
+                        )}
+                    </View>
+                )}
 
                 <TouchableOpacity
                     style={styles.bellIconWrapper}
                     onPress={openNotificationModal}
                 >
-                    <Image 
-                        source={hasUnreadNotifications 
+                    <Image
+                        source={hasUnreadNotifications
                             ? require('../../../assets/bellicon2.png')
                             : require('../../../assets/bellicon.png')
-                        } 
-                        style={styles.bellIcon} 
+                        }
+                        style={styles.bellIcon}
                     />
                 </TouchableOpacity>
             </View>

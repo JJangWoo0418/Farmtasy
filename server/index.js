@@ -2177,6 +2177,38 @@ app.post('/api/cropdetail', async (req, res) => {
     }
 });
 
+// 장터 제품 검색 API
+app.get('/api/market/search', async (req, res) => {
+    try {
+        const { query } = req.query;
+        
+        // market_image_url도 함께 가져오기
+        const [products] = await pool.query(
+            `SELECT 
+                market_id,
+                market_name,
+                market_price,
+                market_image_url,
+                market_created_at
+            FROM market 
+            WHERE market_name LIKE ? 
+            ORDER BY market_created_at DESC`,
+            [`%${query}%`]
+        );
+
+        res.json({
+            success: true,
+            products: products
+        });
+    } catch (error) {
+        console.error('장터 제품 검색 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: '검색 중 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 작물 상세 정보 조회 API
 app.get('/api/cropdetail', async (req, res) => {
     try {
