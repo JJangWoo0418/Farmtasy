@@ -8,6 +8,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import BottomTabNavigator from '../Navigator/BottomTabNavigator';
 import API_CONFIG from '../DB/api';
+import { CameraView } from 'expo-camera';
 
 
 
@@ -69,6 +70,7 @@ const Map = () => {
     const [modifyingTarget, setModifyingTarget] = useState(null);
     const [modifyingLocation, setModifyingLocation] = useState(null);
     const [modifySuccessModalVisible, setModifySuccessModalVisible] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
 
     // --- 지도 중앙 주소 관련 상태 ---
     // const [initialLocationFetched, setInitialLocationFetched] = useState(false);
@@ -353,6 +355,46 @@ const Map = () => {
         }
     };
 
+    // QR코드 스캔 처리 함수
+    const handleBarCodeScanned = async ({ data }) => {
+        setIsScanning(false); // 스캔 모달 닫기
+        try {
+            // 서버에서 QR코드로 상세 작물 정보 조회
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/qr/${data}`);
+            const result = await response.json();
+
+            if (result.success && result.cropDetail) {
+                // 상세 작물 정보가 있으면 해당 페이지로 이동
+                const navigationParams = {
+                    detailId: result.cropDetail.cropdetail_id,
+                    name: result.cropDetail.detail_name,
+                    image: result.cropDetail.detail_image_url,
+                    cropId: result.cropDetail.crop_id,
+                    phone: params.phone,
+                    farmId: result.cropDetail.farm_id,
+                    farmName: result.cropDetail.farm_name,
+                    userData: params.userData,
+                    region: params.region,
+                    introduction: params.introduction,
+                };
+
+                if (result.cropDetail.memo) {
+                    navigationParams.memo = JSON.stringify(result.cropDetail.memo);
+                }
+
+                router.push({
+                    pathname: '/Memo/cropdetailmemopage',
+                    params: navigationParams
+                });
+            } else {
+                Alert.alert('알림', '일치하는 QR코드를 찾을 수 없습니다.');
+            }
+        } catch (error) {
+            console.error('QR코드 조회 실패:', error);
+            Alert.alert('오류', 'QR코드 조회 중 오류가 발생했습니다.');
+        }
+    };
+
     const saveFarmArea = async (name, coordinates) => {
         if (!name || name.trim().length === 0) {
             Alert.alert('오류', '농장 이름을 입력하세요.');
@@ -612,8 +654,9 @@ const Map = () => {
         }
     };
 
+    // QR코드 스캔 버튼 핸들러 수정
     const handleQrScanPress = () => {
-        router.push('Map/qrscan');
+        setIsScanning(true);
     };
 
     const handleWeatherPress = () => console.log('날씨 버튼 클릭됨');
@@ -1446,6 +1489,63 @@ const Map = () => {
                     </TouchableOpacity>
                 </Animated.View>
             )}
+
+            {/* QR코드 스캔 모달 추가 */}
+            <Modal
+                visible={isScanning}
+                transparent={false}
+                animationType="slide"
+                onRequestClose={() => setIsScanning(false)}
+            >
+                <View style={{ flex: 1 }}>
+                    <CameraView
+                        style={{ flex: 1 }}
+                        barcodeScannerSettings={{
+                            barcodeTypes: ['qr'],
+                        }}
+                        onBarcodeScanned={handleBarCodeScanned}
+                    >
+                        <View style={{
+                            flex: 1,
+                            backgroundColor: 'transparent',
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}>
+                            <View style={{
+                                width: 250,
+                                height: 250,
+                                borderWidth: 2,
+                                borderColor: '#fff',
+                                backgroundColor: 'transparent'
+                            }} />
+                            <Text style={{
+                                color: '#fff',
+                                fontSize: 16,
+                                marginTop: 20,
+                                textAlign: 'center',
+                                backgroundColor: 'rgba(0,0,0,0.7)',
+                                padding: 10,
+                                borderRadius: 5
+                            }}>
+                                QR코드를 스캔해주세요
+                            </Text>
+                        </View>
+                    </CameraView>
+                    <TouchableOpacity
+                        style={{
+                            position: 'absolute',
+                            top: 60,
+                            right: 20,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 10,
+                            borderRadius: 5
+                        }}
+                        onPress={() => setIsScanning(false)}
+                    >
+                        <Text style={{ color: '#fff' }}>닫기</Text>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
 
             {/* 중앙 고정 핀 (작물 추가 모드일 때만 표시) */}
             {!isDrawingMode && isAddingCropMode && (
