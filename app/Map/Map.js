@@ -1355,7 +1355,82 @@ const Map = () => {
                     </TouchableOpacity>
 
                     {/* 메뉴 버튼들 */}
-                    <TouchableOpacity style={styles.menuButton} onPress={handleQrScanPress}>
+                    <TouchableOpacity
+                        style={styles.menuButton}
+                        onPress={() => {
+                            Alert.alert(
+                                'QR코드 입력',
+                                'QR코드를 스캔하시겠습니까?',
+                                [
+                                    {
+                                        text: 'QR코드 스캔',
+                                        onPress: handleQrScanPress
+                                    },
+                                    {
+                                        text: 'QR코드 입력',
+                                        onPress: () => {
+                                            Alert.prompt(
+                                                'QR코드 입력',
+                                                'QR코드를 입력해주세요',
+                                                [
+                                                    {
+                                                        text: '취소',
+                                                        style: 'cancel'
+                                                    },
+                                                    {
+                                                        text: '확인',
+                                                        onPress: async (qrCode) => {
+                                                            if (qrCode) {
+                                                                try {
+                                                                    // 서버에서 QR코드로 상세 작물 정보 조회
+                                                                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/cropdetail/qr/${qrCode}`);
+                                                                    const data = await response.json();
+
+                                                                    if (data.success && data.cropDetail) {
+                                                                        // 상세 작물 정보가 있으면 해당 페이지로 이동
+                                                                        const navigationParams = {
+                                                                            detailId: data.cropDetail.cropdetail_id,
+                                                                            name: data.cropDetail.detail_name,
+                                                                            image: data.cropDetail.detail_image_url,
+                                                                            cropId: data.cropDetail.crop_id,
+                                                                            phone: params.phone,
+                                                                            farmId: data.cropDetail.farm_id,
+                                                                            farmName: data.cropDetail.farm_name,
+                                                                            userData: params.userData,
+                                                                            region: params.region,
+                                                                            introduction: params.introduction,
+                                                                        };
+
+                                                                        if (data.cropDetail.memo) {
+                                                                            navigationParams.memo = JSON.stringify(data.cropDetail.memo);
+                                                                        }
+
+                                                                        router.push({
+                                                                            pathname: '/Memo/cropdetailmemopage',
+                                                                            params: navigationParams
+                                                                        });
+                                                                    } else {
+                                                                        Alert.alert('알림', '일치하는 QR코드를 찾을 수 없습니다.');
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error('QR코드 조회 실패:', error);
+                                                                    Alert.alert('오류', 'QR코드 조회 중 오류가 발생했습니다.');
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            );
+                                        }
+                                    },
+                                    {
+                                        text: '취소',
+                                        style: 'cancel'
+                                    }
+                                ]
+                            );
+                        }}
+                    >
                         <Text style={styles.menuButtonText}>QR스캔</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.menuButton} onPress={() => router.push({

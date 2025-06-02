@@ -3471,6 +3471,42 @@ app.post('/api/notifications/read', async (req, res) => {
     }
 });
 
+// QR코드로 상세 작물 정보 조회 API
+app.get('/api/cropdetail/qr/:qrCode', async (req, res) => {
+    console.log('QR코드로 상세 작물 정보 조회 API 호출됨');
+    try {
+        const { qrCode } = req.params;
+
+        // QR코드로 상세 작물 정보 조회
+        const [cropDetails] = await pool.query(
+            `SELECT cd.*, c.farm_id, f.farm_name 
+            FROM cropdetail cd
+            JOIN crop c ON cd.crop_id = c.crop_id
+            JOIN farm f ON c.farm_id = f.farm_id
+            WHERE cd.detail_qr_code = ?`,
+            [qrCode]
+        );
+
+        if (cropDetails.length > 0) {
+            res.json({
+                success: true,
+                cropDetail: cropDetails[0]
+            });
+        } else {
+            res.json({
+                success: false,
+                message: '일치하는 QR코드를 찾을 수 없습니다.'
+            });
+        }
+    } catch (error) {
+        console.error('QR코드 조회 중 오류:', error);
+        res.status(500).json({
+            success: false,
+            message: 'QR코드 조회 중 오류가 발생했습니다.'
+        });
+    }
+});
+
 // 알림 생성 헬퍼 함수
 async function createNotification({
     recipientPhone,
