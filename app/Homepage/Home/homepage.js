@@ -32,6 +32,7 @@ const HomePage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
 
     // 검색 함수
     const handleSearch = async (text) => {
@@ -41,7 +42,6 @@ const HomePage = () => {
             try {
                 const response = await fetch(`${API_CONFIG.BASE_URL}/api/market/search?query=${encodeURIComponent(text)}`);
                 const data = await response.json();
-                console.log('검색 결과:', data); // 검색 결과 데이터 확인
                 if (data.success) {
                     setSearchResults(data.products);
                 }
@@ -1006,31 +1006,53 @@ const HomePage = () => {
                     <FontAwesome name="bars" size={20} color="#555" />
                 </TouchableOpacity>
 
-                <View style={styles.searchBox}>
+                <TouchableOpacity
+                    style={styles.searchBox}
+                    onPress={() => setIsSearchModalVisible(true)}
+                >
                     <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder=" 지금 필요한 농자재 검색"
-                        placeholderTextColor="#aaa"
-                        value={searchQuery}
-                        onChangeText={handleSearch}
-                    />
-                </View>
+                    <Text style={styles.searchPlaceholder}>지금 필요한 농자재 검색</Text>
+                </TouchableOpacity>
 
-                {/* 검색 결과 표시 */}
-                {searchQuery.length > 0 && (
-                    <View style={styles.searchResultsContainer}>
-                        {isSearching ? (
-                            <ActivityIndicator size="small" color="#22CC6B" />
-                        ) : searchResults.length > 0 ? (
-                            <ScrollView style={styles.searchResultsList}>
-                                {searchResults.map((product) => {
-                                    console.log('제품 이미지 URL:', product.market_image_url); // 각 제품의 이미지 URL 확인
-                                    return (
+                {/* 검색 모달 */}
+                <Modal
+                    visible={isSearchModalVisible}
+                    animationType="fade"
+                    transparent={true}
+                    onRequestClose={() => setIsSearchModalVisible(false)}
+                >
+                    <View style={styles.searchModalContainer}>
+                        <View style={styles.searchModalContent}>
+                            <View style={styles.searchModalHeader}>
+                                <View style={styles.searchModalInputContainer}>
+                                    <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
+                                    <TextInput
+                                        style={styles.searchModalInput}
+                                        placeholder="지금 필요한 농자재 검색"
+                                        placeholderTextColor="#aaa"
+                                        value={searchQuery}
+                                        onChangeText={handleSearch}
+                                        autoFocus={true}
+                                    />
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setIsSearchModalVisible(false)}
+                                    style={styles.searchModalCloseButton}
+                                >
+                                    <Image source={require('../../../assets/closeicon.png')} style={{ width: 15, height: 15, marginLeft: 15 }} />
+                                </TouchableOpacity>
+                            </View>
+
+                            {isSearching ? (
+                                <ActivityIndicator size="small" color="#22CC6B" style={styles.searchLoading} />
+                            ) : searchResults.length > 0 ? (
+                                <ScrollView style={styles.searchResultsList}>
+                                    {searchResults.map((product) => (
                                         <TouchableOpacity
                                             key={product.market_id}
                                             style={styles.searchResultItem}
                                             onPress={() => {
+                                                setIsSearchModalVisible(false);
                                                 router.push({
                                                     pathname: '/Market/marketdetailpage',
                                                     params: {
@@ -1057,14 +1079,14 @@ const HomePage = () => {
                                                 </Text>
                                             </View>
                                         </TouchableOpacity>
-                                    );
-                                })}
-                            </ScrollView>
-                        ) : (
-                            <Text style={styles.noResultsText}>검색 결과가 없습니다.</Text>
-                        )}
+                                    ))}
+                                </ScrollView>
+                            ) : searchQuery.length > 0 ? (
+                                <Text style={styles.noResultsText}>검색 결과가 없습니다.</Text>
+                            ) : null}
+                        </View>
                     </View>
-                )}
+                </Modal>
 
                 <TouchableOpacity
                     style={styles.bellIconWrapper}

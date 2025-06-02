@@ -603,5 +603,51 @@ export default StyleSheet.create({
         marginRight: 12,
         backgroundColor: '#f5f5f5', // 이미지가 없을 때 배경색
     },
+    searchModalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    searchModalContent: {
+        flex: 1,
+        backgroundColor: '#fff',
+        marginTop: 150,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    searchModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    searchModalCloseButton: {
+        padding: 8,
+        marginRight: 8,
+    },
+    searchModalInputContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+    },
+    searchModalInput: {
+        flex: 1,
+        height: 40,
+        marginLeft: 8,
+        fontSize: 16,
+    },
+    searchLoading: {
+        marginTop: 20,
+    },
+    searchResultsList: {
+        flex: 1,
+    },
+    searchPlaceholder: {
+        color: '#aaa',
+        marginLeft: 8,
+    },
 });
 
