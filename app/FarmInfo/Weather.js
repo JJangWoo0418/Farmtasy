@@ -532,15 +532,33 @@ const WeatherContent = () => {
             const sky = data['SKY'] || '1';
             const t1h = data['T1H'] ? `${data['T1H']}°` : '-°';
             const reh = data['REH'] ? `${data['REH']}%` : '-%';
-            const rn1 = data['RN1'] === '강수없음' ? '-' : 
-                       data['RN1'].includes('미만') ? `${data['RN1'].split('미만')[0]}↓` : 
-                       data['RN1'];
+            const pop = data['POP'] ? `${data['POP']}%` : '강수없음';
             
             const emoji = getWeatherEmoji(pty, sky);
             
             console.log(`[시간대별 날씨] 시간: ${hour}시, PTY: ${pty}, SKY: ${sky}, 이모지: ${emoji}`);
             
             const isCurrentHour = groupData.time === currentTimeStr;
+
+            // 풍향(VEC)과 풍속(WSD) 정보 추출
+            const wsd = data['WSD'] ? data['WSD'] : '-'; // 풍속
+            const vec = data['VEC'] ? data['VEC'] : '-'; // 풍향(도)
+
+            // 풍향(도수)을 8방위 이모지로 변환하는 함수
+            const getWindDirectionEmoji = (deg) => {
+              if (deg === '-' || deg === undefined) return '·';
+              const d = parseInt(deg, 10);
+              if ((d >= 338 || d < 23)) return '↑';    // 북
+              if (d >= 23 && d < 68) return '↗';      // 북동
+              if (d >= 68 && d < 113) return '→';     // 동
+              if (d >= 113 && d < 158) return '↘';    // 남동
+              if (d >= 158 && d < 203) return '↓';    // 남
+              if (d >= 203 && d < 248) return '↙';    // 남서
+              if (d >= 248 && d < 293) return '←';    // 서
+              if (d >= 293 && d < 338) return '↖';    // 북서
+              return '·';
+            };
+            const windEmoji = getWindDirectionEmoji(vec);
 
           return (
               <View key={idx} style={[
@@ -552,12 +570,14 @@ const WeatherContent = () => {
                   isCurrentHour && styles.hourlyTimeCurrent
                 ]}>{displayHour}</Text>
                 <Text style={styles.weatherEmoji}>{emoji}</Text>
-                <Text style={styles.rainValue}>{rn1}</Text>
+                {/* 강수확률(POP) - 값이 없으면 '강수없음'을 작게, 아래 패딩 추가 */}
+                <Text style={[styles.rainValue, !data['POP'] && { fontSize: 12, paddingBottom: 4 }]}> {pop} </Text>
                 <Text style={[
                   styles.weatherTemp,
                   isCurrentHour && styles.weatherTempCurrent
                 ]}>{t1h}</Text>
-                <Text style={styles.weatherValue}>{reh}</Text>
+                {/* 풍향(이모지) + 풍속(m/s) 표시, 습도 대신 */}
+                <Text style={styles.weatherValue}>{windEmoji} {wsd}</Text>
             </View>
           );
           }).filter(Boolean)}
@@ -831,7 +851,7 @@ const WeatherContent = () => {
           </Text>
         </TouchableOpacity>
       </View>
-      {/*최상단 날씨 박스*/}
+      {/*종합날씨*/}
       <ScrollView style={styles.scrollContainer} nestedScrollEnabled={true}>
         <View style={styles.currentWeatherBox}>
           {isLoading ? (
