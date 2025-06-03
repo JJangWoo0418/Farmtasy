@@ -171,7 +171,7 @@ const FarmInfoContent = (props) => {
 
             {/* 상단 메뉴: 항상 고정 */}
             <View style={styles.section}>
-                <Link href="/FarmInfo/Weather" asChild>
+                <Link href={{ pathname: "/FarmInfo/Weather", params: { phone: userPhone } }} asChild>
                     <TouchableOpacity style={styles.menuItem}>
                         <View style={styles.menuContent2}>
                             <Image source={require('../../assets/weathericon3.png')} style={{ width: 60, height: 60, marginBottom: 10 }} />

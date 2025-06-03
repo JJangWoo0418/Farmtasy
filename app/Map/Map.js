@@ -469,6 +469,7 @@ const Map = () => {
     const handleAreaPress = (areaId) => {
         const area = farmAreas.find(a => a.id === areaId);
         if (!area) return;
+        setSelectedArea(area);  // 선택된 농장 정보 저장
         setFarmActionModal({ visible: true, area });
     };
 
@@ -617,7 +618,14 @@ const Map = () => {
         router.push('Map/qrscan');
     };
 
-    const handleWeatherPress = () => console.log('날씨 버튼 클릭됨');
+    // 날씨 버튼 클릭 시 Weather.js로 이동
+    const handleWeatherPress = () => {
+        // Weather.js로 이동 시 userPhone 파라미터 전달
+        router.push({
+            pathname: '/FarmInfo/Weather',
+            params: { phone: params.phone } // Map.js에서 받은 phone 값을 Weather.js로 전달
+        });
+    };
 
     const handleSearch = async () => {
         if (!searchQuery) return;
@@ -1403,8 +1411,12 @@ const Map = () => {
                                 farmAreas.map(farm => (
                                     <TouchableOpacity
                                         key={farm.id}
-                                        style={styles.farmItem}
+                                        style={[
+                                            styles.farmItem,
+                                            selectedArea?.id === farm.id && styles.selectedFarmItem
+                                        ]}
                                         onPress={() => {
+                                            setSelectedArea(farm);  // 농장 선택
                                             if (farm.coordinates && farm.coordinates.length > 0) {
                                                 setRegion({
                                                     latitude: farm.coordinates[0].latitude,
@@ -1416,7 +1428,10 @@ const Map = () => {
                                             setIsFarmModalVisible(false);
                                         }}
                                     >
-                                        <Text style={styles.farmName}>{farm.name}</Text>
+                                        <Text style={[
+                                            styles.farmName,
+                                            selectedArea?.id === farm.id && styles.selectedFarmName
+                                        ]}>{farm.name}</Text>
                                     </TouchableOpacity>
                                 ))
                             )}
@@ -1932,6 +1947,13 @@ const styles = StyleSheet.create({
         color: '#666',
         fontSize: 16,
         padding: 20,
+    },
+    selectedFarmItem: {
+        backgroundColor: '#E8F5E9',
+        borderRadius: 8,
+    },
+    selectedFarmName: {
+        color: '#2ECC71',
     },
 });
 
