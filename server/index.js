@@ -775,27 +775,35 @@ app.get('/api/user/stats', async (req, res) => {
     }
 
     try {
-        // 게시글 수 조회 - 전화번호로 매칭
+        // 게시글 수 조회 - post + market
         const [postCount] = await pool.query(
-            'SELECT COUNT(*) as post_count FROM post WHERE phone = ?',
-            [phone]
+            `SELECT 
+                (SELECT COUNT(*) FROM post WHERE phone = ?) +
+                (SELECT COUNT(*) FROM market WHERE phone = ?) 
+                AS post_count`,
+            [phone, phone]
         );
 
-        // 댓글 수 조회 - 전화번호로 매칭
+        // 댓글 수 조회 - comment + market_comment
         const [commentCount] = await pool.query(
-            'SELECT COUNT(*) as comment_count FROM comment WHERE phone = ?',
-            [phone]
+            `SELECT 
+                (SELECT COUNT(*) FROM comment WHERE phone = ?) +
+                (SELECT COUNT(*) FROM market_comment WHERE phone = ?) 
+                AS comment_count`,
+            [phone, phone]
         );
 
-        // 받은 좋아요 수 조회 - 게시글과 댓글의 좋아요 합산
+        // 받은 좋아요 수 조회 - 게시글, 장터글, 댓글의 좋아요 합산 (장터댓글은 제외)
         const [likeCount] = await pool.query(`
             SELECT (
                 -- 게시글 좋아요 수
                 (SELECT COALESCE(SUM(post_like), 0) FROM post WHERE phone = ?) +
+                -- 장터글 좋아요 수
+                (SELECT COALESCE(SUM(market_like), 0) FROM market WHERE phone = ?) +
                 -- 댓글 좋아요 수
                 (SELECT COALESCE(SUM(comment_like), 0) FROM comment WHERE phone = ?)
             ) as like_count
-        `, [phone, phone]);
+        `, [phone, phone, phone]);
 
         res.json({
             post_count: postCount[0].post_count || 0,
