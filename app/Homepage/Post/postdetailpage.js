@@ -30,6 +30,24 @@ const PostDetailPage = () => {
     const [editingCommentContent, setEditingCommentContent] = useState(''); // 수정 중인 댓글 내용
     const [imageLoadingStates, setImageLoadingStates] = useState({});
 
+    // 디버깅을 위한 로그 추가
+    console.log('상세 페이지 - 받은 데이터:', route.params);
+    
+    // post가 없을 경우 처리
+    if (!post) {
+        console.log('post 데이터가 없습니다');
+        return null;
+    }
+
+    // post 데이터 구조 확인
+    console.log('post 데이터:', {
+        id: post.id,
+        phone: post.phone,
+        user: post.user,
+        text: post.text,
+        image_urls: post.image_urls
+    });
+
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
 

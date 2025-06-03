@@ -3421,6 +3421,20 @@ app.get('/api/notifications', async (req, res) => {
             `SELECT n.*, 
                 u.name as actor_name,
                 u.region as actor_region,
+                -- 게시글 정보 추가
+                p.post_id as post_id,
+                p.phone as post_phone,
+                p.post_content as post_text,
+                p.image_urls as post_image_urls,
+                p.post_created_at as post_created_at,
+                p.post_like as post_likes,
+                CASE WHEN pl.id IS NOT NULL THEN 1 ELSE 0 END as post_is_liked,
+                CASE WHEN pb.id IS NOT NULL THEN 1 ELSE 0 END as post_is_bookmarked,
+                up.name as post_user,
+                up.profile_image as post_profile_image,
+                up.region as post_region,
+                up.introduction as post_introduction,
+                -- 기존 알림용 필드
                 p.post_content,
                 m.market_name,
                 c.comment_content,
@@ -3442,16 +3456,19 @@ app.get('/api/notifications', async (req, res) => {
             FROM Notifications n
             LEFT JOIN user u ON n.actor_phone = u.phone
             LEFT JOIN post p ON n.target_post_id = p.post_id
+            LEFT JOIN user up ON p.phone = up.phone
             LEFT JOIN market m ON n.target_market_id = m.market_id
             LEFT JOIN comment c ON n.target_comment_id = c.comment_id
             LEFT JOIN market_comment mc ON n.target_comment_id = mc.market_comment_id
             LEFT JOIN market_comment pmc ON mc.market_comment_parent_id = pmc.market_comment_id
             LEFT JOIN comment pc ON c.comment_parent_id = pc.comment_id
             LEFT JOIN post p2 ON pc.post_id = p2.post_id
+            LEFT JOIN post_likes pl ON p.post_id = pl.post_id AND pl.user_phone = ?
+            LEFT JOIN post_bookmarks pb ON p.post_id = pb.post_id AND pb.user_phone = ?
             WHERE n.recipient_phone = ?
             ORDER BY n.created_at DESC
             LIMIT 50`,
-            [phone]
+            [phone, phone, phone]
         );
 
         // 읽지 않은 알림이 있는지 확인

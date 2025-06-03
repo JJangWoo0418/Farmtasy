@@ -53,29 +53,43 @@ const HomePage = () => {
                     return;
                 }
 
-                router.push({
-                    pathname: '/Homepage/Post/postdetailpage',
-                    params: {
-                        post: {
-                            id: notification.target_post_id,
-                            phone: notification.recipient_phone,
-                            user: notification.actor_name || '알 수 없음',
-                            profile_image: null,
-                            region: notification.actor_region || '지역 미설정',
-                            introduction: null,
-                            time: notification.created_at,
-                            text: notification.post_content || '',
-                            image_urls: [],
-                            likes: 0,
-                            is_liked: false,
-                            is_bookmarked: false
-                        },
-                        introduction: params.introduction || '소개 미설정',
-                        phone: params.phone,
-                        name: params.user,
-                        region: params.region,
-                        profile: params.profile_image
-                    }
+                // 디버깅을 위한 로그 추가
+                console.log('알림 클릭 - 이동할 데이터:', {
+                    post_id: notification.post_id,
+                    post_phone: notification.post_phone,
+                    post_user: notification.post_user,
+                    post_text: notification.post_text,
+                    comment_content: notification.comment_content,
+                    target_comment_id: notification.target_comment_id
+                });
+
+                const postData = {
+                    id: notification.post_id,
+                    phone: notification.post_phone,
+                    user: notification.post_user,
+                    profile_image: notification.post_profile_image,
+                    region: notification.post_region,
+                    introduction: notification.post_introduction,
+                    time: notification.post_created_at,
+                    text: notification.post_text || '',
+                    image_urls: notification.post_image_urls || [],
+                    likes: notification.post_likes || 0,
+                    is_liked: notification.post_is_liked === 1 || notification.post_is_liked === true,
+                    is_bookmarked: notification.post_is_bookmarked === 1 || notification.post_is_bookmarked === true
+                };
+
+                const commentData = {
+                    id: notification.target_comment_id,
+                    content: notification.comment_content,
+                    parent_content: notification.parent_comment_content
+                };
+
+                console.log('전달할 데이터:', { post: postData, comment: commentData });
+
+                // 객체를 직접 전달
+                navigation.navigate('Homepage/Post/postdetailpage', {
+                    post: postData,
+                    comment: commentData,
                 });
 
                 break;
