@@ -79,9 +79,17 @@ const HomePage = () => {
                 };
 
                 const commentData = {
-                    id: notification.target_comment_id,
+                    id: notification.comment_id || notification.target_comment_id,
                     content: notification.comment_content,
-                    parent_content: notification.parent_comment_content
+                    created_at: notification.comment_created_at,
+                    phone: notification.comment_phone,
+                    user: notification.comment_user,
+                    profile_image: notification.comment_profile_image,
+                    parent_id: notification.parent_comment_id,
+                    parent_content: notification.parent_comment_content,
+                    parent_phone: notification.parent_comment_phone,
+                    parent_user: notification.parent_comment_user,
+                    parent_profile_image: notification.parent_comment_profile_image,
                 };
 
                 console.log('전달할 데이터:', { post: postData, comment: commentData });
@@ -90,6 +98,7 @@ const HomePage = () => {
                 navigation.navigate('Homepage/Post/postdetailpage', {
                     post: postData,
                     comment: commentData,
+                    phone
                 });
 
                 break;

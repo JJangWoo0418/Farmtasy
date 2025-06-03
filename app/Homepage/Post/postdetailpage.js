@@ -7,7 +7,7 @@ import API_CONFIG from '../../DB/api';
 const PostDetailPage = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const { post, introduction, phone, name, region, profile } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
+    const { post, introduction, phone, name, region, profile, comment = null } = route.params || {}; // postpage.js에서 전달받을 게시글 데이터
     const [isLiked, setIsLiked] = useState(post.is_liked);
     const [likeCount, setLikeCount] = useState(post.likes);
     const [isBookmarked, setIsBookmarked] = useState(post.is_bookmarked);
@@ -32,7 +32,7 @@ const PostDetailPage = () => {
 
     // 디버깅을 위한 로그 추가
     console.log('상세 페이지 - 받은 데이터:', route.params);
-    
+
     // post가 없을 경우 처리
     if (!post) {
         console.log('post 데이터가 없습니다');
@@ -47,6 +47,13 @@ const PostDetailPage = () => {
         text: post.text,
         image_urls: post.image_urls
     });
+
+    // commentData.id가 있으면 해당 댓글로 스크롤/하이라이트
+    useEffect(() => {
+        if (comment && comment.id && comments.length > 0) {
+            // 예시: 해당 댓글을 하이라이트하는 state를 추가
+        }
+    }, [comment, comments]);
 
     // 임시 댓글 데이터
     const [commentSort, setCommentSort] = useState('인기순'); // 댓글 정렬 상태
