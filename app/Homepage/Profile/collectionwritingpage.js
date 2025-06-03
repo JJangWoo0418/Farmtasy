@@ -669,6 +669,7 @@ const CollectionWritingpage = () => {
                             </View>
                         </>
                     }
+                    ListEmptyComponent={<Text style={{textAlign:'center',marginTop:40}}>작성한 게시글이 없습니다.</Text>}
                 />
             )}
         </View>

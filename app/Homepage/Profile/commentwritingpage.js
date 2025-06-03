@@ -612,7 +612,7 @@ const CommentWritingpage = () => {
                             </View>
                         </>
                     }
-                    ListEmptyComponent={<Text style={{textAlign:'center',marginTop:40}}>표시할 게시글이 없습니다.</Text>}
+                    ListEmptyComponent={<Text style={{textAlign:'center',marginTop:40}}>작성한 댓글이 없습니다.</Text>}
                 />
             )}
         </View>

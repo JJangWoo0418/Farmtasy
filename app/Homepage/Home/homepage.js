@@ -974,7 +974,14 @@ const HomePage = () => {
                 ]}
             >
                 <TouchableOpacity
-                    style={styles.drawerBackground}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 100,
+                    }}
                     onPress={closeDrawer}
                     activeOpacity={1}
                 />
@@ -982,7 +989,7 @@ const HomePage = () => {
                 <Animated.View
                     style={[
                         styles.drawerStatic,
-                        { transform: [{ translateX: drawerAnim }] },
+                        { transform: [{ translateX: drawerAnim }], zIndex: 101 },
                     ]}
                 >
                     <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>

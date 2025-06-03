@@ -258,7 +258,7 @@ const FarmInfoContent = (props) => {
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                                         <Image
                                             source={getCropImage(diary.crop_type)}
-                                            style={{ width: 60, height: 60, marginLeft: -17}}
+                                            style={{ width: 60, height: 60, marginLeft: -17, marginRight: 10 }}
                                             resizeMode="contain"
                                         />
                                         <Text style={{ fontSize: 15 }}>{diary.crop_type}</Text>

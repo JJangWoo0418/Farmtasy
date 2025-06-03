@@ -108,15 +108,41 @@ const ProfilePage = () => {
             <View style={styles.activitySection}>
                 <Text style={styles.activityTitle}>활동</Text>
                 <View style={styles.activityBox}>
-                    <View style={styles.activityItem}>
+                    <TouchableOpacity style={styles.activityItem} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/Profile/collectionwritingpage',
+                            params: {
+                                userData: userData,
+                                phone: route.params?.phone,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
+                            }
+                        });
+                    }}>
                         <Text style={styles.activityLabel}>게시글 작성</Text>
                         <Text style={styles.activityValue}>{postCount > 0 ? `${postCount}회` : '-'}</Text>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.activityDivider} />
-                    <View style={styles.activityItem}>
+                    <TouchableOpacity style={styles.activityItem} onPress={() => {
+                        router.push({
+                            pathname: 'Homepage/Profile/commentwritingpage',
+                            params: {
+                                userData: userData,
+                                phone: route.params?.phone,
+                                name: userData?.name,
+                                region: userData?.region,
+                                profile_image: userData?.profile_image,
+                                about_me: userData?.about_me,
+                                introduction: userData?.introduction,
+                            }
+                        });
+                    }}>
                         <Text style={styles.activityLabel}>댓글 작성</Text>
                         <Text style={styles.activityValueActive}>{commentCount > 0 ? `${commentCount}회` : '-'}</Text>
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.activityDivider} />
                     <View style={styles.activityItem}>
                         <Text style={styles.activityLabel}>받은 좋아요</Text>
