@@ -5,6 +5,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI'; // 날씨 API 호출 함수
 import { getBaseDateTime } from '../Components/Utils/timeUtils'; // 시간 관련 유틸리티
 import { getMidLandRegId } from '../Components/Utils/regionMapper'; // 지역 코드 매퍼
+import API_CONFIG from '../DB/api'; // API_CONFIG 임포트
 
 // 농장 좌표 (현재 하드코딩됨)
 const FARM_COORDS = {
@@ -18,7 +19,7 @@ const WeatherContext = createContext();
 
 // Weather Provider 컴포넌트
 // 날씨 관련 상태를 관리하고, Context를 통해 하위 컴포넌트에 제공합니다.
-export function WeatherProvider({ children }) {
+export function WeatherProvider({ children, userPhone }) {
   // 날씨 데이터 상태 변수들
   const [weatherData, setWeatherData] = useState(null); // 초단기 예보 데이터
   const [shortTermData, setShortTermData] = useState(null); // 단기 예보 데이터
@@ -26,6 +27,11 @@ export function WeatherProvider({ children }) {
   const [locationName, setLocationName] = useState(''); // 현재 위치 또는 농장 위치 이름
   const [baseTimeInfo, setBaseTimeInfo] = useState(null); // API 호출 기준 시간 정보
   const [isLoading, setIsLoading] = useState(true); // 데이터 로딩 상태
+
+  // 농장 선택 관련 상태
+  const [isFarmSelectModalVisible, setIsFarmSelectModalVisible] = useState(false);
+  const [allUserFarms, setAllUserFarms] = useState([]);
+  const [currentFarm, setCurrentFarm] = useState(null); // 현재 표시 중인 농장 정보
 
   // 날씨 데이터를 미리 로드하는 함수 - 현재 미사용으로 주석 처리됨
   // 이 함수는 앱 시작 시 또는 필요할 때 날씨 데이터를 일괄적으로 가져옵니다.
@@ -166,6 +172,44 @@ export function WeatherProvider({ children }) {
   }, []);
   */
 
+  // 사용자 농장 목록 가져오는 함수
+  const fetchUserFarms = async () => {
+    if (!userPhone) {
+      console.error('[농장 목록 Context] 사용자 전화번호 없음');
+      return [];
+    }
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/api/farm?user_phone=${userPhone}`);
+      const farms = await response.json();
+      if (response.ok && farms.length > 0) {
+        console.log('[농장 목록 Context] 가져오기 성공:', farms.length);
+        setAllUserFarms(farms);
+        return farms;
+      } else {
+        console.warn('[농장 목록 Context] 등록된 농장 없음 또는 가져오기 실패');
+        setAllUserFarms([]);
+        return [];
+      }
+    } catch (error) {
+      console.error('[농장 목록 Context] 가져오기 오류:', error);
+      setAllUserFarms([]);
+      return [];
+    }
+  };
+
+  // 농장 선택 모달 열기
+  const openFarmSelectModal = async () => {
+    await fetchUserFarms(); // 모달 열 때마다 목록 새로 가져오기
+    setIsFarmSelectModalVisible(true);
+  };
+
+  // 농장 선택 처리
+  const handleFarmSelect = (farm) => {
+    setCurrentFarm(farm); // 선택된 농장으로 상태 업데이트
+    setIsFarmSelectModalVisible(false); // 모달 닫기
+    // WeatherContent에서 mode 상태를 관리하고 있으므로, Context에서는 농장 정보만 업데이트
+  };
+
   const value = {
     weatherData,
     setWeatherData,
@@ -180,6 +224,16 @@ export function WeatherProvider({ children }) {
     isLoading,
     setIsLoading,
     // preloadWeatherData, // 필요할 때 수동으로 데이터를 다시 로드할 수 있도록 함수 노출 - 현재 미사용으로 주석 처리됨
+    
+    // 농장 선택 관련 Context 값
+    isFarmSelectModalVisible,
+    setIsFarmSelectModalVisible,
+    allUserFarms,
+    currentFarm,
+    setCurrentFarm, // WeatherContent에서 첫 로딩 시 설정 가능하도록 노출
+    fetchUserFarms, // 첫 로딩 시 사용
+    openFarmSelectModal,
+    handleFarmSelect,
   };
 
   // Context Provider를 통해 value 객체를 하위 컴포넌트에 제공합니다.

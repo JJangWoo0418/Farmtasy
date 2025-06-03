@@ -46,6 +46,7 @@ export default StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 24,
     alignItems: 'center',
+    position: 'relative',
   },
   currentTemp: {
     fontSize: 48,
@@ -225,15 +226,22 @@ export default StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)'
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
   modalContent: {
     backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%'
+    borderRadius: 16,
+    padding: 25,
+    maxHeight: '70%',
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    justifyContent: 'space-between',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -242,8 +250,11 @@ export default StyleSheet.create({
     marginBottom: 20
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600'
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 20,
+    width: '100%',
   },
   modalCloseButton: {
     fontSize: 16,
@@ -287,5 +298,87 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     paddingLeft: 140
+  },
+  changeFarmButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 8,
+    zIndex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  changeFarmButtonText: {
+    fontSize: 12,
+    color: '#495057',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 10,
+    maxHeight: '60%',
+    width: '85%',
+  },
+  farmListScroll: {
+    width: '100%',
+    flexGrow: 1,
+  },
+  farmItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '95%',
+    alignSelf: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+  },
+  farmEmoji: {
+    fontSize: 35,
+    marginBottom: 5,
+  },
+  farmName: {
+    fontSize: 18,
+    color: '#212529',
+    fontWeight: 'normal',
+    textAlign: 'center',
+  },
+  closeButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  closeModalButton: {
+    backgroundColor: '#e9ecef',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    width: '95%',
+  },
+  closeModalButtonText: {
+    color: '#495057',
+    fontSize: 16,
+    fontWeight: 'normal',
+    textAlign: 'center',
   },
 });

@@ -1,6 +1,6 @@
 // app/FarmInfo/Weather.js
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, TouchableOpacity, Image, navigation } from 'react-native';
+import { View, Text, Button, ScrollView, TouchableOpacity, Image, navigation, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import styles from '../Components/Css/FarmInfo/index.js';
@@ -12,6 +12,7 @@ import { getHistoricalTemperature } from '../Components/Utils/weatherUtils';
 import { useWeather, WeatherProvider } from '../context/WeatherContext';
 import { router } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
+import API_CONFIG from '../DB/api'; // API_CONFIG 임포트
 // import { Asset } from 'expo-asset'; // Asset 더 이상 사용 안 함
 
 // 평균 기온 JSON 데이터 (파일에서 로드)
@@ -32,12 +33,6 @@ const loadAvgTempData = async () => {
   }
 };
 
-//농장 좌표(음성)
-const FARM_COORDS = {
-  latitude: 36.7692064,
-  longitude: 127.0220957,
-};
-
 const WeatherContent = () => {
   const {
     weatherData,
@@ -51,10 +46,18 @@ const WeatherContent = () => {
     setWeeklyData,
     setLocationName,
     setBaseTimeInfo,
-    setIsLoading
+    setIsLoading,
+    isFarmSelectModalVisible,
+    setIsFarmSelectModalVisible,
+    allUserFarms,
+    currentFarm,
+    setCurrentFarm,
+    fetchUserFarms,
+    openFarmSelectModal,
+    handleFarmSelect,
   } = useWeather();
 
-  const { weatherData: preloadedWeatherData, shortTermData: preloadedShortTermData, weeklyData: preloadedWeeklyData, locationName: preloadedLocation, baseTime: preloadedBaseTime } = useLocalSearchParams();
+  const params = useLocalSearchParams();
   const [mode, setMode] = useState('farm');
   const [warningData, setWarningData] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
@@ -63,14 +66,26 @@ const WeatherContent = () => {
   const [weeklyTemps, setWeeklyTemps] = useState({});
   const [currentLocation, setCurrentLocation] = useState('');
 
-  // mode가 변경될 때마다 loadWeather 함수를 호출
+  // mode 또는 currentFarm이 변경될 때마다 날씨 로드
   useEffect(() => {
     loadWeather();
-  }, [mode]);
+  }, [mode, currentFarm]);
 
-  // 컴포넌트 마운트 시 평균 기온 데이터 로드
+  // 컴포넌트 마운트 시 평균 기온 데이터 로드 및 첫 농장 정보 로드
   useEffect(() => {
     loadAvgTempData();
+    // 첫 로딩 시 사용자 농장 목록을 가져와 첫 번째 농장을 currentFarm으로 설정
+    const loadInitialFarm = async () => {
+      if (!params.phone) {
+         console.error('[첫 농장 로드] 사용자 전화번호 없음');
+         return;
+      }
+      const farms = await fetchUserFarms();
+      if (farms.length > 0) {
+        setCurrentFarm(farms[0]); // 첫 번째 농장으로 설정
+      }
+    };
+    loadInitialFarm();
   }, []);
 
   const getLocationName = async (latitude, longitude) => {
@@ -86,44 +101,71 @@ const WeatherContent = () => {
 
   const loadWeather = async () => {
     try {
-    setIsLoading(true);
-    let coords = FARM_COORDS;
+      setIsLoading(true);
+      let coords = null;
       console.log('[날씨 로드] 시작 - 모드:', mode);
-      console.log('[날씨 로드] 좌표:', coords);
 
-    if (mode === 'current') {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
+      if (mode === 'current') {
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') {
             console.error('[위치 권한] 거부됨');
+            setIsLoading(false);
+            return;
+          }
+
+          const position = await Location.getCurrentPositionAsync({});
+          coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          console.log('[현재 위치] 좌표:', coords);
+          
+          const locationName = await getLocationName(coords.latitude, coords.longitude);
+          setCurrentLocation(locationName);
+        } catch (error) {
+          console.error('[위치 오류]:', error);
           setIsLoading(false);
           return;
         }
-
-        const position = await Location.getCurrentPositionAsync({});
-        coords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-          console.log('[현재 위치] 좌표:', coords);
-          
-          // 현재 위치 이름 설정
+      } else { // mode === 'farm'
+        // Map.js에서 전달받은 농장 좌표 또는 현재 선택된 농장 좌표 사용
+        if (params.latitude && params.longitude) {
+          coords = {
+            latitude: parseFloat(params.latitude),
+            longitude: parseFloat(params.longitude)
+          };
+          console.log('[농장 위치] Map에서 전달받은 좌표 사용:', coords);
           const locationName = await getLocationName(coords.latitude, coords.longitude);
           setCurrentLocation(locationName);
-      } catch (error) {
-          console.error('[위치 오류]:', error);
-        setIsLoading(false);
-        return;
+           // Map에서 전달받은 농장 정보로 currentFarm 초기화 - 이제 WeatherContent에서 처리
+          if (params.farmName) {
+            setCurrentFarm({ farm_id: null, farm_name: params.farmName, latitude: coords.latitude, longitude: coords.longitude }); // Map에서 넘어온 정보로 currentFarm 설정
+          } else if (!currentFarm) {
+             // Map에서 넘어왔지만 farmName이 없는 경우 (Map 수정 필요)
+             setCurrentFarm({ farm_id: null, farm_name: locationName, latitude: coords.latitude, longitude: coords.longitude });
+          }
+        } else {
+          // Map.js를 거치지 않고 직접 왔거나, 농장 선택 모달에서 선택했을 경우
+          if (!currentFarm) { // currentFarm이 설정되지 않았을 경우 (초기 로딩) -> useEffect에서 처리
+             console.warn('[농장 위치] currentFarm 상태가 설정되지 않았습니다.');
+             setIsLoading(false);
+             return; // currentFarm이 설정될 때까지 대기
+          }
+          // currentFarm에 설정된 농장 좌표 사용
+          coords = {
+             latitude: parseFloat(currentFarm.latitude),
+             longitude: parseFloat(currentFarm.longitude)
+          };
+          console.log('[농장 위치] 선택된 농장 좌표 사용:', coords);
+          const locationName = await getLocationName(coords.latitude, coords.longitude);
+          setCurrentLocation(currentFarm.farm_name || locationName); // 농장 이름 우선 사용
+        }
       }
-      } else {
-        // 내 농장 위치 이름 설정
-        const locationName = await getLocationName(FARM_COORDS.latitude, FARM_COORDS.longitude);
-        setCurrentLocation(locationName);
-    }
 
       // 현재 시간 기준으로 API 호출 시간 설정
-    const now = new Date();
-    const currentHour = now.getHours();
+      const now = new Date();
+      const currentHour = now.getHours();
       
       // 단기예보용 시간 설정
       let baseTime;
@@ -403,19 +445,19 @@ const WeatherContent = () => {
 
   useEffect(() => {
     // 전달받은 데이터가 있으면 상태 업데이트
-    if (preloadedWeatherData && preloadedShortTermData && preloadedWeeklyData) {
+    if (params.weatherData && params.shortTermData && params.weeklyData) {
       try {
         console.log('[미리 로드된 데이터] 사용');
-        setWeatherData(JSON.parse(preloadedWeatherData));
-        setShortTermData(JSON.parse(preloadedShortTermData));
-        setWeeklyData(JSON.parse(preloadedWeeklyData));
+        setWeatherData(JSON.parse(params.weatherData));
+        setShortTermData(JSON.parse(params.shortTermData));
+        setWeeklyData(JSON.parse(params.weeklyData));
         
         // 위치 정보 설정
-        setCurrentLocation(preloadedLocation || '위치 정보 없음');
+        setCurrentLocation(params.locationName || '위치 정보 없음');
         
         // 기준 시간 정보 설정
-        if (preloadedBaseTime) {
-          const baseTimeInfo = JSON.parse(preloadedBaseTime);
+        if (params.baseTimeInfo) {
+          const baseTimeInfo = JSON.parse(params.baseTimeInfo);
           setBaseTimeInfo(baseTimeInfo);
         }
       } catch (error) {
@@ -425,7 +467,7 @@ const WeatherContent = () => {
     } else {
       loadWeather();  // 미리 로드된 데이터가 없으면 새로 로드
     }
-  }, [preloadedWeatherData, preloadedShortTermData, preloadedWeeklyData, preloadedLocation, preloadedBaseTime]);
+  }, [params.weatherData, params.shortTermData, params.weeklyData, params.locationName, params.baseTimeInfo]);
 
   const getEmoji = (text) => {
     if (!text) return '❓';
@@ -560,7 +602,7 @@ const WeatherContent = () => {
             const pop = data['POP'] ? `${data['POP']}%` : '강수없음';
             
             const emoji = getWeatherEmoji(pty, sky);
-            
+
             // 풍향(VEC)과 풍속(WSD) 정보 추출
             const wsd = data['WSD'] ? data['WSD'] : '0'; // 풍속이 없거나 '-'인 경우 0으로 표시
             const vec = data['VEC'] ? data['VEC'] : '-'; // 풍향(도)
@@ -902,17 +944,8 @@ const WeatherContent = () => {
                 <Text style={styles.tempRange}>
                   {(() => {
                     const items = shortTermData.response.body.items.item;
-                    
-                    // 최저기온과 최고기온 찾기
                     const tmn = items.find(item => item.category === 'TMN')?.fcstValue;
                     const tmx = items.find(item => item.category === 'TMX')?.fcstValue;
-
-                    // 로그 출력
-                    console.log(`[현재 날씨] 기준 시각: ${forecastDateStr} ${baseTime}`);
-                    console.log(`[현재 날씨] 최저: ${tmn}°, 최고: ${tmx}°`);
-                    console.log(`[현재 날씨] 전체 데이터 수: ${items.length}`);
-                    console.log(`[현재 날씨] 전체 카테고리:`, items.map(item => item.category).join(', '));
-                    
                     if (tmn || tmx) {
                       return `최저 ${tmn || '-'}° / 최고 ${tmx || '-'}°`;
                     } else {
@@ -925,11 +958,17 @@ const WeatherContent = () => {
                 {weatherData.response.body.items.item.find(item => item.category === 'POP')?.fcstValue || '강수 없음'}
                 {weatherData.response.body.items.item.find(item => item.category === 'POP')?.fcstValue ? '%' : ''}
               </Text>
+              {/* 농장 변경 버튼 추가 */}
+              {mode === 'farm' && (
+                <TouchableOpacity style={styles.changeFarmButton} onPress={openFarmSelectModal}>
+                  <Text style={styles.changeFarmButtonText}>농장 변경</Text>
+                </TouchableOpacity>
+              )}
             </>
           ) : (
             <Text style={styles.noWarning}>날씨 데이터를 불러올 수 없습니다.</Text>
           )}
-      </View>
+        </View>
 
         <Text style={styles.sectionTitle}>시간대별 날씨</Text>
         {isLoading ? (
@@ -954,13 +993,66 @@ const WeatherContent = () => {
       </View>
         )}
     </ScrollView>
+
+      {/* 농장 선택 모달 렌더링 - WeatherContent 내부로 이동 */}
+      <FarmSelectModal
+        isVisible={isFarmSelectModalVisible}
+        farms={allUserFarms}
+        onClose={() => setIsFarmSelectModalVisible(false)}
+        onSelectFarm={handleFarmSelect}
+      />
     </View>
   );
 };
 
-export default function Weather() {
+// 농장 선택 모달 컴포넌트 (WeatherContent 외부 유지)
+const FarmSelectModal = ({ isVisible, farms, onClose, onSelectFarm }) => {
   return (
-    <WeatherProvider>
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>농장 선택</Text>
+          <ScrollView>
+            {farms.map((farm, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.farmItem}
+                onPress={() => onSelectFarm(farm)}
+              >
+                {/* 농장 이모지 추가 */}
+                <Text style={styles.farmEmoji}>📍</Text>
+                <Text style={styles.farmName}>{farm.farm_name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {/* 닫기 버튼 컨테이너 추가 */}
+          <View style={styles.closeButtonContainer}>
+            <TouchableOpacity
+              style={styles.closeModalButton}
+              onPress={onClose}
+            >
+              <Text style={styles.closeModalButtonText}>닫기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+export default function Weather() {
+  // useLocalSearchParams를 여기서 한 번만 호출하여 phone 값을 가져옵니다.
+  const params = useLocalSearchParams();
+  const userPhone = params.phone; // userPhone 추출
+
+  return (
+    // WeatherProvider에 userPhone prop 전달
+    <WeatherProvider userPhone={userPhone}>
       <WeatherContent />
     </WeatherProvider>
   );
