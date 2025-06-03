@@ -226,11 +226,6 @@ const ProfilePage = () => {
                     <Text style={styles.sectionText}>판매 중 상품</Text>
                     <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.sectionRow}>
-                    <Image source={require('../../../assets/bagicon.png')} style={styles.sectionIcon} />
-                    <Text style={styles.sectionText}>구매 내역</Text>
-                    <Image source={require('../../../assets/arrowrighticon2.png')} style={styles.arrowIcon} />
-                </TouchableOpacity>
             </View>
         </ScrollView>
     );
