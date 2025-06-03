@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions,} from 'react-native';
+import { StyleSheet, Dimensions, } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -52,7 +52,7 @@ export default StyleSheet.create({
         width: 65,
         height: 65,
         marginBottom: 9,
-        resizeMode:"cover"
+        resizeMode: "cover"
     },
     paperpencilIcon: {
         width: 17,
@@ -167,7 +167,7 @@ export default StyleSheet.create({
         alignItems: 'center',
         marginRight: 15,
     },
-    iconContainer:{
+    iconContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },

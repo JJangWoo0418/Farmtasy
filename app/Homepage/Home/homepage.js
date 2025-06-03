@@ -34,6 +34,71 @@ const HomePage = () => {
     const [isSearching, setIsSearching] = useState(false);
     const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
 
+    // 알림 클릭 핸들러 함수 수정
+    const handleNotificationPress = (notification) => {
+        // 알림 모달 닫기
+        setIsNotificationModalVisible(false);
+
+        // 디버깅을 위한 로그
+        console.log('Notification:', notification);
+
+        switch (notification.type) {
+            case 'POST_LIKE':
+            case 'POST_COMMENT':
+            case 'COMMENT_LIKE':
+            case 'COMMENT_REPLY':
+                // 게시글 관련 알림 체크
+                if (!notification.target_post_id) {
+                    console.log('Target Post ID is missing in notification:', notification);
+                    return;
+                }
+
+                router.push({
+                    pathname: '/Homepage/Post/postdetailpage',
+                    params: {
+                        post: {
+                            id: notification.target_post_id,
+                            phone: notification.recipient_phone,
+                            user: notification.actor_name || '알 수 없음',
+                            profile_image: null,
+                            region: notification.actor_region || '지역 미설정',
+                            introduction: null,
+                            time: notification.created_at,
+                            text: notification.post_content || '',
+                            image_urls: [],
+                            likes: 0,
+                            is_liked: false,
+                            is_bookmarked: false
+                        },
+                        introduction: params.introduction || '소개 미설정',
+                        phone: params.phone,
+                        name: params.user,
+                        region: params.region,
+                        profile: params.profile_image
+                    }
+                });
+
+                break;
+            case 'MARKET_POST_LIKE':
+            case 'MARKET_COMMENT':
+            case 'MARKET_COMMENT_REPLY':
+                // target_market_id 체크
+                if (!notification.target_market_id) {
+                    console.log('Target Market ID is missing in notification:', notification);
+                    return;
+                }
+
+                router.push({
+                    pathname: '/Market/marketdetailpage',
+                    params: {
+                        productId: notification.target_market_id,
+                        phone: params.phone
+                    }
+                });
+                break;
+        }
+    };
+
     // 검색 함수
     const handleSearch = async (text) => {
         setSearchQuery(text);
@@ -1123,9 +1188,10 @@ const HomePage = () => {
                         <ScrollView style={styles.notificationList}>
                             {notifications.length > 0 ? (
                                 notifications.map((notification, index) => (
-                                    <View
-                                        key={`${notification.notification_id}_${index}`}  // 고유한 key 생성
+                                    <TouchableOpacity
+                                        key={`${notification.notification_id}_${index}`}
                                         style={styles.notificationItem}
+                                        onPress={() => handleNotificationPress(notification)}
                                     >
                                         <Text style={styles.actorName}>
                                             {notification.actor_name}
@@ -1193,7 +1259,7 @@ const HomePage = () => {
                                         <Text style={styles.notificationTime}>
                                             {formatDate(notification.created_at)}
                                         </Text>
-                                    </View>
+                                    </TouchableOpacity>
                                 ))
                             ) : (
                                 <View style={styles.emptyNotification}>

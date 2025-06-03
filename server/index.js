@@ -2177,6 +2177,8 @@ app.post('/api/cropdetail', async (req, res) => {
     }
 });
 
+
+
 // 장터 제품 검색 API
 app.get('/api/market/search', async (req, res) => {
     try {
