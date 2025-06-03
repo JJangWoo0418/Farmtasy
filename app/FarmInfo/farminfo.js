@@ -177,9 +177,7 @@ const FarmInfoContent = (props) => {
                             <Image source={require('../../assets/weathericon3.png')} style={{ width: 60, height: 60, marginBottom: 10 }} />
                             <Text style={styles.menuText}>날씨</Text>
                             <View style={{ minHeight: 20, justifyContent: 'center' }}>
-                                <Text style={styles.loadingText}>
-                                    {isLoading ? '(로딩중...)' : ' '}
-                                </Text>
+                                {/* 날씨 로딩 상태 표시 제거 */}
                             </View>
                         </View>
                     </TouchableOpacity>

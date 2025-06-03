@@ -1,24 +1,35 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI';
-import { getBaseDateTime } from '../Components/Utils/timeUtils';
-import { getMidLandRegId } from '../Components/Utils/regionMapper';
+// app/context/WeatherContext.js
+// 이 파일은 앱 전체에서 날씨 데이터를 관리하고 공유하기 위한 React Context를 정의합니다.
 
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { fetchWeather } from '../Components/Css/FarmInfo/WeatherAPI'; // 날씨 API 호출 함수
+import { getBaseDateTime } from '../Components/Utils/timeUtils'; // 시간 관련 유틸리티
+import { getMidLandRegId } from '../Components/Utils/regionMapper'; // 지역 코드 매퍼
+
+// 농장 좌표 (현재 하드코딩됨)
 const FARM_COORDS = {
   latitude: 36.7692064,
   longitude: 127.0220957,
 };
 
+// 날씨 Context 생성
+// 이 Context를 통해 날씨 데이터와 관련 상태를 앱 전체에서 접근하고 업데이트할 수 있습니다.
 const WeatherContext = createContext();
 
+// Weather Provider 컴포넌트
+// 날씨 관련 상태를 관리하고, Context를 통해 하위 컴포넌트에 제공합니다.
 export function WeatherProvider({ children }) {
-  const [weatherData, setWeatherData] = useState(null);
-  const [shortTermData, setShortTermData] = useState(null);
-  const [weeklyData, setWeeklyData] = useState(null);
-  const [locationName, setLocationName] = useState('');
-  const [baseTimeInfo, setBaseTimeInfo] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // 날씨 데이터 상태 변수들
+  const [weatherData, setWeatherData] = useState(null); // 초단기 예보 데이터
+  const [shortTermData, setShortTermData] = useState(null); // 단기 예보 데이터
+  const [weeklyData, setWeeklyData] = useState(null); // 주간 예보 데이터
+  const [locationName, setLocationName] = useState(''); // 현재 위치 또는 농장 위치 이름
+  const [baseTimeInfo, setBaseTimeInfo] = useState(null); // API 호출 기준 시간 정보
+  const [isLoading, setIsLoading] = useState(true); // 데이터 로딩 상태
 
-  // 날씨 데이터를 미리 로드하는 함수
+  // 날씨 데이터를 미리 로드하는 함수 - 현재 미사용으로 주석 처리됨
+  // 이 함수는 앱 시작 시 또는 필요할 때 날씨 데이터를 일괄적으로 가져옵니다.
+  /*
   const preloadWeatherData = async () => {
     try {
       setIsLoading(true);
@@ -146,11 +157,14 @@ export function WeatherProvider({ children }) {
       setIsLoading(false);
     }
   };
+  */
 
-  // 컴포넌트가 마운트될 때 날씨 데이터 미리 로드
+  // 컴포넌트가 마운트될 때 날씨 데이터 미리 로드 - 현재 미사용으로 주석 처리
+  /*
   useEffect(() => {
     preloadWeatherData();
   }, []);
+  */
 
   const value = {
     weatherData,
@@ -165,9 +179,10 @@ export function WeatherProvider({ children }) {
     setBaseTimeInfo,
     isLoading,
     setIsLoading,
-    preloadWeatherData, // 필요할 때 수동으로 데이터를 다시 로드할 수 있도록 함수 노출
+    // preloadWeatherData, // 필요할 때 수동으로 데이터를 다시 로드할 수 있도록 함수 노출 - 현재 미사용으로 주석 처리됨
   };
 
+  // Context Provider를 통해 value 객체를 하위 컴포넌트에 제공합니다.
   return (
     <WeatherContext.Provider value={value}>
       {children}
@@ -175,6 +190,9 @@ export function WeatherProvider({ children }) {
   );
 }
 
+// useWeather 커스텀 훅
+// Context 값을 쉽게 사용할 수 있도록 하는 훅입니다.
+// 이 훅을 사용하면 WeatherProvider 내부의 날씨 데이터와 상태에 접근할 수 있습니다.
 export function useWeather() {
   const context = useContext(WeatherContext);
   if (context === undefined) {
