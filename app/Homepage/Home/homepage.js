@@ -1330,7 +1330,7 @@ const HomePage = () => {
             </View>
 
             <View style={styles.tabContainer}>
-                <Text style={styles.activeTab}>인기글</Text>
+                <Text style={styles.activeTab}>♥️ 인기글 ♥️</Text>
             </View>
 
             <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
