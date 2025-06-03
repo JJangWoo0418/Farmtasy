@@ -1326,7 +1326,7 @@ const HomePage = () => {
                 <Text style={styles.activeTab}>인기글</Text>
             </View>
 
-            <ScrollView>
+            <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
                 {popularPosts.map(post => post && renderPost(post))}
             </ScrollView>
 

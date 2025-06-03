@@ -233,6 +233,38 @@ export default StyleSheet.create({
         margin: 4,
         resizeMode: 'cover',
     },
+    leftLargeImage: {
+        width: 238,
+        height: 238,
+        marginRight: 5,
+        resizeMode: 'cover',
+        marginBottom: 5
+    },
+    rightColumn: {
+        flexDirection: 'column',
+        marginLeft: 4,
+    },
+    rightSmallImage: {
+        width: 115,
+        height: 115,
+        marginBottom: 8,
+        resizeMode: 'cover',
+    },
+    overlay: {
+        width: 177,
+        height: 177,
+        marginLeft: 4,
+        marginTop: 4,
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    overlayText: {
+        color: '#fff',
+        fontSize: 28,
+        fontWeight: 'bold',
+    },
     bestCommentPreview: {
         backgroundColor: '#F3F3F3',
         borderRadius: 8,
