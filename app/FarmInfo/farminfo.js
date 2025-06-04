@@ -9,7 +9,7 @@ import Weather from './Weather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../Components/Css/FarmInfo/FarmInfoStyle';
 import { router, useLocalSearchParams } from 'expo-router';
-const defaultCropImage = require('../../assets/handpencilicon.png');
+const defaultCropImage = require('../../assets/handpencilicon2.png');
 import API_CONFIG from '../DB/api';
 
 const FarmInfoContent = (props) => {
@@ -232,7 +232,7 @@ const FarmInfoContent = (props) => {
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                         <Image source={require('../../assets/timeicon.png')} style={{ width: 22, height: 22, marginRight: 0 }} />
                                         <Text style={{ fontWeight: 'bold', fontSize: 16, marginRight: 75 }}>{dateStr}</Text>
-                                        <View style={{ flexDirection: 'row', gap: 3}}>
+                                        <View style={{ flexDirection: 'row', gap: 3 }}>
                                             {/* 수정하기 버튼 */}
                                             <TouchableOpacity
                                                 onPress={() => navigation.navigate('FarmInfo/DiaryWrite', {
@@ -258,7 +258,10 @@ const FarmInfoContent = (props) => {
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                                         <Image
                                             source={getCropImage(diary.crop_type)}
-                                            style={{ width: 60, height: 60, marginLeft: -17, marginRight: 10 }}
+                                            style={[
+                                                { width: 60, height: 60, marginLeft: -17, marginRight: 10 },
+                                                getCropImage(diary.crop_type) === defaultCropImage && { width: 60, height: 60, marginLeft: -17, marginRight: 10, alignSelf: 'center' }
+                                            ]}
                                             resizeMode="contain"
                                         />
                                         <Text style={{ fontSize: 15 }}>{diary.crop_type}</Text>
