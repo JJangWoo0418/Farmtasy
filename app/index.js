@@ -2,7 +2,7 @@ import { Redirect } from "expo-router";
 
 const Index = () => {
     return (
-        <Redirect href="Login/Intro" />
+        <Redirect href="Homepage/tutorial/tutorial" />
     );
 }
 
