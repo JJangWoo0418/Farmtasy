@@ -66,6 +66,54 @@ desc: '문의 목록에서는 다른 사람들이 남긴 질문과 답변을 확
 },
 ];
 
+// 날씨 튜토리얼 이미지 및 설명
+const weatherImages = [
+{
+src: require('../../../assets/weather_tutorial1.png'),
+desc: '먼저 내 농장을 지도에서 선택하거나 수정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/weather_tutorial2.png'),
+desc: '내 농장 날씨 탭에서 농장 위치의 실시간 날씨 정보를 확인할 수 있습니다.',
+},
+{
+src: require('../../../assets/weather_tutorial3.png'),
+desc: '여러 농장을 등록했다면, 농장 선택 버튼을 눌러 원하는 농장의 날씨를 볼 수 있습니다.',
+},
+{
+src: require('../../../assets/weather_tutorial4.png'),
+desc: '현 위치 날씨 탭을 누르면 현재 내 위치의 날씨 정보도 확인할 수 있습니다.',
+},
+];
+
+// 병해충 튜토리얼 이미지 및 설명
+const pestImages = [
+{
+src: require('../../../assets/pests_tutorial1.png'),
+desc: '정보 페이지에서 병해충 정보를 확인할 수 있어요.',
+},
+{
+src: require('../../../assets/pests_tutorial2.png'),
+desc: '작물, 발병 부위, 증상을 차례로 선택해 주세요.',
+},
+{
+src: require('../../../assets/pests_tutorial3.png'),
+desc: '작물, 발병 부위, 증상을 차례로 선택해 주세요.',
+},
+{
+src: require('../../../assets/pests_tutorial4.png'),
+desc: '병해충 증상과 의심되는 병명을 입력하고, 필요하다면 사진도 첨부해 주세요.',
+},
+{
+src: require('../../../assets/pests_tutorial5.png'),
+desc: '모든 정보를 입력한 후 "질문하기" 버튼을 누르면 AI가 진단을 시작합니다.',
+},
+{
+src: require('../../../assets/pests_tutorial6.png'),
+desc: 'AI 진단 결과 화면에서 입력한 정보와 함께 진단 결과를 확인하여 방제법, 추천 약품/비료 등 상세 정보를 확인할 수 있습니다.',
+},
+];
+
 export default function Tutorial({ navigation }) {
 const [step, setStep] = useState(0); // 0~features.length-1
 const [messages, setMessages] = useState([...initialMessages, { sender: 'bot', text: `먼저 '${features[0].name}'부터 시작할까?` }]);
@@ -75,6 +123,10 @@ const [marketWriteStep, setMarketWriteStep] = useState(-1); // -1: 아직 아님
 const [showMarketWriteAsk, setShowMarketWriteAsk] = useState(false);
 const [inquiryStep, setInquiryStep] = useState(-1); // -1: 아직 아님, 0~1: 문의 튜토리얼 단계
 const [showInquiryAsk, setShowInquiryAsk] = useState(false);
+const [weatherStep, setWeatherStep] = useState(-1); // -1: 아직 아님, 0~3: 날씨 튜토리얼 단계
+const [showWeatherAsk, setShowWeatherAsk] = useState(false);
+const [pestStep, setPestStep] = useState(-1); // -1: 아직 아님, 0~5: 병해충 튜토리얼 단계
+const [showPestAsk, setShowPestAsk] = useState(false);
 
 const handleChoice = (choice) => {
 let newMessages = [...messages];
@@ -93,7 +145,14 @@ if (features[step].name === '장터') {
             newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
             setMessages(newMessages);
             setShowChoices(false);
-            setFinished(true);
+            setMarketWriteStep(-1);
+            setInquiryStep(-1);
+            setWeatherStep(-1);
+            setShowMarketWriteAsk(false);
+            setShowInquiryAsk(false);
+            setShowWeatherAsk(false);
+            setShowChoices(false);
+            setTimeout(() => setFinished(true), 100);
         }
     } else {
         newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
@@ -103,6 +162,74 @@ if (features[step].name === '장터') {
         setMessages(newMessages);
         setShowChoices(false);
         setShowMarketWriteAsk(true);
+    }
+    return;
+}
+// 병해충 기능 진입 시 분기
+if (features[step].name === '병해충') {
+    if (choice === '알고있음') {
+        newMessages.push({ sender: 'user', text: '이미 알고 있지~' });
+        newMessages.push({ sender: 'bot', text: `오! 이미 알고 있다니 대단해! 그럼 다음 기능으로 넘어갈게.` });
+        // 다음 기능으로
+        if (step < features.length - 1) {
+            newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+            setStep(step + 1);
+            setMessages(newMessages);
+            setShowChoices(true);
+        } else {
+            newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+            setMessages(newMessages);
+            setShowChoices(false);
+            setMarketWriteStep(-1);
+            setInquiryStep(-1);
+            setWeatherStep(-1);
+            setPestStep(-1);
+            setShowMarketWriteAsk(false);
+            setShowInquiryAsk(false);
+            setShowWeatherAsk(false);
+            setShowPestAsk(false);
+            setShowChoices(false);
+            setTimeout(() => setFinished(true), 100);
+        }
+    } else {
+        newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
+        newMessages.push({ sender: 'bot', text: '병해충을 추가하고 AI 진단을 받아보는 방법을 알고 있어?' });
+        setMessages(newMessages);
+        setShowChoices(false);
+        setShowPestAsk(true);
+    }
+    return;
+}
+// 날씨 기능 진입 시 분기
+if (features[step].name === '날씨') {
+    if (choice === '알고있음') {
+        newMessages.push({ sender: 'user', text: '이미 알고 있지~' });
+        newMessages.push({ sender: 'bot', text: `오! 이미 알고 있다니 대단해! 그럼 다음 기능으로 넘어갈게.` });
+        // 다음 기능으로
+        if (step < features.length - 1) {
+            newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+            setStep(step + 1);
+            setMessages(newMessages);
+            setShowChoices(true);
+        } else {
+            newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+            setMessages(newMessages);
+            setShowChoices(false);
+            setMarketWriteStep(-1);
+            setInquiryStep(-1);
+            setWeatherStep(-1);
+            setShowMarketWriteAsk(false);
+            setShowInquiryAsk(false);
+            setShowWeatherAsk(false);
+            setShowChoices(false);
+            setTimeout(() => setFinished(true), 100);
+        }
+    } else {
+        newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
+        newMessages.push({ sender: 'bot', text: '날씨를 추가하는 방법을 알고 있어?' });
+        setMessages(newMessages);
+        setShowChoices(false);
+        setShowWeatherAsk(true);
     }
     return;
 }
@@ -125,7 +252,14 @@ if (step < features.length - 1) {
     newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
     setMessages(newMessages);
     setShowChoices(false);
-    setFinished(true);
+    setMarketWriteStep(-1);
+    setInquiryStep(-1);
+    setWeatherStep(-1);
+    setShowMarketWriteAsk(false);
+    setShowInquiryAsk(false);
+    setShowWeatherAsk(false);
+    setShowChoices(false);
+    setTimeout(() => setFinished(true), 100);
 }
 };
 
@@ -166,11 +300,6 @@ const handleInquiryAsk = (answer) => {
 let newMessages = [...messages];
 if (answer === '예') {
     newMessages.push({ sender: 'user', text: '예' });
-    setMessages(newMessages);
-    setInquiryStep(0);
-    setShowInquiryAsk(false);
-} else {
-    newMessages.push({ sender: 'user', text: '아니오' });
     newMessages.push({ sender: 'bot', text: '알겠어! 그럼 다음 기능으로 넘어갈게.' });
     // 다음 기능으로
     if (step < features.length - 1) {
@@ -183,8 +312,21 @@ if (answer === '예') {
         newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
         setMessages(newMessages);
         setShowInquiryAsk(false);
-        setFinished(true);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
     }
+} else {
+    newMessages.push({ sender: 'user', text: '아니오' });
+    newMessages.push({ sender: 'bot', text: '그럼 문의하기 기능에 대해 설명해줄게!' });
+    setMessages(newMessages);
+    setInquiryStep(0);
+    setShowInquiryAsk(false);
 }
 };
 
@@ -206,7 +348,147 @@ if (inquiryStep < inquiryImages.length - 1) {
         newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
         setMessages(newMessages);
         setInquiryStep(-1);
-        setFinished(true);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+}
+};
+
+// 날씨 추가 방법 예/아니오 분기
+const handleWeatherAsk = (answer) => {
+let newMessages = [...messages];
+if (answer === '예') {
+    newMessages.push({ sender: 'user', text: '예' });
+    newMessages.push({ sender: 'bot', text: '알겠어! 그럼 다음 기능으로 넘어갈게.' });
+    // 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setShowWeatherAsk(false);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setShowWeatherAsk(false);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+} else {
+    newMessages.push({ sender: 'user', text: '아니오' });
+    newMessages.push({ sender: 'bot', text: '그럼 날씨 기능에 대해 설명해줄게!' });
+    setMessages(newMessages);
+    setWeatherStep(0);
+    setShowWeatherAsk(false);
+}
+};
+
+// 날씨 튜토리얼 사진 진행
+const handleWeatherNext = () => {
+let newMessages = [...messages];
+if (weatherStep < weatherImages.length - 1) {
+    setWeatherStep(weatherStep + 1);
+} else {
+    // 사진 설명 끝나면 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: '이제 날씨 기능도 알았으니, 다음 기능으로 넘어갈게!' });
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setWeatherStep(-1);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setWeatherStep(-1);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+}
+};
+
+// 병해충 추가 방법 예/아니오 분기
+const handlePestAsk = (answer) => {
+let newMessages = [...messages];
+if (answer === '예') {
+    newMessages.push({ sender: 'user', text: '예' });
+    newMessages.push({ sender: 'bot', text: '알겠어! 그럼 다음 기능으로 넘어갈게.' });
+    // 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setShowPestAsk(false);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setShowPestAsk(false);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setPestStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowPestAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+} else {
+    newMessages.push({ sender: 'user', text: '아니오' });
+    newMessages.push({ sender: 'bot', text: '그럼 병해충 AI 진단 방법에 대해 설명해줄게!' });
+    setMessages(newMessages);
+    setPestStep(0);
+    setShowPestAsk(false);
+}
+};
+
+// 병해충 튜토리얼 사진 진행
+const handlePestNext = () => {
+let newMessages = [...messages];
+if (pestStep < pestImages.length - 1) {
+    setPestStep(pestStep + 1);
+} else {
+    // 사진 설명 끝나면 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: '이제 병해충 기능도 알았으니, 다음 기능으로 넘어갈게!' });
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setPestStep(-1);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setPestStep(-1);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowPestAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
     }
 }
 };
@@ -250,9 +532,33 @@ return (
         </TouchableOpacity>
         </View>
     )}
+    {/* 날씨 사진 튜토리얼 */}
+    {weatherStep >= 0 && (
+        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+        <Image source={weatherImages[weatherStep].src} style={{ width: 260, height: 480, borderRadius: 16, marginBottom: 16 }} resizeMode="cover" />
+        <View style={styles.botBubble}>
+            <Text style={styles.botText}>{weatherImages[weatherStep].desc}</Text>
+        </View>
+        <TouchableOpacity style={styles.button} onPress={handleWeatherNext}>
+            <Text style={styles.buttonText}>{weatherStep === weatherImages.length - 1 ? '다음 기능' : '다음'}</Text>
+        </TouchableOpacity>
+        </View>
+    )}
+    {/* 병해충 사진 튜토리얼 */}
+    {pestStep >= 0 && (
+        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+        <Image source={pestImages[pestStep].src} style={{ width: 260, height: 480, borderRadius: 16, marginBottom: 16 }} resizeMode="cover" />
+        <View style={styles.botBubble}>
+            <Text style={styles.botText}>{pestImages[pestStep].desc}</Text>
+        </View>
+        <TouchableOpacity style={styles.button} onPress={handlePestNext}>
+            <Text style={styles.buttonText}>{pestStep === pestImages.length - 1 ? '다음 기능' : '다음'}</Text>
+        </TouchableOpacity>
+        </View>
+    )}
     </ScrollView>
     {/* 일반 기능 분기 선택지 */}
-    {showChoices && !finished && marketWriteStep === -1 && !showMarketWriteAsk && inquiryStep === -1 && !showInquiryAsk && (
+    {showChoices && marketWriteStep === -1 && !showMarketWriteAsk && inquiryStep === -1 && !showInquiryAsk && weatherStep === -1 && !showWeatherAsk && (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
         <TouchableOpacity style={[styles.button, { backgroundColor: '#e6e6e6' }]} onPress={() => { setShowChoices(false); handleChoice('알고있음'); }}>
             <Text style={[styles.buttonText, { color: '#333' }]}>이미 알고 있지~</Text>
@@ -280,6 +586,28 @@ return (
             <Text style={[styles.buttonText, { color: '#333' }]}>아니오</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={() => handleInquiryAsk('예')}>
+            <Text style={styles.buttonText}>예</Text>
+        </TouchableOpacity>
+        </View>
+    )}
+    {/* 날씨 추가 방법 예/아니오 선택지 */}
+    {showWeatherAsk && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: '#e6e6e6' }]} onPress={() => handleWeatherAsk('아니오')}>
+            <Text style={[styles.buttonText, { color: '#333' }]}>아니오</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => handleWeatherAsk('예')}>
+            <Text style={styles.buttonText}>예</Text>
+        </TouchableOpacity>
+        </View>
+    )}
+    {/* 병해충 추가 방법 예/아니오 선택지 */}
+    {showPestAsk && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: '#e6e6e6' }]} onPress={() => handlePestAsk('아니오')}>
+            <Text style={[styles.buttonText, { color: '#333' }]}>아니오</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => handlePestAsk('예')}>
             <Text style={styles.buttonText}>예</Text>
         </TouchableOpacity>
         </View>
