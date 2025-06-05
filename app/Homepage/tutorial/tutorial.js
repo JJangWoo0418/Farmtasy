@@ -166,6 +166,58 @@ desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농�
 },
 ];
 
+// 게시글 튜토리얼 이미지 및 설명
+const postImages = [
+{
+src: require('../../../assets/home_tutorial1.png'),
+desc: '홈 화면에서 다양한 게시글을 확인할 수 있고, 글쓰기 버튼을 눌러 카테고리별로 게시글을 올릴 수 있어.',
+},
+{
+src: require('../../../assets/home_tutorial3.png'),
+desc: '게시글 작성 화면으로 이동 후 변경 버튼을 통해 선택한 카테고리를 수정할 수 있어.',
+},
+{
+src: require('../../../assets/home_tutorial2.png'),
+desc: '게시글 작성 화면에서 내용을 입력하고, 사진도 첨부할 수 있어.',
+},
+{
+src: require('../../../assets/home_tutorial4.png'),
+desc: '사진을 첨부하고 내용을 입력한 뒤 등록 버튼을 누르면 게시글이 업로드가 돼!',
+},
+];
+
+// 시세 튜토리얼 이미지 및 설명
+const priceImages = [
+{
+src: require('../../../assets/quote_tutorial1.png'),
+desc: '농사 정보에서 작물 시세 메뉴로 들어가면 다양한 작물의 시세를 확인할 수 있어.',
+},
+{
+src: require('../../../assets/quote_tutorial2.png'),
+desc: '상단의 + 작물 추가 버튼을 눌러 원하는 작물을 추가할 수 있어.',
+},
+{
+src: require('../../../assets/quote_tutorial3.png'),
+desc: '인기 작물에 해당되는 작물을 선택 해도 되고 시세가 궁금한 작물을 직접 추가도 할 수 있어',
+},
+{
+src: require('../../../assets/quote_tutorial4.png'),
+desc: '시세가 궁금한 작물을 직접 기입한 후 해당되는 작물을 선택하면 돼!',
+},
+{
+src: require('../../../assets/quote_tutorial5.png'),
+desc: '캘린더를 통해 날짜를 선택하여 원하는 날짜의 시세를 확인할 수 있어.',
+},
+{
+src: require('../../../assets/quote_tutorial6.png'),
+desc: '설정이 완료되었으면 사진과 같이 작물들의 경매내역의 시세를 확인할 수 있고 최고가, 최저가, 거래량 많은 순 등 다양한 정렬/비교 기능도 제공돼.',
+},
+{
+src: require('../../../assets/quote_tutorial7.png'),
+desc: '경매내역이 아니라 전국시세가 궁금한 경우에는 캘린더 밑에 전국시세 버튼을 눌러 확인할 수 있어!',
+},
+];
+
 export default function Tutorial({ navigation }) {
 const [step, setStep] = useState(0); // 0~features.length-1
 const [messages, setMessages] = useState([...initialMessages, { sender: 'bot', text: `먼저 '${features[0].name}'부터 시작할까?` }]);
@@ -181,6 +233,10 @@ const [pestStep, setPestStep] = useState(-1); // -1: 아직 아님, 0~5: 병해�
 const [showPestAsk, setShowPestAsk] = useState(false);
 const [mapStep, setMapStep] = useState(-1); // -1: 아직 아님, 0~12: 지도 튜토리얼 단계
 const [showMapAsk, setShowMapAsk] = useState(false);
+const [postStep, setPostStep] = useState(-1); // -1: 아직 아님, 0~3: 게시글 튜토리얼 단계
+const [showPostAsk, setShowPostAsk] = useState(false);
+const [priceStep, setPriceStep] = useState(-1); // -1: 아직 아님, 0~6: 시세 튜토리얼 단계
+const [showPriceAsk, setShowPriceAsk] = useState(false);
 
 const handleChoice = (choice) => {
 let newMessages = [...messages];
@@ -219,6 +275,86 @@ if (features[step].name === '장터') {
     }
     return;
 }
+// 시세 기능 진입 시 분기
+if (features[step].name === '시세') {
+    if (choice === '알고있음') {
+        newMessages.push({ sender: 'user', text: '이미 알고 있지~' });
+        newMessages.push({ sender: 'bot', text: `오! 이미 알고 있다니 대단해! 그럼 다음 기능으로 넘어갈게.` });
+        // 다음 기능으로
+        if (step < features.length - 1) {
+            newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+            setStep(step + 1);
+            setMessages(newMessages);
+            setShowChoices(true);
+        } else {
+            newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+            setMessages(newMessages);
+            setShowChoices(false);
+            setMarketWriteStep(-1);
+            setInquiryStep(-1);
+            setWeatherStep(-1);
+            setPestStep(-1);
+            setMapStep(-1);
+            setPostStep(-1);
+            setPriceStep(-1);
+            setShowMarketWriteAsk(false);
+            setShowInquiryAsk(false);
+            setShowWeatherAsk(false);
+            setShowPestAsk(false);
+            setShowMapAsk(false);
+            setShowPostAsk(false);
+            setShowPriceAsk(false);
+            setShowChoices(false);
+            setTimeout(() => setFinished(true), 100);
+        }
+    } else {
+        newMessages.push({ sender: 'user', text: '좋아!' });
+        newMessages.push({ sender: 'bot', text: '그럼 시세 기능에 대해 설명해줄게!' });
+        setMessages(newMessages);
+        setShowChoices(false);
+        setPriceStep(0);
+    }
+    return;
+}
+// 게시글 기능 진입 시 분기
+if (features[step].name === '게시판') {
+    if (choice === '알고있음') {
+        newMessages.push({ sender: 'user', text: '이미 알고 있지~' });
+        newMessages.push({ sender: 'bot', text: `오! 이미 알고 있다니 대단해! 그럼 다음 기능으로 넘어갈게.` });
+        // 다음 기능으로
+        if (step < features.length - 1) {
+            newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+            setStep(step + 1);
+            setMessages(newMessages);
+            setShowChoices(true);
+        } else {
+            newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+            setMessages(newMessages);
+            setShowChoices(false);
+            setMarketWriteStep(-1);
+            setInquiryStep(-1);
+            setWeatherStep(-1);
+            setPestStep(-1);
+            setMapStep(-1);
+            setPostStep(-1);
+            setShowMarketWriteAsk(false);
+            setShowInquiryAsk(false);
+            setShowWeatherAsk(false);
+            setShowPestAsk(false);
+            setShowMapAsk(false);
+            setShowPostAsk(false);
+            setShowChoices(false);
+            setTimeout(() => setFinished(true), 100);
+        }
+    } else {
+        newMessages.push({ sender: 'user', text: '좋아!' });
+        newMessages.push({ sender: 'bot', text: '그럼 게시글 기능에 대해 설명해줄게!' });
+        setMessages(newMessages);
+        setShowChoices(false);
+        setPostStep(0);
+    }
+    return;
+}
 // 병해충 기능 진입 시 분기
 if (features[step].name === '병해충') {
     if (choice === '알고있음') {
@@ -249,7 +385,6 @@ if (features[step].name === '병해충') {
         newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
         newMessages.push({ sender: 'bot', text: '병해충을 추가하고 AI 진단을 받아보는 방법을 알고 있어?' });
         setMessages(newMessages);
-        setShowChoices(false);
         setShowPestAsk(true);
     }
     return;
@@ -282,7 +417,6 @@ if (features[step].name === '날씨') {
         newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
         newMessages.push({ sender: 'bot', text: '날씨를 추가하는 방법을 알고 있어?' });
         setMessages(newMessages);
-        setShowChoices(false);
         setShowWeatherAsk(true);
     }
     return;
@@ -319,7 +453,6 @@ if (features[step].name === '지도') {
         newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
         newMessages.push({ sender: 'bot', text: '우선 농장을 추가하는 방법을 배워보자!' });
         setMessages(newMessages);
-        setShowChoices(false);
         setMapStep(0);
     }
     return;
@@ -617,6 +750,78 @@ if (mapStep < mapImages.length - 1) {
 }
 };
 
+// 게시글 튜토리얼 사진 진행
+const handlePostNext = () => {
+let newMessages = [...messages];
+if (postStep < postImages.length - 1) {
+    setPostStep(postStep + 1);
+} else {
+    // 사진 설명 끝나면 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: '이제 게시글 기능도 알았으니, 다음 기능으로 넘어갈게!' });
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setPostStep(-1);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setPostStep(-1);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setPestStep(-1);
+        setMapStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowPestAsk(false);
+        setShowMapAsk(false);
+        setShowPostAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+}
+};
+
+// 시세 튜토리얼 사진 진행
+const handlePriceNext = () => {
+let newMessages = [...messages];
+if (priceStep < priceImages.length - 1) {
+    setPriceStep(priceStep + 1);
+} else {
+    // 사진 설명 끝나면 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: '이제 시세 기능도 알았으니, 다음 기능으로 넘어갈게!' });
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setPriceStep(-1);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setPriceStep(-1);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setPestStep(-1);
+        setMapStep(-1);
+        setPostStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowPestAsk(false);
+        setShowMapAsk(false);
+        setShowPostAsk(false);
+        setShowPriceAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+}
+};
+
 const handleStart = () => {
 navigation.replace('Homepage/homepage');
 };
@@ -708,7 +913,41 @@ return (
             </TouchableOpacity>
         </View>
     )}
-    </ScrollView>
+    {/* 게시글 사진 튜토리얼 */}
+    {postStep >= 0 && (
+        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+        <Image source={postImages[postStep].src} style={{ width: 260, height: 480, borderRadius: 16, marginBottom: 16 }} resizeMode="cover" />
+        <View style={styles.botBubble}>
+            <Text style={styles.botText}>{postImages[postStep].desc}</Text>
+        </View>
+        <TouchableOpacity style={styles.button} onPress={handlePostNext}>
+            <Text style={styles.buttonText}>{postStep === postImages.length - 1 ? '다음 기능' : '다음'}</Text>
+        </TouchableOpacity>
+        </View>
+    )}
+    {/* 시세 사진 튜토리얼 */}
+    {priceStep >= 0 && (
+        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+        <Image source={priceImages[priceStep].src} style={{ width: 260, height: 480, borderRadius: 16, marginBottom: 16 }} resizeMode="cover" />
+        <View style={styles.botBubble}>
+            <Text style={styles.botText}>{priceImages[priceStep].desc}</Text>
+        </View>
+        <TouchableOpacity style={styles.button} onPress={handlePriceNext}>
+            <Text style={styles.buttonText}>{priceStep === priceImages.length - 1 ? '다음 기능' : '다음'}</Text>
+        </TouchableOpacity>
+        </View>
+    )}
+    {/* 시세 기능 설명 예/아니오 선택지 */}
+    {showPriceAsk && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: '#e6e6e6' }]} onPress={() => handlePriceAsk('아니오')}>
+            <Text style={[styles.buttonText, { color: '#333' }]}>아니오</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => handlePriceAsk('좋아!')}>
+            <Text style={styles.buttonText}>좋아!</Text>
+        </TouchableOpacity>
+        </View>
+    )}
     {/* 일반 기능 분기 선택지 */}
     {showChoices && marketWriteStep === -1 && !showMarketWriteAsk && inquiryStep === -1 && !showInquiryAsk && weatherStep === -1 && !showWeatherAsk && (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 16, marginBottom: 16 }}>
@@ -770,6 +1009,7 @@ return (
         <Text style={styles.buttonText}>시작하기</Text>
         </TouchableOpacity>
     )}
+</ScrollView>
 </SafeAreaView>
 );
 }
