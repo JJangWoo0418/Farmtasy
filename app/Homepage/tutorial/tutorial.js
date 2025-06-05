@@ -114,6 +114,58 @@ desc: 'AI 진단 결과 화면에서 입력한 정보와 함께 진단 결과를
 },
 ];
 
+// 지도 튜토리얼 이미지 및 설명
+const mapImages = [
+{
+src: require('../../../assets/map_tutorial1.png'),
+desc: '먼저 내 농장을 지도에서 선택하거나 수정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial2.jpg'),
+desc: '내 농장 위치를 지도에서 선택하거나 수정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial3.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial4.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial5.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial6.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial7.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial8.jpg'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial9.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial10.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial11.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+{
+src: require('../../../assets/map_tutorial12.png'),
+desc: '작물을 추가하고 농장 영역을 설정할 수 있습니다.\n농장 영역이 성공적으로 수정되면 알림이 표시됩니다.',
+},
+];
+
 export default function Tutorial({ navigation }) {
 const [step, setStep] = useState(0); // 0~features.length-1
 const [messages, setMessages] = useState([...initialMessages, { sender: 'bot', text: `먼저 '${features[0].name}'부터 시작할까?` }]);
@@ -127,6 +179,8 @@ const [weatherStep, setWeatherStep] = useState(-1); // -1: 아직 아님, 0~3: �
 const [showWeatherAsk, setShowWeatherAsk] = useState(false);
 const [pestStep, setPestStep] = useState(-1); // -1: 아직 아님, 0~5: 병해충 튜토리얼 단계
 const [showPestAsk, setShowPestAsk] = useState(false);
+const [mapStep, setMapStep] = useState(-1); // -1: 아직 아님, 0~12: 지도 튜토리얼 단계
+const [showMapAsk, setShowMapAsk] = useState(false);
 
 const handleChoice = (choice) => {
 let newMessages = [...messages];
@@ -230,6 +284,43 @@ if (features[step].name === '날씨') {
         setMessages(newMessages);
         setShowChoices(false);
         setShowWeatherAsk(true);
+    }
+    return;
+}
+// 지도 기능 진입 시 분기
+if (features[step].name === '지도') {
+    if (choice === '알고있음') {
+        newMessages.push({ sender: 'user', text: '이미 알고 있지~' });
+        newMessages.push({ sender: 'bot', text: `오! 이미 알고 있다니 대단해! 그럼 다음 기능으로 넘어갈게.` });
+        // 다음 기능으로
+        if (step < features.length - 1) {
+            newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+            setStep(step + 1);
+            setMessages(newMessages);
+            setShowChoices(true);
+        } else {
+            newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+            setMessages(newMessages);
+            setShowChoices(false);
+            setMarketWriteStep(-1);
+            setInquiryStep(-1);
+            setWeatherStep(-1);
+            setPestStep(-1);
+            setMapStep(-1);
+            setShowMarketWriteAsk(false);
+            setShowInquiryAsk(false);
+            setShowWeatherAsk(false);
+            setShowPestAsk(false);
+            setShowMapAsk(false);
+            setShowChoices(false);
+            setTimeout(() => setFinished(true), 100);
+        }
+    } else {
+        newMessages.push({ sender: 'user', text: '좋아, 알려줘!' });
+        newMessages.push({ sender: 'bot', text: '우선 농장을 추가하는 방법을 배워보자!' });
+        setMessages(newMessages);
+        setShowChoices(false);
+        setMapStep(0);
     }
     return;
 }
@@ -493,6 +584,39 @@ if (pestStep < pestImages.length - 1) {
 }
 };
 
+// 지도 튜토리얼 진행
+const handleMapNext = () => {
+let newMessages = [...messages];
+if (mapStep < mapImages.length - 1) {
+    setMapStep(mapStep + 1);
+} else {
+    // 사진 설명 끝나면 다음 기능으로
+    if (step < features.length - 1) {
+        newMessages.push({ sender: 'bot', text: '이제 지도 기능도 알았으니, 다음 기능으로 넘어갈게!' });
+        newMessages.push({ sender: 'bot', text: `다음은 '${features[step + 1].name}' 기능이야!` });
+        setStep(step + 1);
+        setMessages(newMessages);
+        setShowChoices(true);
+        setMapStep(-1);
+    } else {
+        newMessages.push({ sender: 'bot', text: '이제 Farmtasy의 다양한 기능을 직접 경험해봐!' });
+        setMessages(newMessages);
+        setMapStep(-1);
+        setMarketWriteStep(-1);
+        setInquiryStep(-1);
+        setWeatherStep(-1);
+        setPestStep(-1);
+        setShowMarketWriteAsk(false);
+        setShowInquiryAsk(false);
+        setShowWeatherAsk(false);
+        setShowPestAsk(false);
+        setShowMapAsk(false);
+        setShowChoices(false);
+        setTimeout(() => setFinished(true), 100);
+    }
+}
+};
+
 const handleStart = () => {
 navigation.replace('Homepage/homepage');
 };
@@ -554,6 +678,34 @@ return (
         <TouchableOpacity style={styles.button} onPress={handlePestNext}>
             <Text style={styles.buttonText}>{pestStep === pestImages.length - 1 ? '다음 기능' : '다음'}</Text>
         </TouchableOpacity>
+        </View>
+    )}
+    {/* 지도 위치 등록/작물 추가 사진 튜토리얼 */}
+    {mapStep >= 0 && (
+        <View style={{ alignItems: 'center', marginVertical: 16 }}>
+            {mapStep === 7 ? (
+                <View style={{ width: 260, height: 180, overflow: 'hidden', borderRadius: 16, marginBottom: 16 }}>
+                    <Image
+                        source={mapImages[mapStep].src}
+                        style={{ width: 260, height: 260, position: 'absolute', top: -80 }}
+                        resizeMode="cover"
+                    />
+                </View>
+            ) : (
+                <Image
+                    source={mapImages[mapStep].src}
+                    style={{ width: 260, height: 480, borderRadius: 16, marginBottom: 16 }}
+                    resizeMode="cover"
+                />
+            )}
+            {mapImages[mapStep].desc ? (
+                <View style={styles.botBubble}>
+                    <Text style={styles.botText}>{mapImages[mapStep].desc}</Text>
+                </View>
+            ) : null}
+            <TouchableOpacity style={styles.button} onPress={handleMapNext}>
+                <Text style={styles.buttonText}>{mapStep === mapImages.length - 1 ? '다음 기능' : '다음'}</Text>
+            </TouchableOpacity>
         </View>
     )}
     </ScrollView>
