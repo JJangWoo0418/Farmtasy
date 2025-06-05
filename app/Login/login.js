@@ -131,7 +131,7 @@ const Login = () => {
             </TouchableOpacity>
 
             {/* 비밀번호 변경 */}
-            <TouchableOpacity onPress={() => navigation.navigate('Login/pwchange')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Homepage/tutorial/tutorial')}>
                 <Text style={styles.passwordChange}>비밀번호 변경</Text>
             </TouchableOpacity>
 
@@ -143,7 +143,7 @@ const Login = () => {
             </View>
 
             {/* 회원가입 버튼 */}
-            <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('Login/register')}>
+            <TouchableOpacity style={styles.signupButton} onPress={() => navigation.navigate('Homepage/tutorial/tutorial')}>
                 <Text style={styles.signupText}>회원가입</Text>
             </TouchableOpacity>
         </View>
