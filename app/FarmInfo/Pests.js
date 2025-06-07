@@ -497,6 +497,7 @@ const Pests = () => {
           <Text style={styles.submitButtonText}>질문하기</Text>
         )}
       </TouchableOpacity>
+      <Text style={{ color: '#666', marginTop: 8, textAlign: 'left' }}>powered by Gemini API</Text>
     </ScrollView>
   );
 };
