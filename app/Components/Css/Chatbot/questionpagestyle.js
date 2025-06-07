@@ -13,12 +13,14 @@ export default StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderColor: '#eee'
+        borderColor: '#eee',
+        marginTop: -10,
     },
     headerTitle: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#222'
+        color: '#222',
+        marginLeft: 4,
     },
     chatContainer: {
         paddingVertical: 20,
@@ -31,19 +33,29 @@ export default StyleSheet.create({
     },
     aiBubble: {
         backgroundColor: '#f0f0f0',
-        padding: 10,
-        borderRadius: 15,
+        padding: 14,
+        borderRadius: 18,
         maxWidth: '80%',
         flexDirection: 'row',
         alignItems: 'center',
-        flexWrap: 'wrap',         // 추가
-        wordBreak: 'break-all',   // 웹이면 추가, RN은 필요 없음
+        flexWrap: 'wrap',
+        marginVertical: 6,
+        marginHorizontal: 8,
+        // 그림자 효과 (iOS/Android)
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 2,
     },
     aiText: {
-        color: '#000',
-        marginLeft: 5,
-        flexShrink: 1,        // 추가
-        flexWrap: 'wrap',     // 추가
+        color: '#222',
+        fontSize: 16,
+        lineHeight: 22,
+        marginLeft: 0,
+        flexShrink: 1,
+        flexWrap: 'wrap',
+        fontWeight: 'bold',
     },
     myMessageContainer: {
         flexDirection: 'row-reverse',
@@ -52,17 +64,27 @@ export default StyleSheet.create({
     },
     myBubble: {
         backgroundColor: '#22C55E',
-        padding: 10,
-        borderRadius: 15,
+        padding: 14,
+        borderRadius: 18,
         maxWidth: '80%',
         alignItems: 'center',
-        flexWrap: 'wrap',         // 추가
+        flexWrap: 'wrap',
         alignSelf: 'flex-end',
+        marginVertical: 6,
+        marginHorizontal: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
     },
     myText: {
         color: '#fff',
-        flexShrink: 1,        // 추가
-        flexWrap: 'wrap',     // 추가
+        fontSize: 16,
+        lineHeight: 22,
+        flexShrink: 1,
+        flexWrap: 'wrap',
+        fontWeight: 'bold',
     },
     // 이미지 메시지 컨테이너
     imageMessageContainer: {
@@ -121,6 +143,6 @@ export default StyleSheet.create({
         color: 'white',
         fontSize: 14,
     },
-    
+
 });
 

@@ -3463,7 +3463,7 @@ app.get('/api/market/products', async (req, res) => {
     console.log('서버에서 받은 phone:', req.query.phone);
     try {
         const [markets] = await pool.query(
-            `SELECT * FROM market WHERE market_status = '판매중' ORDER BY market_created_at DESC`
+            `SELECT * FROM market WHERE market_status = '판매중' OR market_status = '예약중' ORDER BY market_created_at DESC`
         );
         res.json(markets);
     } catch (error) {

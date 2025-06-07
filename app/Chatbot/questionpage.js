@@ -24,7 +24,7 @@ const QuestionPage = () => {
     const [messages, setMessages] = useState([
         {
             type: 'ai',
-            content: '안녕하세요! 팜타지 농장 관리 도우미입니다. 제가 알려드릴 수 있는 정보는 다음과 같습니다:\n\n1. 현재 장터에 판매 중인 제품 정보\n2. 귀하의 농장에 있는 작물 정보\n3. 작물 재배 방법\n4. 농장 관리 팁\n\n어떤 정보가 필요하신가요?',
+            content: '안녕하세요! 팜타지 AI 챗봇입니다. \n어떤것을 알려드릴까요?\n\n1. 현재 장터에 판매 중인 제품 정보\n2. 귀하의 농장에 있는 작물 정보 \n3. 현재 업로드된 게시글 정보\n\n어떤 정보가 필요하신가요?',
             timestamp: new Date()
         }
     ]);
@@ -80,7 +80,15 @@ const QuestionPage = () => {
                     farm_name: farm.farm_name,
                     address: farm.address,
                     crops: farm.crops && farm.crops.length > 0
-                        ? farm.crops.map(crop => `${crop.crop_name}(${crop.crop_type})`).join(', ')
+                        ? farm.crops.map(crop => ({
+                            name: crop.crop_name,
+                            type: crop.crop_type,
+                            yield_kg: crop.crop_yield_kg,
+                            area_m2: crop.crop_area_m2,
+                            planting_date: crop.crop_planting_date,
+                            harvest_date: crop.crop_harvest_date,
+                            created_at: crop.created_at
+                        }))
                         : '작물 없음'
                 }))
                 : [];
@@ -89,7 +97,12 @@ const QuestionPage = () => {
                 ? marketData.map(market => ({
                     market_name: market.market_name,
                     market_price: market.market_price,
-                    market_category: market.market_category
+                    market_category: market.market_category,
+                    seller: market.name, // 판매자명
+                    created_at: market.market_created_at, // 업로드 날짜
+                    updated_at: market.market_update_at,  // 업데이트 날짜
+                    like: market.market_like,             // 좋아요 수
+                    status: market.market_status          // 상태(판매중/예약중 등)
                 }))
                 : [];
 
@@ -98,7 +111,10 @@ const QuestionPage = () => {
                     title: post.post_content?.slice(0, 20) + '...', // 내용 앞부분만 요약
                     author: post.name,
                     region: post.region,
-                    created_at: post.post_created_at
+                    created_at: post.post_created_at,
+                    category: post.post_category,
+                    like: post.post_like,
+                    updated_at: post.post_update_at,
                 }))
                 : [];
 
@@ -229,7 +245,7 @@ ${JSON.stringify(postsSummary)}
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 <TouchableOpacity
                                     style={styles.quickQuestionButton}
-                                    onPress={() => setInput("장터에 어떤 제품들이 있나요?")}
+                                    onPress={() => setInput("장터에 어떤 제품들이 있는지 보여줘")}
                                 >
                                     <Text style={styles.quickQuestionText}>장터 제품 보기</Text>
                                 </TouchableOpacity>
