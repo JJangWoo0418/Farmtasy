@@ -61,9 +61,7 @@ const Intro = () => {
 
             {/* 기관 로고 및 텍스트 */}
             <View style={styles.orgContainer}>
-                <View style={styles.orgRow}>
-                    <Image source={require('../../assets/IntroLogo2.png')} style={styles.Logo2} />
-                </View>
+
             </View>
 
             {/* 버튼 컨테이너 */}

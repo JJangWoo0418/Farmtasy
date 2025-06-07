@@ -60,7 +60,7 @@ export default StyleSheet.create({
     },
     buttonContainer: {
         alignItems: 'center',
-        marginTop: 20,
+        marginTop: 100,
     },
     startText: {
         fontSize: 14,
