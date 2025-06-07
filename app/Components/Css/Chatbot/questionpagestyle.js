@@ -25,44 +25,44 @@ export default StyleSheet.create({
         paddingHorizontal: 16,
     },
     aiMessageContainer: {
-        alignItems: 'flex-start',
-        marginVertical: 8,
-        paddingHorizontal: 16,
+        flexDirection: 'row',
+        marginVertical: 5,
+        paddingHorizontal: 10,
     },
     aiBubble: {
+        backgroundColor: '#f0f0f0',
+        padding: 10,
+        borderRadius: 15,
+        maxWidth: '80%',
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 12,
-        borderWidth: 2,
-        borderColor: '#686868',
-        maxWidth: '80%',    // 화면 가로의 80% 이내로 제한
-        flexShrink: 1,
+        flexWrap: 'wrap',         // 추가
+        wordBreak: 'break-all',   // 웹이면 추가, RN은 필요 없음
     },
     aiText: {
-        color: '#222',
-        fontSize: 15,
-        marginLeft: 10,
-        flexShrink: 1,
+        color: '#000',
+        marginLeft: 5,
+        flexShrink: 1,        // 추가
+        flexWrap: 'wrap',     // 추가
     },
     myMessageContainer: {
-        alignItems: 'flex-end',
-        marginVertical: 8,
-        paddingHorizontal: 16,
+        flexDirection: 'row-reverse',
+        marginVertical: 5,
+        paddingHorizontal: 10,
     },
     myBubble: {
         backgroundColor: '#22C55E',
-        borderRadius: 10,
-        padding: 16,
+        padding: 10,
+        borderRadius: 15,
         maxWidth: '80%',
-        flexShrink: 1,
+        alignItems: 'center',
+        flexWrap: 'wrap',         // 추가
+        alignSelf: 'flex-end',
     },
     myText: {
         color: '#fff',
-        fontSize: 15,
-        fontWeight: 'bold',
-        flexShrink: 1,
+        flexShrink: 1,        // 추가
+        flexWrap: 'wrap',     // 추가
     },
     // 이미지 메시지 컨테이너
     imageMessageContainer: {
@@ -95,9 +95,32 @@ export default StyleSheet.create({
         color: '#222'
     },
     sendicon: {
-        width: 30,
-        height: 30,
-        resizeMode: 'contain'
-    }
+        width: 24,
+        height: 24,
+        resizeMode: 'contain',
+    },
+    sendicon2: {
+        width: 36,
+        height: 36,
+        resizeMode: 'contain',
+        marginBottom: 30,
+        marginTop: -15,
+    },
+    quickQuestions: {
+        padding: 10,
+        backgroundColor: '#f5f5f5',
+    },
+    quickQuestionButton: {
+        backgroundColor: '#22C55E',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginRight: 10,
+    },
+    quickQuestionText: {
+        color: 'white',
+        fontSize: 14,
+    },
+    
 });
 

@@ -3346,6 +3346,23 @@ app.delete('/api/comment/:commentId', async (req, res) => {
     }
 });
 
+// 최신 게시글 20개 조회 API
+app.get('/api/posts', async (req, res) => {
+    console.log('최신 게시글 20개 조회 API 호출됨 (챗봇)');
+    try {
+        const [posts] = await pool.query(
+            `SELECT post_id, name, region, post_content, image_urls, post_category, post_created_at, phone, post_like
+             FROM post
+             ORDER BY post_created_at DESC
+             LIMIT 20`
+        );
+        res.json(posts);
+    } catch (error) {
+        console.error('게시글 정보 조회 오류:', error);
+        res.status(500).json({ error: '게시글 정보를 가져오는데 실패했습니다.' });
+    }
+});
+
 // 장터 댓글 수정 API
 app.put('/api/market/comment/:commentId', async (req, res) => {
     console.log('장터 댓글 수정 API 호출됨');
@@ -3408,6 +3425,50 @@ app.put('/api/market/comment/:commentId', async (req, res) => {
             message: '댓글 수정 중 오류가 발생했습니다.',
             error: error.message
         });
+    }
+});
+
+app.get('/api/farm/user', async (req, res) => {
+    try {
+        const userPhone = req.query.phone;
+        if (!userPhone) {
+            return res.status(400).json({ error: 'user_phone이 필요합니다.' });
+        }
+        // 1. 농장 정보 조회
+        const [farms] = await pool.query(
+            `SELECT * FROM farm WHERE user_phone = ?`,
+            [userPhone]
+        );
+
+        // 2. 각 농장별로 작물 정보 조회
+        for (const farm of farms) {
+            const [crops] = await pool.query(
+                `SELECT crop_id, crop_name, crop_type, crop_planting_date, crop_harvest_date, crop_yield_kg, crop_area_m2 
+                 FROM crop WHERE farm_id = ?`,
+                [farm.farm_id]
+            );
+            farm.crops = crops; // 농장 객체에 crops 배열 추가
+        }
+
+        res.json(farms);
+    } catch (error) {
+        console.error('농장 정보 조회 오류:', error);
+        res.status(500).json({ error: '농장 정보를 가져오는데 실패했습니다.' });
+    }
+});
+
+// 장터 제품 정보 조회 API
+app.get('/api/market/products', async (req, res) => {
+    console.log('장터 제품 정보 조회 API 호출됨 (챗봇)');
+    console.log('서버에서 받은 phone:', req.query.phone);
+    try {
+        const [markets] = await pool.query(
+            `SELECT * FROM market WHERE market_status = '판매중' ORDER BY market_created_at DESC`
+        );
+        res.json(markets);
+    } catch (error) {
+        console.error('장터 제품 정보 조회 오류:', error);
+        res.status(500).json({ error: '장터 제품 정보를 가져오는데 실패했습니다.' });
     }
 });
 
