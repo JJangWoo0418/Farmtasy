@@ -147,9 +147,12 @@ const WeatherContent = () => {
           }
         } else {
           // Map.js를 거치지 않고 직접 왔거나, 농장 선택 모달에서 선택했을 경우
-          if (!currentFarm) { // currentFarm이 설정되지 않았을 경우 (초기 로딩) -> useEffect에서 처리
+          if (!currentFarm) { // currentFarm이 설정되지 않았을 경우 (초기 로딩)
              console.warn('[농장 위치] currentFarm 상태가 설정되지 않았습니다.');
              setIsLoading(false);
+             setWeatherData(null);    // 기존 날씨 데이터 초기화
+             setShortTermData(null); // 기존 단기예보 데이터 초기화
+             setWeeklyData(null);    // 기존 주간예보 데이터 초기화
              return; // currentFarm이 설정될 때까지 대기
           }
           // currentFarm에 설정된 농장 좌표 사용
@@ -965,14 +968,22 @@ const WeatherContent = () => {
                 </TouchableOpacity>
               )}
             </>
+          ) : mode === 'farm' && !currentFarm ? (
+            <TouchableOpacity onPress={() => router.push({ pathname: '/Map/Map', params: { ...params } })}> 
+              <Text style={[styles.noWarning, { color: '#22CC6B' }]}>내 농장 설정하기</Text>
+            </TouchableOpacity>
           ) : (
             <Text style={styles.noWarning}>날씨 데이터를 불러올 수 없습니다.</Text>
           )}
         </View>
 
+        <Text style={[styles.sourceText, { color: '#666', paddingHorizontal: 16, marginTop: 0, textAlign: 'right' }]}>출처 : 기상청</Text>
+
         <Text style={styles.sectionTitle}>시간대별 날씨</Text>
         {isLoading ? (
           <Text style={styles.loading}>로딩중...</Text>
+        ) : mode === 'farm' && !currentFarm ? (
+          <Text style={styles.noWarning}>내 농장을 설정해 주세요.</Text>
         ) : (
           renderForecast()
         )}
@@ -980,6 +991,8 @@ const WeatherContent = () => {
         <Text style={styles.sectionTitle}>주간 날씨</Text>
         {isLoading ? (
           <Text style={styles.loading}>로딩중...</Text>
+        ) : mode === 'farm' && !currentFarm ? (
+          <Text style={styles.noWarning}>내 농장을 설정해 주세요.</Text>
         ) : (
           renderWeekly()
         )}
@@ -987,6 +1000,10 @@ const WeatherContent = () => {
         <Text style={styles.sectionTitle}>기상 특보</Text>
         {isLoading ? (
           <Text style={styles.loading}>로딩중...</Text>
+        ) : mode === 'farm' && !currentFarm ? (
+          <View style={styles.warningContainer}>
+            <Text style={styles.noWarning}>내 농장을 설정해 주세요.</Text>
+          </View>
         ) : (
           <View style={styles.warningContainer}>
             {renderWarning()}
@@ -1048,7 +1065,7 @@ const FarmSelectModal = ({ isVisible, farms, onClose, onSelectFarm }) => {
 export default function Weather() {
   // useLocalSearchParams를 여기서 한 번만 호출하여 phone 값을 가져옵니다.
   const params = useLocalSearchParams();
-  const userPhone = params.phone; // userPhone 추출
+  const userPhone = params.phone;
 
   return (
     // WeatherProvider에 userPhone prop 전달

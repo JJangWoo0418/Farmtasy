@@ -872,8 +872,9 @@ export default function MarketPriceScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>작물 시세</Text>
       </View>
+      <Text style={{ color: '#666', fontSize: 14, textAlign: 'right', paddingRight: 16, marginBottom: 8 }}>출처 : 농림축산식품부</Text>
       {/* 작물 추가 버튼 위쪽에 패딩 추가 */}
-      <View style={{ paddingTop: 16, paddingHorizontal: 16 }}>
+      <View>
         <TouchableOpacity style={styles.addCropButton} onPress={openModal}>
           <Text style={styles.addCropText}>+ 작물 추가</Text>
         </TouchableOpacity>
