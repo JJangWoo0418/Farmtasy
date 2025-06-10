@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Card } from '../../components/ui/card';
+import { Card } from '../Components/UI/card';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
