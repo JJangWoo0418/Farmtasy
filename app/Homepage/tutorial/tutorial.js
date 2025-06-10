@@ -823,7 +823,7 @@ if (priceStep < priceImages.length - 1) {
 };
 
 const handleStart = () => {
-navigation.replace('Homepage/homepage');
+    navigation.replace('Homepage/Home/homepage');
 };
 
 return (
