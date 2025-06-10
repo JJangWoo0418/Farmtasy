@@ -995,6 +995,11 @@ const HomePage = () => {
                     <TouchableOpacity onPress={closeDrawer} style={styles.drawerClose}>
                         <Image source={require('../../../assets/closeicon.png')} style={{ width: 20, height: 20 }} />
                     </TouchableOpacity>
+                    <ScrollView 
+                        style={styles.drawerScroll}
+                        contentContainerStyle={styles.drawerScrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
 
                     <Text style={styles.drawerTitle}>정보</Text>
                     <TouchableOpacity style={styles.drawerItem} onPress={() => {
@@ -1093,6 +1098,11 @@ const HomePage = () => {
                         <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>질문하기</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/tutorial/tutorial' })}>
+                            <Image source={require('../../../assets/fruit.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>튜토리얼</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
                 </Animated.View>
             </View>
 
