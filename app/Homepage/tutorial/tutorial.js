@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import styles from '../../../app/Components/Css/Homepage/tutorialstyle';
 
 const features = [
@@ -218,7 +219,8 @@ desc: '경매내역이 아니라 전국시세가 궁금한 경우에는 캘린�
 },
 ];
 
-export default function Tutorial({ navigation }) {
+export default function Tutorial() {
+const navigation = useNavigation();
 const [step, setStep] = useState(0); // 0~features.length-1
 const [messages, setMessages] = useState([...initialMessages, { sender: 'bot', text: `먼저 '${features[0].name}'부터 시작할까?` }]);
 const [showChoices, setShowChoices] = useState(true);
