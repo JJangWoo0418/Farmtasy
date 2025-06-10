@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../../../app/Components/Css/Homepage/tutorialstyle';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const features = [
 {
@@ -221,6 +224,7 @@ desc: '경매내역이 아니라 전국시세가 궁금한 경우에는 캘린�
 
 export default function Tutorial() {
 const navigation = useNavigation();
+const router = useRouter();
 const [step, setStep] = useState(0); // 0~features.length-1
 const [messages, setMessages] = useState([...initialMessages, { sender: 'bot', text: `먼저 '${features[0].name}'부터 시작할까?` }]);
 const [showChoices, setShowChoices] = useState(true);
@@ -824,8 +828,31 @@ if (priceStep < priceImages.length - 1) {
 }
 };
 
-const handleStart = () => {
-    navigation.replace('Homepage/Home/homepage');
+const handleStart = async () => {
+    try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData) {
+            const user = JSON.parse(userData);
+            router.push({
+                pathname: "/Homepage/Home/homepage",
+                params: {
+                    userData: userData,
+                    phone: user.phone,
+                    name: user.name,
+                    region: user.region || '지역 미설정',
+                    profile_image: user.profile_image,
+                    about_me: user.about_me,
+                    introduction: user.introduction,
+                }
+            });
+        } else {
+            Alert.alert('오류', '사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+            navigation.replace('Login/login');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Alert.alert('오류', '사용자 정보를 불러오는 중 문제가 발생했습니다.');
+    }
 };
 
 return (
