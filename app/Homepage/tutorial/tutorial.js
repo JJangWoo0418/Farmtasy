@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, ScrollView, Image, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import styles from '../../../app/Components/Css/Homepage/tutorialstyle';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 
 const features = [
 {
@@ -221,6 +221,73 @@ src: require('../../../assets/quote_tutorial7.png'),
 desc: '경매내역이 아니라 전국시세가 궁금한 경우에는 캘린더 밑에 전국시세 버튼을 눌러 확인할 수 있어!',
 },
 ];
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff'
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee'
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600'
+    },
+    scrollView: {
+        flex: 1,
+        backgroundColor: '#fff'
+    },
+    scrollViewContent: {
+        flexGrow: 1,
+        padding: 16,
+        paddingBottom: 32
+    },
+    botBubble: {
+        backgroundColor: '#f0f0f0',
+        padding: 12,
+        borderRadius: 16,
+        marginBottom: 8,
+        maxWidth: '80%',
+        alignSelf: 'flex-start'
+    },
+    userBubble: {
+        backgroundColor: '#007AFF',
+        padding: 12,
+        borderRadius: 16,
+        marginBottom: 8,
+        maxWidth: '80%',
+        alignSelf: 'flex-end'
+    },
+    botText: {
+        color: '#000',
+        fontSize: 16
+    },
+    userText: {
+        color: '#fff',
+        fontSize: 16
+    },
+    button: {
+        backgroundColor: '#4CAF50',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 8,
+        minWidth: 100,
+        alignItems: 'center'
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600'
+    }
+});
 
 export default function Tutorial() {
 const navigation = useNavigation();
@@ -856,8 +923,15 @@ const handleStart = async () => {
 };
 
 return (
-<SafeAreaView style={styles.container}>
-    <ScrollView style={{ width: '100%' }} contentContainerStyle={{ paddingVertical: 32 }}>
+<View style={styles.container}>
+    <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={28} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>튜토리얼</Text>
+        <View style={{ width: 28 }} />
+    </View>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
     {messages.map((msg, idx) => (
         <View
         key={idx}
@@ -1039,6 +1113,6 @@ return (
         </TouchableOpacity>
     )}
 </ScrollView>
-</SafeAreaView>
+</View>
 );
 }
