@@ -1099,7 +1099,7 @@ const HomePage = () => {
                         <Text style={styles.drawerText}>질문하기</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/tutorial/tutorial' })}>
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/Homepage/tutorial/tutorial' })}>
                             <Image source={require('../../../assets/tutorial_icon.png')} style={styles.drawerIcon} />
                             <Text style={styles.drawerText}>튜토리얼</Text>
                     </TouchableOpacity>
