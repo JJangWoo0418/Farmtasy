@@ -1098,10 +1098,17 @@ const HomePage = () => {
                         <Image source={require('../../../assets/chatboticon2.png')} style={styles.drawerIcon} />
                         <Text style={styles.drawerText}>질문하기</Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/tutorial/tutorial' })}>
-                            <Image source={require('../../../assets/fruit.png')} style={styles.drawerIcon} />
+                            <Image source={require('../../../assets/tutorial_icon.png')} style={styles.drawerIcon} />
                             <Text style={styles.drawerText}>튜토리얼</Text>
-                        </TouchableOpacity>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.drawerItem} onPress={() => router.push({ pathname: '/AIOT/aiot' })}>
+                            <Image source={require('../../../assets/fruit.png')} style={styles.drawerIcon} />
+                            <Text style={styles.drawerText}>과일 당도 측정하기</Text>
+                    </TouchableOpacity>
+                        
                     </ScrollView>
                 </Animated.View>
             </View>
